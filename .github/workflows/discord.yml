@@ -2,6 +2,7 @@ name: Discord Notify
 
 on:
   pull_request:
+  workflow_dispatch:
 
 jobs:
   notify:
