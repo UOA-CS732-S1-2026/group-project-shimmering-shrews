@@ -15,8 +15,10 @@ entity "Users" as users {
   * surname : VARCHAR(250)
   * email : VARCHAR(250)
   * role : ENUM user_role
-  level : INTEGER <<computed>>
-  xp_earned : INTEGER <<computed>>
+  * level : INTEGER <<computed>>
+  * xp_earned : INTEGER <<computed>>
+  * streak_count : INTEGER <<computed>>
+  last_completed_challenge : TIMESTAMP
 } 
 
 entity "Badge" as badge {
@@ -41,14 +43,14 @@ entity "UserActivity" as user_activity {
   * user_id : INTEGER
   * timestamp : TIMESTAMP
   --
-  *description : JSON
+  * description : JSON
 }
 
 entity "AwardedBadge" as awarded_badge {
   * user_id : INTEGER
   * badge_id : INTEGER
   --
-  awarded_at : TIMESTAMP
+  * awarded_at : TIMESTAMP
 }
 
 entity "UserChallenge" as user_challenge {
