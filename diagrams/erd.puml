@@ -14,7 +14,7 @@ entity "Users" as users {
   * first_name : VARCHAR(250)
   * surname : VARCHAR(250)
   * email : VARCHAR(250)
-  * role : ENUM user_role
+  * user_role : ENUM user_role
   * level : INTEGER <<computed>>
   * xp_earned : INTEGER <<computed>>
   * streak_count : INTEGER <<computed>>
@@ -39,9 +39,9 @@ entity "UserBadgeProgress" as user_badge_progress {
   * current_value : INTEGER
 }
 
-entity "UserActivity" as user_activity {
+entity "ActivityLog" as activity_log {
   * user_id : INTEGER
-  * timestamp : TIMESTAMP
+  * recorded_at : TIMESTAMP
   --
   * description : JSON
 }
@@ -59,26 +59,28 @@ entity "UserChallenge" as user_challenge {
   --
   * status : ENUM challenge_status
   * xp_worth : INTEGER
-  assigned_at : TIMESTAMP
+  * assigned_at : TIMESTAMP
   completed_at : TIMESTAMP
 }
 
 entity "Challenge" as challenge {
   * id : INTEGER
   --
-  * name : VARCHAR(100)
+  * name : VARCHAR(500)
   * location_id : INTEGER <<FK>>
   * xp_worth : INTEGER
   * is_active : BOOLEAN
   description: VARCHAR(1000)
+  duration : INTERVAL
+  started_at : TIMESTAMP
 }
 
 entity "Location" as location {
   * id : INTEGER
   --
-  * geography(Point, 4326)
-  name: VARCHAR(100)
-  category : ENUM location_type
+  * located_at : geography(Point, 4326)
+  * name: VARCHAR(500)
+  category : VARCHAR(250)
 }
 
 ' Define relationships (foreign keys)
@@ -89,6 +91,6 @@ users ||-o{ awarded_badge
 users ||-o{ user_badge_progress
 awarded_badge }o--|| badge
 user_badge_progress }o---|| badge
-users ||--o{ user_activity
+users ||--o{ activity_log
 
 @enduml
