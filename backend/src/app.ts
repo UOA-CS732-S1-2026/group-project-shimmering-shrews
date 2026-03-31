@@ -8,7 +8,7 @@ app.use(cors());
 app.use(express.json());
 
 app.get('/', (_req, res) => {
-  res.send('API is running');
+  res.send('API is running for Shimmering Shrews pretty app!');
 });
 
 app.use('/', testRoute);
