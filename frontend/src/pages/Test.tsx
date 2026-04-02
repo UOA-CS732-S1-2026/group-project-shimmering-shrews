@@ -35,7 +35,7 @@ export default function Test() {
     Count is {count}
   </button>
 
-  {/* 👇 ADD THIS BLOCK */}
+  
   <div style={{ marginTop: '2rem', width: '100%' }}>
     <h2>Backend Response</h2>
 
