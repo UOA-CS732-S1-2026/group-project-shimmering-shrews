@@ -11,15 +11,24 @@ skinparam {
 entity "Users" as users {
   * id : INTEGER
   --
-  * first_name : VARCHAR(250)
-  * surname : VARCHAR(250)
+  * username : VARCHAR(100)
   * email : VARCHAR(250)
   * user_role : ENUM user_role
+  * created_at : DATE
+  * updated_at : DATE
   * level : INTEGER <<computed>>
   * xp_earned : INTEGER <<computed>>
   * streak_count : INTEGER <<computed>>
   last_completed_challenge : TIMESTAMP
 } 
+
+entity "Account" as account {
+ * provider : TEXT
+ * provider_account_id : TEXT
+ --
+ * type : TEXT
+ * user_id : INT <<FK>>
+}
 
 entity "Badge" as badge {
   * id : INTEGER
@@ -39,13 +48,6 @@ entity "UserBadgeProgress" as user_badge_progress {
   * current_value : INTEGER
 }
 
-entity "ActivityLog" as activity_log {
-  * user_id : INTEGER
-  * recorded_at : TIMESTAMP
-  --
-  * description : JSON
-}
-
 entity "AwardedBadge" as awarded_badge {
   * user_id : INTEGER
   * badge_id : INTEGER
@@ -61,6 +63,7 @@ entity "UserChallenge" as user_challenge {
   * xp_worth : INTEGER
   * assigned_at : TIMESTAMP
   completed_at : TIMESTAMP
+  skipped_at : TIMESTAMP
 }
 
 entity "Challenge" as challenge {
@@ -68,11 +71,18 @@ entity "Challenge" as challenge {
   --
   * name : VARCHAR(500)
   * location_id : INTEGER <<FK>>
+  * category_id : INTEGER <<fk>>
   * xp_worth : INTEGER
   * is_active : BOOLEAN
+  * created_at : TIMESTAMP
   description: VARCHAR(1000)
-  duration : INTERVAL
-  started_at : TIMESTAMP
+}
+
+entity "ChallengeCategory" as challenge_category {
+  * id : INT
+  --
+  * name : VARCHAR(100)
+  * icon : VARCHAR(500)
 }
 
 entity "Location" as location {
@@ -87,10 +97,11 @@ entity "Location" as location {
 users ||--o{ user_challenge
 user_challenge }o--|| challenge
 challenge }o-|| location
+challenge_category ||-o{ challenge
 users ||-o{ awarded_badge
 users ||-o{ user_badge_progress
 awarded_badge }o--|| badge
 user_badge_progress }o---|| badge
-users ||--o{ activity_log
+users ||--o{ account
 
 @enduml

@@ -1,13 +1,14 @@
 -- ENUM TYPES
 CREATE TYPE user_role AS ENUM ('user', 'admin');
-CREATE TYPE challenge_status AS ENUM ('in_progress', 'completed');
+CREATE TYPE challenge_status AS ENUM ('in_progress', 'skipped', 'completed');
 
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
-    first_name VARCHAR(250) NOT NULL,
-    surname VARCHAR(250) NOT NULL,
+    username VARCHAR(100) NOT NULL,
     email VARCHAR(250) UNIQUE NOT NULL,
     user_role user_role NOT NULL,
+    created_at DATE NOT NULL,
+    updated_at DATE NOT NULL,
     -- updated whenever user completes a challenge
     last_completed_challenge TIMESTAMP,
     -- computed fields
@@ -16,11 +17,26 @@ CREATE TABLE users (
     streak_count INTEGER NOT NULL DEFAULT 0
 );
 
+CREATE TABLE account (
+    provider TEXT NOT NULL,
+    provider_account_id TEXT NOT NULL,
+    user_id INTEGER NOT NULL,
+    type TEXT NOT NULL,
+
+    PRIMARY KEY (provider, provider_account_id),
+
+    CONSTRAINT fk_account_user
+        FOREIGN KEY (user_id)
+        REFERENCES users(id)
+        ON DELETE CASCADE
+);
+
 CREATE TABLE badge (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     -- achievement_criteria defines what triggers a badge's progress to update
     achievement_criteria JSONB NOT NULL,
+    target_value INTEGER NOT NULL,
     description VARCHAR(100),
     -- What the badge looks like achieved vs unachieved
     active_url VARCHAR(500),
@@ -38,30 +54,27 @@ CREATE TABLE challenge (
     id SERIAL PRIMARY KEY,
     name VARCHAR(500) NOT NULL,
     location_id INTEGER NOT NULL,
+    category_id INTEGER NOT NULL,
     xp_worth INTEGER NOT NULL DEFAULT 0,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     description VARCHAR(1000),
-    duration INTERVAL,
-    started_at TIMESTAMP,
 
     CONSTRAINT fk_challenge_location
         FOREIGN KEY (location_id)
         REFERENCES location(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_challenge_category
+        FOREIGN KEY (category_id)
+        REFERENCES challenge_category(id)
         ON DELETE CASCADE
 );
 
-
-CREATE TABLE activity_log (
-    user_id INTEGER NOT NULL,
-    recorded_at TIMESTAMP NOT NULL,
-    description JSON NOT NULL,
-
-    PRIMARY KEY (user_id, recorded_at),
-
-    CONSTRAINT fk_activity_user
-        FOREIGN KEY (user_id)
-        REFERENCES users(id)
-        ON DELETE CASCADE
+CREATE TABLE challenge_category (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    icon VARCHAR(500)
 );
 
 CREATE TABLE awarded_badge (
@@ -106,6 +119,7 @@ CREATE TABLE user_challenge (
     xp_worth INTEGER NOT NULL,
     assigned_at TIMESTAMP NOT NULL,
     completed_at TIMESTAMP,
+    skipped_at TIMESTAMP,
 
     PRIMARY KEY(user_id, challenge_id),
 
