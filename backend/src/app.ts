@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import testRoute from './routes/testRoute';
+import challengeRoute from './routes/challengeRoute';
 
 const app = express();
 
@@ -12,5 +13,6 @@ app.get('/', (_req, res) => {
 });
 
 app.use('/', testRoute);
+app.use('/challenges', challengeRoute)
 
 export default app;
