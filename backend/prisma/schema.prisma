@@ -1,15 +1,121 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = env("DIRECT_URL")
+}
+
+model account {
+  provider            String
+  provider_account_id String
+  user_id             Int
+  account_type        String
+  users               users  @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_account_user")
+
+  @@id([provider, provider_account_id])
+}
+
+model awarded_badge {
+  user_id  Int
+  badge_id Int
+  badge    badge @relation(fields: [badge_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_ab_badge")
+  users    users @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_ab_user")
+
+  @@id([user_id, badge_id])
+}
+
+model badge {
+  id                   Int                   @id @default(autoincrement())
+  name                 String                @db.VarChar(100)
+  achievement_criteria Json
+  target_value         Int
+  description          String?               @db.VarChar(100)
+  active_url           String?               @db.VarChar(500)
+  inactive_url         String?               @db.VarChar(500)
+  awarded_badge        awarded_badge[]
+  user_badge_progress  user_badge_progress[]
+}
+
+model challenge {
+  id                 Int                @id @default(autoincrement())
+  name               String             @db.VarChar(500)
+  location_id        Int
+  category_id        Int
+  xp_worth           Int                @default(0)
+  is_active          Boolean            @default(true)
+  created_at         DateTime           @default(now()) @db.Timestamp(6)
+  description        String?            @db.VarChar(1000)
+  challenge_category challenge_category @relation(fields: [category_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_challenge_category")
+  location           location           @relation(fields: [location_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_challenge_location")
+  user_challenge     user_challenge[]
+}
+
+model challenge_category {
+  id        Int         @id @default(autoincrement())
+  name      String      @db.VarChar(100)
+  icon      String?     @db.VarChar(500)
+  challenge challenge[]
+}
+
+model location {
+  id        Int         @id @default(autoincrement())
+  name      String      @db.VarChar(500)
+  category  String?     @db.VarChar(250)
+  latitude  Decimal     @db.Decimal(9, 6)
+  longitude Decimal     @db.Decimal(9, 6)
+  challenge challenge[]
+}
+
+model user_badge_progress {
+  user_id       Int
+  badge_id      Int
+  current_value Int
+  badge         badge @relation(fields: [badge_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_ubp_badge")
+  users         users @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_ubp_user")
+
+  @@id([user_id, badge_id])
+}
+
+model user_challenge {
+  user_id      Int
+  challenge_id Int
+  status       challenge_status
+  xp_worth     Int
+  assigned_at  DateTime         @default(now()) @db.Timestamp(6)
+  completed_at DateTime?        @db.Timestamp(6)
+  skipped_at   DateTime?        @db.Timestamp(6)
+  challenge    challenge        @relation(fields: [challenge_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_uc_challenge")
+  users        users            @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_uc_user")
+
+  @@id([user_id, challenge_id])
+}
+
+model users {
+  id                       Int                   @id @default(autoincrement())
+  username                 String                @unique @db.VarChar(100)
+  email                    String                @unique @db.VarChar(250)
+  user_role                user_role
+  created_at               DateTime              @default(now()) @db.Timestamp(6)
+  updated_at               DateTime              @default(now()) @db.Timestamp(6)
+  last_completed_challenge DateTime?             @db.Timestamp(6)
+  level                    Int                   @default(1)
+  xp_earned                Int                   @default(0)
+  streak_count             Int                   @default(0)
+  account                  account[]
+  awarded_badge            awarded_badge[]
+  user_badge_progress      user_badge_progress[]
+  user_challenge           user_challenge[]
+}
+
+enum challenge_status {
+  in_progress
+  skipped
+  completed
+}
+
+enum user_role {
+  user
+  admin
 }
