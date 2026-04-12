@@ -8,7 +8,6 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
-app.use(errorHandler);
 
 app.get('/', (_req, res) => {
   res.send('API is running for Shimmering Shrews pretty app!');
@@ -16,5 +15,7 @@ app.get('/', (_req, res) => {
 
 app.use('/', testRoute);
 app.use('/challenges', challengeRoute)
+
+app.use(errorHandler);
 
 export default app;
