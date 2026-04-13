@@ -1,7 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import testRoute from './routes/testRoute';
-import challengeRoute from './routes/challenge';
+
+import challengeRoute from './routes/challengeRoute';
+import { errorHandler } from './middleware/errorMiddleWare';
 
 const app = express();
 
@@ -13,6 +15,8 @@ app.get('/', (_req, res) => {
   res.send('API is running for Shimmering Shrews pretty app!');
 });
 
-app.use('/', testRoute);
+app.use('/test', testRoute);
+
+app.use(errorHandler);
 
 export default app;
