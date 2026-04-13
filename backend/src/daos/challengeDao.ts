@@ -1,8 +1,9 @@
 import prisma from '../config/prisma'
 
 export const findAllActiveChallenges = async () => {
-  return prisma.challenge.findMany({
-    where: {
+  return prisma.challenge.findMany(
+    {
+      where: {
       is_active: true,
     },
     select: {
@@ -26,5 +27,6 @@ export const findAllActiveChallenges = async () => {
         },
       },
     },
-  })
+  }
+    )
 }

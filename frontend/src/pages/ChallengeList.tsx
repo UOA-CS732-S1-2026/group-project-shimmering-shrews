@@ -2,15 +2,20 @@ import React from 'react'
 import { badgeStyle, buttonStyle, cardStyle, categoryColors, containerStyle, challengeTitleStyle, titleStyle, xpStyle } from '../styles/challengeStyle'
 export default function ChallengeList({goToDetailView}: {goToDetailView: (challenge: any) => void }) {
 
-  type Challenge ={
+  type Challenge = {
     id: number;
-    title: string;
-    location: string;
+    name: string;
     description: string;
-    category: string;
-    xp: string;
-  }
-    
+   xp_worth: number;
+    challenge_category: {
+      name: string;
+      icon: string;
+      };
+      location: {
+      name: string;
+     };
+  };
+    const [loading, setLoading] = React.useState(true)
     const closeButtonStyle = {
       position: "absolute",
       top: "10px",
@@ -39,9 +44,18 @@ export default function ChallengeList({goToDetailView}: {goToDetailView: (challe
       React.useEffect(() => {
         fetch("http://localhost:5000/challenges")
           .then(res => res.json())
-          .then(data => setChallenges(data))
+          .then(data => {
+            setChallenges(data.data);
+            setLoading(false);
+          })
           .catch(err => console.error("Error fetching challenges:", err))
       }, [])
+      if (loading) {
+        return <div style={containerStyle}>
+          <h1 style={titleStyle}>Today's Challenges</h1>
+          <p>Loading...</p>
+        </div>
+      }
     const handleClose = (id: number) => {
         setChallenges(prev => prev.filter(challenge => challenge.id !== id))
     }
@@ -74,17 +88,17 @@ export default function ChallengeList({goToDetailView}: {goToDetailView: (challe
                 x
             </button>
             <h2 style={challengeTitleStyle}>
-                {challenge.title}
+                {challenge.name}
             </h2>
             <p style={descriptionStyle}>
                 {challenge.description}
             </p>
             <div style={rowStyle}>
-              <span style={{...badgeStyle, background: categoryColors[challenge.category] || "#ddd"}}>
-                {challenge.category}
+              <span style={{...badgeStyle, background: categoryColors[challenge.challenge_category.name] || "#ddd"}}>
+                {challenge.challenge_category.name}
               </span>
               <span style={xpStyle}>
-                {challenge.xp}
+                {challenge.xp_worth} XP
               </span>
             </div>
         </div>
@@ -100,7 +114,7 @@ export default function ChallengeList({goToDetailView}: {goToDetailView: (challe
           <ChallengeCard 
             key={challenge.id} 
             challenge={challenge} 
-            onClose={() => handleClose(challenge.id)} 
+            onClose={handleClose} 
           />
 
         ))}
