@@ -17,12 +17,19 @@ export const syncUser = async () => {
 
   if (!token) return
 
-  const res = await fetch("http://localhost:3000/api/auth/sync-user", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  })
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
 
-  return res.json()
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/auth/sync-user`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+
+    const json = await res.json()
+    return json
+  } catch (err) {
+    console.log(err)
+  }
 }

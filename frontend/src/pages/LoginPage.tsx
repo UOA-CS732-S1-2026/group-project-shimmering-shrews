@@ -1,4 +1,4 @@
-import { loginWithGoogle } from "../auth/auth"
+import { loginWithGoogle } from "../services/auth"
 
 const LoginPage = () => {
   const handleGoogleLogin = async () => {

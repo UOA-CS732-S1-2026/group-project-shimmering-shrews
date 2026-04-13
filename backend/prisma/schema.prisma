@@ -93,7 +93,7 @@ model users {
   level                    Int                   @default(1)
   xp_earned                Int                   @default(0)
   streak_count             Int                   @default(0)
-  auth_id                  String?               @unique
+  auth_id                  String                @unique
   awarded_badge            awarded_badge[]
   user_badge_progress      user_badge_progress[]
   user_challenge           user_challenge[]
