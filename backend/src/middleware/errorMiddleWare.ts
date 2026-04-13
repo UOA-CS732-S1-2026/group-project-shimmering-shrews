@@ -7,6 +7,7 @@ export const errorHandler = (
   res: Response,
   _next: NextFunction
 ) => {
+  console.error('Error:', err)
   const statusCode = err instanceof ApiError ? err.statusCode : 500
   const message =
     err instanceof ApiError ? err.message : 'Internal Server Error'
