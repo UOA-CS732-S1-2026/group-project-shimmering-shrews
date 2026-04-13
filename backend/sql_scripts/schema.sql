@@ -1,27 +1,37 @@
+-- ⚠️ DEV ONLY: Reset database
+DROP SCHEMA public CASCADE;
+CREATE SCHEMA public;
+
+GRANT ALL ON SCHEMA public TO postgres;
+GRANT ALL ON SCHEMA public TO public;
+
 -- ENUM TYPES
 CREATE TYPE user_role AS ENUM ('user', 'admin');
 CREATE TYPE challenge_status AS ENUM ('in_progress', 'skipped', 'completed');
 
+-- USERS
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
-    username VARCHAR(100) NOT NULL,
+    username VARCHAR(100) UNIQUE NOT NULL,
     email VARCHAR(250) UNIQUE NOT NULL,
     user_role user_role NOT NULL,
-    created_at DATE NOT NULL,
-    updated_at DATE NOT NULL,
-    -- updated whenever user completes a challenge
+
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+
     last_completed_challenge TIMESTAMP,
-    -- computed fields
+
     level INTEGER NOT NULL DEFAULT 1,
     xp_earned INTEGER NOT NULL DEFAULT 0,
     streak_count INTEGER NOT NULL DEFAULT 0
 );
 
+-- ACCOUNT (for auth providers)
 CREATE TABLE account (
     provider TEXT NOT NULL,
     provider_account_id TEXT NOT NULL,
     user_id INTEGER NOT NULL,
-    type TEXT NOT NULL,
+    account_type TEXT NOT NULL,
 
     PRIMARY KEY (provider, provider_account_id),
 
@@ -31,25 +41,34 @@ CREATE TABLE account (
         ON DELETE CASCADE
 );
 
+-- BADGES
 CREATE TABLE badge (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
-    -- achievement_criteria defines what triggers a badge's progress to update
     achievement_criteria JSONB NOT NULL,
     target_value INTEGER NOT NULL,
     description VARCHAR(100),
-    -- What the badge looks like achieved vs unachieved
     active_url VARCHAR(500),
     inactive_url VARCHAR(500)
 );
 
+-- LOCATION
 CREATE TABLE location (
     id SERIAL PRIMARY KEY,
-    located_at GEOGRAPHY(Point, 4326) NOT NULL,
-    name VARCHAR(500),
-    category VARCHAR(250)
+    name VARCHAR(500) NOT NULL,
+    category VARCHAR(250),
+    latitude DECIMAL(9,6) NOT NULL,
+    longitude DECIMAL(9,6) NOT NULL
 );
 
+-- CHALLENGE CATEGORY
+CREATE TABLE challenge_category (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    icon VARCHAR(500)
+);
+
+-- CHALLENGE
 CREATE TABLE challenge (
     id SERIAL PRIMARY KEY,
     name VARCHAR(500) NOT NULL,
@@ -71,12 +90,7 @@ CREATE TABLE challenge (
         ON DELETE CASCADE
 );
 
-CREATE TABLE challenge_category (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    icon VARCHAR(500)
-);
-
+-- AWARDED BADGES
 CREATE TABLE awarded_badge (
     user_id INTEGER NOT NULL,
     badge_id INTEGER NOT NULL,
@@ -94,6 +108,7 @@ CREATE TABLE awarded_badge (
         ON DELETE CASCADE
 );
 
+-- USER BADGE PROGRESS
 CREATE TABLE user_badge_progress (
     user_id INTEGER NOT NULL,
     badge_id INTEGER NOT NULL,
@@ -112,12 +127,13 @@ CREATE TABLE user_badge_progress (
         ON DELETE CASCADE
 );
 
+-- USER CHALLENGE
 CREATE TABLE user_challenge (
     user_id INTEGER NOT NULL,
     challenge_id INTEGER NOT NULL,
     status challenge_status NOT NULL,
     xp_worth INTEGER NOT NULL,
-    assigned_at TIMESTAMP NOT NULL,
+    assigned_at TIMESTAMP NOT NULL DEFAULT NOW(),
     completed_at TIMESTAMP,
     skipped_at TIMESTAMP,
 
