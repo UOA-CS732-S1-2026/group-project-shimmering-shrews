@@ -7,11 +7,13 @@ export default function MapView() {
   const [challenges, setChallenges] = useState<any[]>([])
 
   useEffect(() => {
+    // Fetching all active challenges from database
     getChallenges().then((data) => {
       console.log('Challenges from API:', data)
       setChallenges(data)
     })
 
+    // Get user's current device location and render map when received
     navigator.geolocation.getCurrentPosition((position) => {
       const { latitude, longitude } = position.coords
       setUserLocation([latitude, longitude])
@@ -19,9 +21,12 @@ export default function MapView() {
   }, [])
 
   return (
-    <div style={{ height: '100vh', width: '100%' }}>
+  <div style={{ height: '100vh', width: '100%' }}>
+    {!userLocation ? (
+      <p style={{ textAlign: 'center', marginTop: '2rem' }}>Grabbing your location...</p>
+    ) : (
       <MapContainer
-        center={[-36.8485, 174.7633]}
+        center={userLocation}
         zoom={14}
         style={{ height: '100%', width: '100%' }}
       >
@@ -29,11 +34,9 @@ export default function MapView() {
           url={`https://maps.geoapify.com/v1/tile/osm-bright/{z}/{x}/{y}.png?apiKey=${import.meta.env.VITE_GEOAPIFY_KEY}`}
           attribution="Geoapify"
         />
-        {userLocation && (
-          <Marker position={userLocation}>
-            <Popup>You are here</Popup>
-          </Marker>
-        )}
+        <Marker position={userLocation}>
+          <Popup>You are here</Popup>
+        </Marker>
         {challenges.map((challenge) => (
           <Marker
             key={challenge.id}
@@ -47,6 +50,7 @@ export default function MapView() {
           </Marker>
         ))}
       </MapContainer>
-    </div>
+    )}
+  </div>
   )
 }
