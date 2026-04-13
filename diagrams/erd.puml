@@ -1,0 +1,107 @@
+@startuml schema
+' Style rules
+skinparam {
+  style StrictUML
+  linetype ortho
+  padding 2
+  RoundCorner 5
+}
+
+' Define entities (tables)
+entity "Users" as users {
+  * id : INTEGER
+  --
+  * username : VARCHAR(100)
+  * email : VARCHAR(250)
+  * user_role : ENUM user_role
+  * created_at : DATE
+  * updated_at : DATE
+  * level : INTEGER <<computed>>
+  * xp_earned : INTEGER <<computed>>
+  * streak_count : INTEGER <<computed>>
+  last_completed_challenge : TIMESTAMP
+} 
+
+entity "Account" as account {
+ * provider : TEXT
+ * provider_account_id : TEXT
+ --
+ * type : TEXT
+ * user_id : INT <<FK>>
+}
+
+entity "Badge" as badge {
+  * id : INTEGER
+  --
+  * name : VARCHAR(100)
+  * achievement_criteria : JSON
+  * target_value : INTEGER
+  description : VARCHAR(100)
+  active_url : VARCHAR(500)
+  inactive_url : VARCHAR(500)
+}
+
+entity "UserBadgeProgress" as user_badge_progress {
+  * user_id : INTEGER
+  * badge_id : INTEGER
+  --
+  * current_value : INTEGER
+}
+
+entity "AwardedBadge" as awarded_badge {
+  * user_id : INTEGER
+  * badge_id : INTEGER
+  --
+  * awarded_at : TIMESTAMP
+}
+
+entity "UserChallenge" as user_challenge {
+  * user_id : INTEGER <<FK>>
+  * challenge_id : INTEGER <<FK>>
+  --
+  * status : ENUM challenge_status
+  * xp_worth : INTEGER
+  * assigned_at : TIMESTAMP
+  completed_at : TIMESTAMP
+  skipped_at : TIMESTAMP
+}
+
+entity "Challenge" as challenge {
+  * id : INTEGER
+  --
+  * name : VARCHAR(500)
+  * location_id : INTEGER <<FK>>
+  * category_id : INTEGER <<fk>>
+  * xp_worth : INTEGER
+  * is_active : BOOLEAN
+  * created_at : TIMESTAMP
+  description: VARCHAR(1000)
+}
+
+entity "ChallengeCategory" as challenge_category {
+  * id : INT
+  --
+  * name : VARCHAR(100)
+  * icon : VARCHAR(500)
+}
+
+entity "Location" as location {
+  * id : INTEGER
+  --
+  * located_at : geography(Point, 4326)
+  * name: VARCHAR(500)
+  category : VARCHAR(250)
+}
+
+' Define relationships (foreign keys)
+users ||--o{ user_challenge
+user_challenge }o--|| challenge
+challenge }o-|| location
+challenge_category ||-o{ challenge
+users ||-o{ awarded_badge
+users ||-o{ user_badge_progress
+awarded_badge }o--|| badge
+user_badge_progress }o---|| badge
+users ||--o{ account
+
+@enduml

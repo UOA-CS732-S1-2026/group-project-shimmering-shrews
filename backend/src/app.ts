@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import testRoute from './routes/testRoute';
+import challengeRoute from './routes/challengeRoute';
+import { errorHandler } from './middleware/errorMiddleWare'
 
 const app = express();
 
@@ -12,5 +14,8 @@ app.get('/', (_req, res) => {
 });
 
 app.use('/', testRoute);
+app.use('/challenges', challengeRoute)
+
+app.use(errorHandler);
 
 export default app;
