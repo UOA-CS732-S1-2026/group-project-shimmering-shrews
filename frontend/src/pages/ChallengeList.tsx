@@ -2,6 +2,14 @@ import React from 'react'
 import { badgeStyle, buttonStyle, cardStyle, categoryColors, containerStyle, challengeTitleStyle, titleStyle, xpStyle } from '../styles/challengeStyle'
 export default function ChallengeList({goToDetailView}: {goToDetailView: (challenge: any) => void }) {
 
+  type Challenge ={
+    id: number;
+    title: string;
+    location: string;
+    description: string;
+    category: string;
+    xp: string;
+  }
     
     const closeButtonStyle = {
       position: "absolute",
@@ -22,18 +30,18 @@ export default function ChallengeList({goToDetailView}: {goToDetailView: (challe
     } as const
 
 
-    const initialChallenges = [
-        { id: 1, title: "Challenge 1", location: "location for Challenge 1", description: "Description for Challenge 1", category: "category for Challenge 1", xp: "50xp" },
-        { id: 2, title: "Challenge 2", location: "location for Challenge 2", description: "Description for Challenge 2", category: "category for Challenge 2", xp: "50xp" },
-        { id: 3, title: "Challenge 3", location: "location for Challenge 3", description: "Description for Challenge 3", category: "category for Challenge 3", xp: "50xp" },
-    ]
-
     const rowStyle = {
         display: "flex",
         gap: "10px",
         alignItems: "center",
     } as const
-    const [challenges, setChallenges] = React.useState(initialChallenges)
+    const [challenges, setChallenges] = React.useState<Challenge[]>([])
+      React.useEffect(() => {
+        fetch("http://localhost:5000/challenges")
+          .then(res => res.json())
+          .then(data => setChallenges(data))
+          .catch(err => console.error("Error fetching challenges:", err))
+      }, [])
     const handleClose = (id: number) => {
         setChallenges(prev => prev.filter(challenge => challenge.id !== id))
     }
@@ -47,20 +55,22 @@ export default function ChallengeList({goToDetailView}: {goToDetailView: (challe
         console.log("Return to Profile clicked")
     }
 
-    type Challenge ={
-    id: number;
-    title: string;
-    location: string;
-    description: string;
-    category: string;
-    xp: string;
-    }
+    
   function ChallengeCard({challenge, onClose}: {challenge: Challenge, onClose: (id: number) => void}) {
     return (
         <div style={{...cardStyle, cursor: "pointer", transition: "transform 0.2s"}}
           onClick={() => goToDetailView(challenge)}
+          onMouseEnter={(e) => {
+          (e.currentTarget as HTMLDivElement).style.transform = "scale(1.02)";
+          }}
+          onMouseLeave={(e) => {
+          (e.currentTarget as HTMLDivElement).style.transform = "scale(1)";
+          }}
         >
-            <button style={closeButtonStyle} onClick={() => onClose(challenge.id)}>
+            <button style={closeButtonStyle} onClick={(e) => {
+                e.stopPropagation();
+                onClose(challenge.id);
+            }}>
                 x
             </button>
             <h2 style={challengeTitleStyle}>
