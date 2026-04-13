@@ -1,73 +1,58 @@
-# React + TypeScript + Vite
+# CityQuest Frontend - US03 User Profile
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This frontend contains the **US03_user_profile** work for CityQuest. It is a responsive profile page where a user can view their progress, badges, city quest history, and account actions.
 
-Currently, two official plugins are available:
+## What This Page Includes
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Profile page for `John Doe`
+- Generic profile placeholder image
+- XP and level display
+- XP progress bar
+- Stats cards for streak, badges, and completed city quests
+- Badge grid with earned and locked city exploration badges
+- Activity history tab
+- Logout button with simple feedback message
+- Bottom navigation with map and selected profile icons
+- Mock data only, no backend required
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- React
+- TypeScript
+- Vite
+- Plain CSS
 
-## Expanding the ESLint configuration
+## Useful Files
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```text
+src/pages/ProfilePage.tsx      Main profile page
+src/components/                Profile UI components
+src/data/profileData.ts        Mock profile, badge, and history data
+src/types/profile.ts           TypeScript types
+src/App.css                    Page styling
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Run Locally
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
+
+Open the local URL printed by Vite, usually:
+
+```text
+http://localhost:5173
+```
+
+## Check The Build
+
+```bash
+npm run build
+```
+
+## Notes
+
+- This is frontend-only for now.
+- The profile data is mocked in `src/data/profileData.ts`.
+- The backend is not needed to view or test this page.

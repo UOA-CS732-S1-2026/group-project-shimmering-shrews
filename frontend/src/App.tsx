@@ -1,7 +1,8 @@
-import Test from './pages/Test'
+import ProfilePage from './pages/ProfilePage'
+import './App.css'
 
 function App() {
-  return <Test />
+  return <ProfilePage />
 }
 
 export default App
