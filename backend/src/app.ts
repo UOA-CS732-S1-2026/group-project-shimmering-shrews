@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import testRoute from './routes/testRoute';
 import challengeRoute from './routes/challengeRoute';
-import locationsRoute from './routes/addLocations';
+import locationsRoute from './routes/locationsRoute';
 import { errorHandler } from './middleware/errorMiddleWare'
 
 const app = express();
@@ -16,7 +16,7 @@ app.get('/', (_req, res) => {
 
 app.use('/', testRoute);
 app.use('/challenges', challengeRoute)
-app.use('/locations', locationsRoute)
+app.use('/locations-test', locationsRoute)
 
 app.use(errorHandler);
 
