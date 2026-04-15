@@ -3,8 +3,10 @@ import { AuthContext } from "./AuthContext"
 import { supabase } from "../lib/supabase"
 import { syncUser } from "../services/auth"
 import type { Session, User } from "@supabase/supabase-js"
+import { useNavigate } from "react-router-dom"
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const navigate = useNavigate()
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
@@ -15,6 +17,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setUser(null)
     setSession(null)
     setLoading(false)
+
+    navigate("/")
   }
 
   useEffect(() => {
