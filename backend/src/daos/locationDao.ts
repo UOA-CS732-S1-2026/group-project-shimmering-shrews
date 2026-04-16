@@ -7,3 +7,13 @@ export const createLocations = async ( data: any[] ) => {
     });
 }
 
+export const getLocationsWithoutChallenges = async () => {
+    return prisma.location.findMany({
+        where: {
+            challenge: {
+                none: {},
+            }
+        }
+    })
+
+}

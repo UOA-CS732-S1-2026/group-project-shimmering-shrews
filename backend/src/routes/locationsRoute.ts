@@ -1,9 +1,10 @@
 import { Router } from 'express';
-import { fetchAndCreateLocations } from '../controllers/locationsController';
+import { fetchAndCreateLocations, fetchPlaces } from '../controllers/locationsController';
 
 const router = Router();
 
-router.get('/', fetchAndCreateLocations);
+router.get('/create', fetchAndCreateLocations);
+router.get('/fetch', fetchPlaces)
 
 export default router;
 

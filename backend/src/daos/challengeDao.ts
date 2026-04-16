@@ -28,3 +28,10 @@ export const findAllActiveChallenges = async () => {
     },
   })
 }
+
+export const createChallenges = async ( data: any[] ) => {
+    return prisma.challenge.createMany({
+        data,
+        skipDuplicates: true,
+    });
+}

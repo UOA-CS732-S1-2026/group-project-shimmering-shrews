@@ -16,7 +16,7 @@ app.get('/', (_req, res) => {
 
 app.use('/', testRoute);
 app.use('/challenges', challengeRoute)
-app.use('/locations-test', locationsRoute)
+app.use('/locations', locationsRoute) 
 
 app.use(errorHandler);
 
