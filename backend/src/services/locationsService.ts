@@ -25,9 +25,9 @@ export const fetchLocations = async ( category = 'catering.cafe', limit = 5 ) =>
 };
 
 export const addLocations = async ( category = 'catering.cafe', limit = 3 ) => {
-    // Based on the current location entries, they would correlate to 'catering.cafe', 'lesiure.park' and 'sports.fitness_centre'
+    // Based on the seeded location records, the catergories would be 'catering.cafe', 'lesiure.park' and 'sports.fitness_centre'
 
-    const places = await fetchLocations( category, limit) ;
+    const places = await fetchLocations( category, limit ) ;
     const data = [];
 
     for ( let place of places ) {

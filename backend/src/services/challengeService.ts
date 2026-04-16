@@ -9,7 +9,8 @@ export const getAllChallenges = async () => {
 export const createNewChallenges = async () => {
   const locations = await getLocationsWithoutChallenges();
   
-  if ( !locations.length ) {
+  // No locations without a challenge
+  if ( !locations.length ) { 
     throw new Error( 'All locations have at least one challenge!' );
   }
 
