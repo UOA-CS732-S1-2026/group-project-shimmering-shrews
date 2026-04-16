@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import testRoute from './routes/testRoute';
 import challengeRoute from './routes/challengeRoute';
-import locationsRoute from './routes/locationsRoute';
+import locationsRoute from './routes/locationRoute';
 import { errorHandler } from './middleware/errorMiddleWare'
 
 const app = express();

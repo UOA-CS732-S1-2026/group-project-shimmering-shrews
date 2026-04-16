@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { addLocations, fetchLocations } from '../services/locationsService';
+import { addLocations, fetchLocations } from '../services/locationService';
 import { asyncHandler } from '../utils/asyncHandler';
 
 

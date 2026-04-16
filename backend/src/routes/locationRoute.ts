@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { fetchAndCreateLocations, fetchPlaces } from '../controllers/locationsController';
+import { fetchAndCreateLocations, fetchPlaces } from '../controllers/locationController';
 
 const router = Router();
 
