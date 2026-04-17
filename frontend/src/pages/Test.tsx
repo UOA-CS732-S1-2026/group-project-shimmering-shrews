@@ -6,7 +6,7 @@ import '../App.css'
 import { getTestDb } from '../services/testapi'
 
 export default function Test() {
-    const [data, setData] = useState<any>(null)
+    const [data, setData] = useState<unknown>(null)
     const [count, setCount] = useState(0)
     useEffect(() => {
       getTestDb().then(setData)
@@ -59,4 +59,3 @@ export default function Test() {
     </>
   )
 }
-

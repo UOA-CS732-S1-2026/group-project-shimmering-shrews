@@ -1,65 +1,44 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+import { supabase } from "../lib/supabase"
 
-export interface GoogleProfile {
-  email?: string
-  given_name?: string
-  family_name?: string
-  name?: string
-  picture?: string
-  sub?: string
-}
-
-export interface GoogleExchangeResult {
-  profile: GoogleProfile
-  backendConnected: boolean
-  raw?: unknown
-}
-
-function decodeBase64Url(value: string) {
-  const base64 = value.replace(/-/g, '+').replace(/_/g, '/')
-  const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=')
-  return window.atob(padded)
-}
-
-export function decodeGoogleCredential(credential: string): GoogleProfile {
-  const [, payload] = credential.split('.')
-
-  if (!payload) {
-    throw new Error('Google credential payload was missing.')
+export const loginWithGoogle = async () => {
+  if (!supabase) {
+    console.warn("Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY to frontend/.env.")
+    return
   }
 
-  return JSON.parse(decodeBase64Url(payload)) as GoogleProfile
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: window.location.origin
+    }
+  })
+
+  if (error) console.error(error)
 }
 
-export async function exchangeGoogleCredential(
-  credential: string,
-): Promise<GoogleExchangeResult> {
-  const profile = decodeGoogleCredential(credential)
+export const syncUser = async () => {
+  if (!supabase) return
+
+  const { data } = await supabase.auth.getSession()
+  const token = data.session?.access_token
+
+  if (!token) return
+
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
+
+  if (!BACKEND_URL) return
 
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/google`, {
-      method: 'POST',
+    const res = await fetch(`${BACKEND_URL}/api/auth/sync-user`, {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ credential }),
+        Authorization: `Bearer ${token}`
+      }
     })
 
-    if (!response.ok) {
-      throw new Error(`Backend auth failed with status ${response.status}.`)
-    }
-
-    const raw = (await response.json()) as unknown
-
-    return {
-      profile,
-      backendConnected: true,
-      raw,
-    }
-  } catch {
-    return {
-      profile,
-      backendConnected: false,
-    }
+    const json = await res.json()
+    return json
+  } catch (err) {
+    console.log(err)
   }
 }

@@ -7,7 +7,7 @@ function BottomNav() {
         </svg>
       </a>
 
-      <a className="bottom-nav__item bottom-nav__item--active" href="/" aria-label="Profile" aria-current="page">
+      <a className="bottom-nav__item bottom-nav__item--active" href="/profile" aria-label="Profile" aria-current="page">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M12 12.2a4.7 4.7 0 1 0 0-9.4 4.7 4.7 0 0 0 0 9.4Zm0 2.1c-4.5 0-8.2 2.4-8.2 5.3 0 .9.7 1.6 1.6 1.6h13.2c.9 0 1.6-.7 1.6-1.6 0-2.9-3.7-5.3-8.2-5.3Z" />
         </svg>

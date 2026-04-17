@@ -1,16 +1,21 @@
-.profile-page {
-  min-height: 100svh;
-  padding-bottom: 96px;
+#root {
   background:
     linear-gradient(180deg, rgba(229, 247, 255, 0.82), rgba(246, 251, 255, 0.96) 48%),
     #f6fbff;
   color: #071317;
 }
 
-.profile-shell {
+.container {
+  min-height: 100svh;
   width: min(1120px, calc(100% - 32px));
   margin: 0 auto;
-  padding: 24px 0 48px;
+  padding: 24px 0 96px;
+}
+
+.shell {
+  width: min(1120px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 0 0 48px;
 }
 
 .topbar {

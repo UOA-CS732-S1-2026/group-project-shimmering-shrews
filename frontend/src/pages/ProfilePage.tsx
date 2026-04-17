@@ -6,21 +6,23 @@ import StatCard from '../components/StatCard'
 import Tabs from '../components/Tabs'
 import { badges, historyItems, profileStats, userProfile } from '../data/profileData'
 import type { TabKey } from '../types/profile'
+import { useAuth } from '../context/useAuth'
 
 const tabs: TabKey[] = ['badges', 'history']
 
 function ProfilePage() {
   const [activeTab, setActiveTab] = useState<TabKey>('badges')
-  const [isLoggedOut, setIsLoggedOut] = useState(false)
+  const { user, loading, logout } = useAuth()
+  const isLoggedIn = !!user
 
   return (
-    <main className="profile-page">
-      <div className="profile-shell">
+    <main className="container page page-profile">
+      <div className="shell shell-profile">
         <nav className="topbar" aria-label="Main navigation">
           <a href="/" aria-label="CityQuest home">
             CityQuest
           </a>
-          <button className="logout-button" type="button" onClick={() => setIsLoggedOut(true)}>
+          <button className="logout-button" type="button" onClick={() => logout()}>
             Logout
           </button>
         </nav>
@@ -38,7 +40,7 @@ function ProfilePage() {
           {renderTabContent(activeTab)}
         </section>
 
-        {isLoggedOut ? <p className="logout-message">You have been logged out.</p> : null}
+        {!loading && !isLoggedIn ? <p className="logout-message">You have been logged out.</p> : null}
       </div>
       <BottomNav />
     </main>
