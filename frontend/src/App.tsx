@@ -1,9 +1,31 @@
 import React from 'react'
+import { Routes, Route } from "react-router-dom"
+
 import ChallengeList from "./pages/ChallengeList"
 import ChallengeDetailView from "./pages/ChallengeDetailView"
-
+import LoginPage from './pages/LoginPage'
+import ProfilePage from './pages/ProfilePage'
+import Layout from "./layouts/MainLayout"
+import TabsLayout from "./layouts/TabsLayout"
+import './App.css'
 
 export default function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<TabsLayout />}>
+        <Route index element={<ChallengeFlow />} />
+        <Route path="challenges" element={<ChallengeFlow />} />
+        <Route path="*" element={<ChallengeFlow />} />
+      </Route>
+      <Route path="/" element={<Layout />}>
+        <Route path="/login" element={<LoginPage />} />
+      </Route>
+      <Route path="/profile" element={<ProfilePage />} />
+    </Routes>
+  )
+}
+
+function ChallengeFlow() {
   const [page, setPage] = React.useState("ChallengeList")
   const [selectedChallenge, setSelectedChallenge] = React.useState(null)
   const [checkedInChallenges, setCheckedInChallenges] = React.useState<number[]>([])

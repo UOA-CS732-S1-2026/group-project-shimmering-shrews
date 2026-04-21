@@ -1,5 +1,6 @@
 export const getTestDb = async () => {
-    const res = await fetch('http://localhost:5000/test-db')
-    if (!res.ok) throw new Error('API error')
-    return res.json()
-  }
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
+  const res = await fetch(`${BACKEND_URL}/test-db`)
+  if (!res.ok) throw new Error('API error')
+  return res.json()
+}

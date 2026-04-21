@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-labelledby="title desc">
+  <title id="title">Generic profile placeholder</title>
+  <desc id="desc">A neutral social media style avatar placeholder.</desc>
+  <rect width="240" height="240" rx="24" fill="#dce7eb"/>
+  <circle cx="120" cy="86" r="44" fill="#8fa1a8"/>
+  <path
+    fill="#8fa1a8"
+    d="M44 210c7.8-45.1 38.1-72 76-72s68.2 26.9 76 72H44Z"
+  />
+</svg>
