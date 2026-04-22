@@ -1,5 +1,6 @@
 import React from 'react'
 import { badgeStyle, buttonStyle, cardStyle, categoryColors, containerStyle, challengeTitleStyle, titleStyle, xpStyle } from '../styles/challengeStyle'
+import type { Challenge } from '../types/challenge'
 
 export default function ChallengeDetailView({
     challenge,
@@ -7,11 +8,10 @@ export default function ChallengeDetailView({
     setCheckedInChallenges,
     goToChallengeList, 
     }: {goToChallengeList: () => void, 
-        challenge: any,
+        challenge: Challenge | null,
         checkedInChallenges: number[],
         setCheckedInChallenges: React.Dispatch<React.SetStateAction<number[]>>,
     }) {
-    console.log("Detail challenge:", challenge)
     const detailDescriptionStyle = {
         margin:"6px 0", 
         color: "#555",
@@ -66,7 +66,7 @@ export default function ChallengeDetailView({
                 }}>
                 <div>
                     <h2 style={challengeTitleStyle}>{challenge.name}</h2>
-                    <p style={detailDescriptionStyle}>{challenge.description}</p>
+                    <p style={detailDescriptionStyle}>{challenge.description ?? 'No description available.'}</p>
                     <p style={{margin: "10px 0"}}>Location: {challenge.location.name}</p>
                     <div style={{
                         display: "flex", 

@@ -43,9 +43,10 @@ export const buttonStyle = {
         cursor: "pointer"
     } as const
 export const categoryColors: { [key: string]: string } = {
-        "category for Challenge 1": "#c8f7c5",
-        "category for Challenge 2": "#fceabb", 
-        "category for Challenge 3": "#d5f5f9",}
+        Food: "#c8f7c5",
+        Fitness: "#fceabb",
+        Social: "#d5f5f9",
+    }
 export const challengeTitleStyle = {
         margin: 0, 
         textAlign: "left", 

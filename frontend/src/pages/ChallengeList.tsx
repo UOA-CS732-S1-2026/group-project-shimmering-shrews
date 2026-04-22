@@ -1,21 +1,13 @@
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
+import { getChallenges } from '../services/challenges'
 import { badgeStyle, buttonStyle, cardStyle, categoryColors, containerStyle, challengeTitleStyle, titleStyle, xpStyle } from '../styles/challengeStyle'
-export default function ChallengeList({goToDetailView}: {goToDetailView: (challenge: any) => void }) {
+import type { Challenge } from '../types/challenge'
 
-  type Challenge = {
-    id: number;
-    name: string;
-    description: string;
-   xp_worth: number;
-    challenge_category: {
-      name: string;
-      icon: string;
-      };
-      location: {
-      name: string;
-     };
-  };
+export default function ChallengeList({goToDetailView}: {goToDetailView: (challenge: Challenge) => void }) {
+    const navigate = useNavigate()
     const [loading, setLoading] = React.useState(true)
+    const [error, setError] = React.useState<string | null>(null)
     const closeButtonStyle = {
       position: "absolute",
       top: "10px",
@@ -42,13 +34,13 @@ export default function ChallengeList({goToDetailView}: {goToDetailView: (challe
     } as const
     const [challenges, setChallenges] = React.useState<Challenge[]>([])
       React.useEffect(() => {
-        fetch("http://localhost:5000/challenges")
-          .then(res => res.json())
+        getChallenges()
           .then(data => {
-            setChallenges(data.data);
-            setLoading(false);
+            setChallenges(data)
+            setError(null)
           })
-          .catch(err => console.error("Error fetching challenges:", err))
+          .catch(() => setError("Could not load challenges."))
+          .finally(() => setLoading(false))
       }, [])
       if (loading) {
         return <div style={containerStyle}>
@@ -56,17 +48,14 @@ export default function ChallengeList({goToDetailView}: {goToDetailView: (challe
           <p>Loading...</p>
         </div>
       }
+      if (error) {
+        return <div style={containerStyle}>
+          <h1 style={titleStyle}>Today's Challenges</h1>
+          <p>{error}</p>
+        </div>
+      }
     const handleClose = (id: number) => {
         setChallenges(prev => prev.filter(challenge => challenge.id !== id))
-    }
-
-
-
-    const MapView = () => {
-        console.log("Map View clicked")
-    }
-    const ReturnToProfile = () => {
-        console.log("Return to Profile clicked")
     }
 
     
@@ -91,7 +80,7 @@ export default function ChallengeList({goToDetailView}: {goToDetailView: (challe
                 {challenge.name}
             </h2>
             <p style={descriptionStyle}>
-                {challenge.description}
+                {challenge.description ?? 'No description available.'}
             </p>
             <div style={rowStyle}>
               <span style={{...badgeStyle, background: categoryColors[challenge.challenge_category.name] || "#ddd"}}>
@@ -125,10 +114,10 @@ export default function ChallengeList({goToDetailView}: {goToDetailView: (challe
             flexDirection: "column",
             gap: "12px",
         }}>
-            <button onClick={MapView} style={buttonStyle}>
+            <button onClick={() => window.location.assign('/#map')} style={buttonStyle}>
                 Map View
             </button>
-            <button onClick={ReturnToProfile} style={buttonStyle}>
+            <button onClick={() => navigate('/profile')} style={buttonStyle}>
                 Return to Profile
             </button>
         </div>

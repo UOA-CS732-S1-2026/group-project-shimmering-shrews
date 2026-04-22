@@ -7,6 +7,7 @@ import LoginPage from './pages/LoginPage'
 import ProfilePage from './pages/ProfilePage'
 import Layout from "./layouts/MainLayout"
 import TabsLayout from "./layouts/TabsLayout"
+import type { Challenge } from './types/challenge'
 import './App.css'
 
 export default function App() {
@@ -26,8 +27,8 @@ export default function App() {
 }
 
 function ChallengeFlow() {
-  const [page, setPage] = React.useState("ChallengeList")
-  const [selectedChallenge, setSelectedChallenge] = React.useState(null)
+  const [page, setPage] = React.useState<'ChallengeList' | 'ChallengeDetailView'>("ChallengeList")
+  const [selectedChallenge, setSelectedChallenge] = React.useState<Challenge | null>(null)
   const [checkedInChallenges, setCheckedInChallenges] = React.useState<number[]>([])
   return(
     <div>

@@ -1,6 +1,5 @@
 import express from 'express';
 import cors from 'cors';
-import testRoute from './routes/testRoute';
 import challengeRoute from './routes/challengeRoute';
 import locationsRoute from './routes/locationRoute';
 import authRoute from "./routes/authRoute"
@@ -23,7 +22,6 @@ app.get('/', (_req, res) => {
   res.send('API is running for Shimmering Shrews pretty app!');
 });
 
-app.use('/', testRoute);
 app.use('/locations', locationsRoute)
 app.use("/api/auth", authRoute)
 

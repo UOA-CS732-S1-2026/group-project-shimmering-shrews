@@ -1,44 +1,52 @@
+type LocationForChallenge = {
+  id: number
+  name: string
+  category: string | null
+}
 
-const checkCategory = ( category: string, name: string ) => {
-    // Based on seeded location and challenges
-     if ( category.includes('catering') ) {
+type ChallengeCategoryIds = {
+  food: number
+  fitness: number
+  social: number
+}
+
+const checkCategory = (category: string | null, name: string, categoryIds: ChallengeCategoryIds) => {
+    const normalizedCategory = category ?? ''
+
+    if ( normalizedCategory.includes('catering') ) {
         return {
             name: 'Grab a bite',
-            category_id: 1, // Food
+            category_id: categoryIds.food,
             xp_worth: 10,
             description: `Grab something to eat or drink at ${ name }.`,
         };
     } 
     
-    else if ( category.includes('leisure') ) {
+    else if ( normalizedCategory.includes('leisure') ) {
          return {
             name: 'Talk to a stranger',
-            category_id: 2, // Social
+            category_id: categoryIds.social,
             xp_worth: 15,
             description: `Start a conversation with someone new at ${ name}.`,
         };
     }
 
-    else if ( category.includes('fitness') ) {
+    else if ( normalizedCategory.includes('fitness') ) {
          return {
             name: 'Workout session',
-            category_id: 3, // Fitness
+            category_id: categoryIds.fitness,
             xp_worth: 20,
             description: `Complete a workout at ${ name }.`,
         };
     }
     else {
-         return {
-            category_id: 0,
-            xp_worth: 0,
-            description: "UNKNOWN CATEGORY",
-        };
+      throw new Error(`Unsupported location category '${normalizedCategory}' for ${name}`)
     }
 }
 
 
-export const mapLocations = ( location: any ) => {
-    const categoryInfo = checkCategory( location.category, location.name );
+export const mapLocations = (location: LocationForChallenge, categoryIds: ChallengeCategoryIds) => {
+    const categoryInfo = checkCategory(location.category, location.name, categoryIds);
         
     return {
         name: categoryInfo.name,
