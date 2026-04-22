@@ -7,12 +7,14 @@ import Tabs from '../components/Tabs'
 import { badges, historyItems, profileStats, userProfile } from '../data/profileData'
 import type { TabKey } from '../types/profile'
 import { useAuth } from '../context/useAuth'
+import { useLogout } from "../hooks/useLogout"
 
 const tabs: TabKey[] = ['badges', 'history']
 
 function ProfilePage() {
   const [activeTab, setActiveTab] = useState<TabKey>('badges')
-  const { user, logout } = useAuth()
+  const { user } = useAuth()
+  const logout = useLogout()
   const isLoggedIn = !!user
 
   return (
@@ -22,7 +24,7 @@ function ProfilePage() {
           <a href="/" aria-label="CityQuest home">
             CityQuest
           </a>
-          <button className="logout-button" type="button" onClick={() => logout()}>
+          <button className="logout-button" type="button" onClick={logout}>
             Logout
           </button>
         </nav>

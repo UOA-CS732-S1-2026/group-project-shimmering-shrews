@@ -6,26 +6,39 @@ const supabase = createClient(
   process.env.SUPABASE_PUBLISHABLE_KEY!
 )
 
-const supabaseJwtMiddleware = async (req: Request, res: Response, next: NextFunction) => {
+export interface AuthRequest extends Request {
+  auth?: {
+    sub: string
+    email?: string
+    [key: string]: any
+  }
+}
+
+const supabaseJwtMiddleware = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const token = req.headers.authorization?.split(" ")[1]
+
     if (!token) {
       return next(new Error("No token provided"))
     }
 
     // Use Supabase's built-in JWT verification
-    const { data: { user }, error } = await supabase.auth.getUser(token)
+    // Uses claims so our server can verify the user without making a round trip to the DB
+    const { data, error } = await supabase.auth.getClaims(token)
 
-    if (error || !user) {
-      console.error("❌ Supabase JWT verification failed:", error?.message)
+    if (error || !data?.claims) {
+      console.error("❌ Supabase JWT verification failed", error?.message)
       return next(new Error("Invalid token"))
     }
 
-    // Attach user to request
-    ;(req as AuthRequest).auth = {
-      sub: user.id,
-      email: user.email,
-      ...user
+    const { claims } = data
+
+    if (!claims.sub) {
+      return next(new Error("Invalid token payload"))
+    }
+
+    req.auth = {
+      ...claims,
     }
 
     next()
@@ -50,13 +63,6 @@ export const requireAuth = [
 
 console.log("requireAuth initialised")
 
-export interface AuthRequest extends Request {
-  auth?: {
-    sub: string
-    email?: string
-    [key: string]: any
-  }
-}
 
 export const attachUser = (
   req: AuthRequest,
