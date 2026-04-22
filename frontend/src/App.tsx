@@ -1,14 +1,17 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom"
+import React from 'react'
 
 import { protectedLoader } from './services/protectedLoader'
+import ChallengeList from "./pages/ChallengeList"
+import ChallengeDetailView from "./pages/ChallengeDetailView"
 import LoginPage from './pages/LoginPage'
 import ProfilePage from './pages/ProfilePage'
-import Test from "./pages/Test"
+import AuthCallback from "./pages/AuthCallback"
 import Layout from "./layouts/MainLayout"
 import TabsLayout from "./layouts/TabsLayout"
-import './App.css'
+import type { Challenge } from './types/challenge'
 import { AuthProvider } from "./context/AuthProvider"
-import AuthCallback from "./pages/AuthCallback"
+import './App.css'
 
 /**
  * Within the router, we specify what layout template to use for each group of children,
@@ -21,8 +24,9 @@ const router = createBrowserRouter([
     path: "/",
     element: <TabsLayout />,
     children: [
-      { index: true, element: <Test /> },
-      { path: "*", element: <Test /> },
+      { index: true, element: <ChallengeFlow /> },
+      { path: "challenges", element: <ChallengeFlow /> },
+      { path: "*", element: <ChallengeFlow /> },
     ],
   },
   {
@@ -40,11 +44,33 @@ const router = createBrowserRouter([
   },
 ])
 
-function App() {
+export default function App() {
   return (
     <AuthProvider>
       <RouterProvider router={router}/>
     </AuthProvider>
   )
 }
-export default App
+
+function ChallengeFlow() {
+  const [page, setPage] = React.useState<'ChallengeList' | 'ChallengeDetailView'>("ChallengeList")
+  const [selectedChallenge, setSelectedChallenge] = React.useState<Challenge | null>(null)
+  const [checkedInChallenges, setCheckedInChallenges] = React.useState<number[]>([])
+  return(
+    <div>
+      {page === "ChallengeList" && <ChallengeList goToDetailView={(challenge) => {
+        setSelectedChallenge(challenge)
+        setPage("ChallengeDetailView")
+      }} />}
+      {page === "ChallengeDetailView" && (
+        <ChallengeDetailView challenge={selectedChallenge}
+        checkedInChallenges={checkedInChallenges} 
+        setCheckedInChallenges={setCheckedInChallenges}
+        goToChallengeList={() => {
+        setPage("ChallengeList")}} />
+      )
+      
+      }
+    </div>
+  )
+}

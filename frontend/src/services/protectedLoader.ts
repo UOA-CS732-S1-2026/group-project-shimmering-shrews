@@ -1,5 +1,5 @@
 import { redirect, type LoaderFunctionArgs } from "react-router-dom"
-import { supabase } from "../lib/supabase"
+import { getSupabaseClient } from "../lib/supabase"
 
 export type User = {
 	id: string
@@ -23,6 +23,7 @@ export type User = {
 export async function protectedLoader({ request }: LoaderFunctionArgs): Promise<User | Response>  {
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
 
+	const supabase = getSupabaseClient()
 	const { data } = await supabase.auth.getSession()
   	const token = data.session?.access_token
 

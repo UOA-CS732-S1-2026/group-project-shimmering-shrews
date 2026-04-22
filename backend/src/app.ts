@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
-import testRoute from './routes/testRoute';
 import challengeRoute from './routes/challengeRoute';
+import locationsRoute from './routes/locationRoute';
 import authRoute from "./routes/authRoute"
 import userRoute from "./routes/userRoute"
 import { errorHandler } from './middleware/errorMiddleWare'
@@ -17,13 +17,13 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
+app.use('/challenges', challengeRoute);
 
 app.get('/', (_req, res) => {
   res.send('API is running for Shimmering Shrews pretty app!');
 });
 
-app.use('/', testRoute);
-app.use('/challenges', challengeRoute)
+app.use('/locations', locationsRoute)
 app.use("/api/auth", authRoute)
 app.use("/api/user", userRoute)
 

@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express"
-import { createClient } from "@supabase/supabase-js"
+import { createClient, type User } from "@supabase/supabase-js"
+import { ApiError } from "../utils/ApiError"
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -19,7 +20,7 @@ const supabaseJwtMiddleware = async (req: AuthRequest, res: Response, next: Next
     const token = req.headers.authorization?.split(" ")[1]
 
     if (!token) {
-      return next(new Error("No token provided"))
+      return next(new ApiError(401, "No token provided"))
     }
 
     // Use Supabase's built-in JWT verification
@@ -27,8 +28,7 @@ const supabaseJwtMiddleware = async (req: AuthRequest, res: Response, next: Next
     const { data, error } = await supabase.auth.getClaims(token)
 
     if (error || !data?.claims) {
-      console.error("❌ Supabase JWT verification failed", error?.message)
-      return next(new Error("Invalid token"))
+      return next(new ApiError(401, "Invalid token"))
     }
 
     const { claims } = data
@@ -41,9 +41,14 @@ const supabaseJwtMiddleware = async (req: AuthRequest, res: Response, next: Next
       ...claims,
     }
 
+
+    // ;(req as AuthRequest).auth = {
+    // sub: user.id,
+    // email: user.email,
+    // user,
+
     next()
   } catch (err) {
-    console.error("❌ JWT middleware error:", err)
     next(err)
   }
 }
@@ -56,28 +61,6 @@ const debugMiddleware = (req: Request, _res: Response, next: NextFunction) => {
   next()
 }
 
-/* If this is specified, the API can only be called if the user has a session,
- * I.e. user must be signed in
-*/
-export const requireAuth = [
-  // debugMiddleware,
-  supabaseJwtMiddleware,
-]
-
-/* if this is specified, the user can only make a API call
- * to a path with param :userID if that id matches the ID in their session
- * I.e. a user can only query themself.
-*/
-export const requireSelf = (
-  req: AuthRequest,
-  res: Response,
-  next: NextFunction
-) => {
-  if (req.params.id !== req.auth?.sub) {
-    return res.status(403).json({ error: 'Forbidden'})
-  }
-}
-
 console.log("requireAuth initialised")
 
 export const attachUser = (
@@ -87,4 +70,23 @@ export const attachUser = (
 ) => {
   console.log("👤 User attached:", req.auth?.sub)
   next()
+}
+
+/* If this is specified, the API can only be called if the user has a session,
+ * I.e. user must be signed in
+*/
+export const requireAuth = [supabaseJwtMiddleware]
+
+/* if this is specified, the user can only make a API call
+* to a path with param :userID if that id matches the ID in their session
+* I.e. a user can only query themself.
+*/
+export const requireSelf = (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  if (req.params.id !== req.auth?.sub) {
+    return res.status(403).json({ error: 'Forbidden'})
+  }
 }

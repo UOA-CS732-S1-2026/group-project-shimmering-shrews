@@ -1,6 +1,6 @@
 import { useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { supabase } from "../lib/supabase"
+import { getSupabaseClient } from "../lib/supabase"
 
 const AuthCallback = () => {
     const navigate = useNavigate()
@@ -8,6 +8,7 @@ const AuthCallback = () => {
     useEffect(() => {
         const from = sessionStorage.getItem("redirectAfterLogin") || "/"
 
+        const supabase = getSupabaseClient()
         const { data: listener } = supabase.auth.onAuthStateChange(
             (_event, session) => {
                 if (session) {
