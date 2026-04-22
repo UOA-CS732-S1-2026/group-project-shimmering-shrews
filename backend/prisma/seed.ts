@@ -2,6 +2,7 @@ import "dotenv/config";
 import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
+type ChallengeCategory = Awaited<ReturnType<typeof prisma.challenge_category.findMany>>[number]
 
 async function main() {
   console.log('Seeding database.')
@@ -17,9 +18,9 @@ async function main() {
   })
 
   const categories = await prisma.challenge_category.findMany()
-  const foodCategory = categories.find((c) => c.name === 'Food')
-  const fitnessCategory = categories.find((c) => c.name === 'Fitness')
-  const socialCategory = categories.find((c) => c.name === 'Social')
+  const foodCategory = categories.find((c: ChallengeCategory) => c.name === 'Food')
+  const fitnessCategory = categories.find((c: ChallengeCategory) => c.name === 'Fitness')
+  const socialCategory = categories.find((c: ChallengeCategory) => c.name === 'Social')
 
   if (!foodCategory || !fitnessCategory || !socialCategory) {
     throw new Error('Failed to seed challenge categories')
