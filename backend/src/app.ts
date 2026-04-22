@@ -3,6 +3,7 @@ import cors from 'cors';
 import testRoute from './routes/testRoute';
 import challengeRoute from './routes/challengeRoute';
 import authRoute from "./routes/authRoute"
+import userRoute from "./routes/userRoute"
 import { errorHandler } from './middleware/errorMiddleWare'
 
 const allowedOrigins = [
@@ -24,6 +25,7 @@ app.get('/', (_req, res) => {
 app.use('/', testRoute);
 app.use('/challenges', challengeRoute)
 app.use("/api/auth", authRoute)
+app.use("/api/user", userRoute)
 
 app.use(errorHandler);
 

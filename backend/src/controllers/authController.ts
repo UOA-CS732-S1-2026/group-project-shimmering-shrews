@@ -1,7 +1,8 @@
 import { Request, Response } from 'express'
 import prisma from '../config/prisma'
+import { AuthRequest } from '../middleware/auth'
 
-export const syncUser = async (req: Request, res: Response) => {
+export const syncUser = async (req: AuthRequest, res: Response) => {
   const user = (req as any).auth
 
   try {

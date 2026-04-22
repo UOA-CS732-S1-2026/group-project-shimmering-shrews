@@ -56,13 +56,29 @@ const debugMiddleware = (req: Request, _res: Response, next: NextFunction) => {
   next()
 }
 
+/* If this is specified, the API can only be called if the user has a session,
+ * I.e. user must be signed in
+*/
 export const requireAuth = [
   // debugMiddleware,
   supabaseJwtMiddleware,
 ]
 
-console.log("requireAuth initialised")
+/* if this is specified, the user can only make a API call
+ * to a path with param :userID if that id matches the ID in their session
+ * I.e. a user can only query themself.
+*/
+export const requireSelf = (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  if (req.params.id !== req.auth?.sub) {
+    return res.status(403).json({ error: 'Forbidden'})
+  }
+}
 
+console.log("requireAuth initialised")
 
 export const attachUser = (
   req: AuthRequest,

@@ -8,7 +8,10 @@ function BadgeCard({ badge }: BadgeCardProps) {
   return (
     <article className={badge.earned ? 'badge-card badge-card--earned' : 'badge-card badge-card--locked'}>
       <div className="badge-card__icon" aria-hidden="true">
-        {badge.icon}
+        <img
+          src={badge.earned ? badge.active_icon : badge.inactive_icon}
+          alt={badge.name}
+        />
       </div>
       <div>
         <h3>{badge.name}</h3>
