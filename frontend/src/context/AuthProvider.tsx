@@ -14,14 +14,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     setLoading(true)
-    if (supabase) {
-      await supabase.auth.signOut()
-    }
-    setUser(null)
-    setSession(null)
-    setLoading(false)
 
-    navigate("/")
+    try {
+      if (supabase) {
+        const { error } = await supabase.auth.signOut()
+
+        if (error) {
+          throw error
+        }
+      }
+    } catch (error) {
+      console.error("Logout failed:", error)
+    } finally {
+      setUser(null)
+      setSession(null)
+      setLoading(false)
+      navigate("/login", { replace: true })
+    }
   }
 
   useEffect(() => {
@@ -29,26 +38,47 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return
     }
 
-    supabase.auth.getSession().then(({ data }) => {
+    let isActive = true
+
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (!isActive) {
+        return
+      }
+
       setSession(data.session)
       setUser(data.session?.user ?? null)
-      setLoading(false)
 
       if (data.session) {
-        syncUser().catch((error) => console.error(error))
+        await syncUser().catch((error) => console.error(error))
+      }
+
+      if (isActive) {
+        setLoading(false)
       }
     })
 
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!isActive) {
+        return
+      }
+
+      setLoading(true)
       setSession(session)
       setUser(session?.user ?? null)
 
       if (session) {
-        syncUser().catch((error) => console.error(error))
+        await syncUser().catch((error) => console.error(error))
+      }
+
+      if (isActive) {
+        setLoading(false)
       }
     })
 
-    return () => data.subscription.unsubscribe()
+    return () => {
+      isActive = false
+      data.subscription.unsubscribe()
+    }
   }, [])
 
   return (

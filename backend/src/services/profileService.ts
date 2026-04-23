@@ -1,0 +1,69 @@
+import {
+  countCompletedChallengesByUserId,
+  findBadgesByUserId,
+  findRecentCompletedChallengesByUserId,
+  findUserProfileByAuthId,
+  upsertUserProfileByAuth,
+} from '../daos/profileDao'
+import { ApiError } from '../utils/ApiError'
+
+const XP_PER_LEVEL = 500
+
+const formatCompletedDate = (date: Date | null) => {
+  if (!date) {
+    return 'Challenge completed'
+  }
+
+  return `Completed on ${date.toLocaleDateString('en-NZ', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  })}`
+}
+
+export const getUserProfile = async (authId: string, email?: string) => {
+  let profile = await findUserProfileByAuthId(authId)
+
+  if (!profile) {
+    if (!email) {
+      throw new ApiError(404, 'User profile not found')
+    }
+
+    profile = await upsertUserProfileByAuth(authId, email)
+  }
+
+  const [completedChallenges, badgeRows, recentHistoryRows] = await Promise.all([
+    countCompletedChallengesByUserId(profile.id),
+    findBadgesByUserId(profile.id),
+    findRecentCompletedChallengesByUserId(profile.id),
+  ])
+
+  const badgeItems = badgeRows.map((badge) => ({
+    id: badge.id,
+    name: badge.name,
+    description: badge.description ?? 'Badge earned through your city adventures.',
+    icon: badge.name.charAt(0).toUpperCase() || 'B',
+    earned: badge.awarded_badge.length > 0,
+  }))
+
+  const xpForCurrentLevel = Math.max(0, (profile.level - 1) * XP_PER_LEVEL)
+  const xpForNextLevel = Math.max(profile.level * XP_PER_LEVEL, profile.xp_earned + XP_PER_LEVEL)
+
+  return {
+    name: profile.username,
+    level: profile.level,
+    xp: profile.xp_earned,
+    streak: profile.streak_count,
+    badges: badgeItems.filter((badge) => badge.earned).length,
+    challengesCompleted: completedChallenges,
+    xpForCurrentLevel,
+    xpForNextLevel,
+    badgeItems,
+    historyItems: recentHistoryRows.map((item) => ({
+      id: item.challenge_id,
+      title: item.challenge.name,
+      detail: item.challenge.description ?? formatCompletedDate(item.completed_at),
+      xp: item.xp_worth,
+    })),
+  }
+}

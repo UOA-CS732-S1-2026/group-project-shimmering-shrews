@@ -2,6 +2,7 @@ import prisma from '../config/prisma'
 import { AuthRequest } from '../middleware/auth'
 import { ApiError } from '../utils/ApiError'
 import { asyncHandler } from '../utils/asyncHandler'
+import { buildUsernameFromAuth } from '../utils/username'
 
 export const syncUser = asyncHandler(async (req, res) => {
   const user = (req as AuthRequest).auth
@@ -16,7 +17,7 @@ export const syncUser = asyncHandler(async (req, res) => {
     create: {
       auth_id: user.sub,
       email: user.email,
-      username: user.email.split("@")[0],
+      username: buildUsernameFromAuth(user.email, user.sub),
       user_role: "user",
     },
   })
