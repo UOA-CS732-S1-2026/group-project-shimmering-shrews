@@ -408,6 +408,29 @@
   fill: currentColor;
 }
 
+.skeleton {
+  background: linear-gradient(90deg, #eee, #ddd, #eee);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite;
+  border-radius: 6px;
+}
+
+.skeleton-text {
+  height: 16px;
+  width: 120px;
+  margin-bottom: 6px;
+}
+
+.skeleton-text.small {
+  width: 80px;
+  height: 12px;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0 }
+  100% { background-position: -200% 0 }
+}
+
 @media (max-width: 900px) {
   .profile-header {
     grid-template-columns: 1fr;

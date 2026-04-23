@@ -50,9 +50,9 @@ function ProfilePage() {
     if (session) fetchProfile()
   }, [session])
 
-  if (loading || !profile) {
-    return <p>Loading profile...</p>
-  }
+  // if (loading || !profile) {
+  //   return <p>Loading profile...</p>
+  // }
   
   function renderTabContent(activeTab: TabKey) {
     if (activeTab === 'history') {
@@ -81,13 +81,16 @@ function ProfilePage() {
       <div className="tab-panel" role="tabpanel">
         <div className="section-heading">
           <p className="eyebrow">Badge Vault</p>
-          <h2>{profile?.badges?.length ?? 0} earned badges</h2>
+          <h2>{profile?.badges?.length ?? <p className='skeleton skeleton-text small' />} earned badges</h2>
         </div>
   
         <div className="badge-grid">
-          {profile?.badges?.map((badge: Badge) => (
-            <BadgeCard key={badge.id} badge={badge} />
-          ))}
+          {loading
+            ? ['1', '2', '3', '4', '5'].map((i) => <BadgeCard key={i} loading />)
+            : profile?.badges?.map((badge: Badge) => (
+              <BadgeCard key={badge.id} badge={badge} loading={loading}/>
+            ))
+          }
         </div>
       </div>
     )
@@ -105,16 +108,20 @@ function ProfilePage() {
           </button>
         </nav>
 
-        <ProfileHeader profile={profile} />
+        <ProfileHeader profile={profile} loading={loading} />
 
         <section className="stats-grid" aria-label="Profile stats">
-          {profileStats.map((stat) => (
-            <StatCard key={stat.label} stat={stat} />
-          ))}
+          {loading
+            ? ['1', '2', '3'].map((i) => <StatCard key={i} loading />)
+            : profileStats.map((stat) => (
+              <StatCard key={stat.label} stat={stat} loading={loading} />
+            ))
+          }
         </section>
 
         <section className="profile-content" aria-live="polite">
           <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
+          {/* {loading ? <SkeletonTabContent />: renderTabContent(activeTab)} */}
           {renderTabContent(activeTab)}
         </section>
 

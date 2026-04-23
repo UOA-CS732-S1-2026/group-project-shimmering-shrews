@@ -2,10 +2,30 @@ import type { UserProfile } from '../types/profile'
 // import XPProgress from './XPProgress'
 
 type ProfileHeaderProps = {
-  profile: UserProfile
+  profile: UserProfile | null
+  loading?: boolean
 }
 
-function ProfileHeader({ profile }: ProfileHeaderProps) {
+function ProfileHeader({ profile, loading }: ProfileHeaderProps) {
+  if (loading || !profile) {
+    return (
+      <header className="profile-header">
+        <div className="profile-header__identity">
+          <img className="profile-header__avatar"
+            src={'/profile-placeholder.svg'}
+            alt={`profile avatar`}
+          />
+          <div>
+            <h1 className="skeleton skeleton-text" />
+            <div className="profile-header__level">
+              <span className="skeleton skeleton-text" />
+            </div>
+          </div>
+        </div>
+      </header>
+    )
+  }
+
   return (
     <header className="profile-header">
       <div className="profile-header__identity">
