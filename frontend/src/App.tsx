@@ -1,15 +1,13 @@
 import { createBrowserRouter, Navigate, RouterProvider, useLocation } from "react-router-dom"
-import React from 'react'
 
-import ChallengeList from "./pages/ChallengeList"
-import ChallengeDetailView from "./pages/ChallengeDetailView"
+import ChallengesRoute from "./pages/ChallengesRoute"
+import ChallengeRoute from "./pages/ChallengeRoute"
 import LoginPage from './pages/LoginPage'
 import MapView from "./pages/MapView"
 import ProfilePage from './pages/ProfilePage'
 import AuthCallback from "./pages/AuthCallback"
 import Layout from "./layouts/MainLayout"
 import TabsLayout from "./layouts/TabsLayout"
-import type { Challenge } from './types/challenge'
 import { AuthProvider } from "./context/AuthProvider"
 import { useAuth } from "./context/useAuth"
 import './App.css'
@@ -19,9 +17,10 @@ const router = createBrowserRouter([
     path: "/",
     element: <TabsLayout />,
     children: [
-      { index: true, element: <MapView /> },
+      { index: true, element: <HomeRedirect /> },
       { path: "map", element: <MapView /> },
-      { path: "challenges", element: <ChallengeFlow /> },
+      { path: "challenges", element: <ChallengesRoute /> },
+      { path: "challenges/:challengeId", element: <ChallengeRoute /> },
       { path: "*", element: <Navigate to="/" replace /> },
     ],
   },
@@ -47,33 +46,20 @@ export default function App() {
   )
 }
 
-function ChallengeFlow() {
-  const [page, setPage] = React.useState<'ChallengeList' | 'ChallengeDetailView'>("ChallengeList")
-  const [selectedChallenge, setSelectedChallenge] = React.useState<Challenge | null>(null)
-  const [checkedInChallenges, setCheckedInChallenges] = React.useState<number[]>([])
+function HomeRedirect() {
+  const { user, loading } = useAuth()
 
-  return (
-    <div>
-      {page === "ChallengeList" && (
-        <ChallengeList
-          goToDetailView={(challenge) => {
-            setSelectedChallenge(challenge)
-            setPage("ChallengeDetailView")
-          }}
-        />
-      )}
-      {page === "ChallengeDetailView" && (
-        <ChallengeDetailView
-          challenge={selectedChallenge}
-          checkedInChallenges={checkedInChallenges}
-          setCheckedInChallenges={setCheckedInChallenges}
-          goToChallengeList={() => {
-            setPage("ChallengeList")
-          }}
-        />
-      )}
-    </div>
-  )
+  if (loading) {
+    return (
+      <main className="container page page-profile">
+        <div className="shell shell-profile">
+          <p className="status-message">Loading...</p>
+        </div>
+      </main>
+    )
+  }
+
+  return <Navigate to={user ? "/profile" : "/login"} replace />
 }
 
 function ProtectedProfilePage() {

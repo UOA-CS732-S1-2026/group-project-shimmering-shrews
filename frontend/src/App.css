@@ -415,6 +415,71 @@
   fill: currentColor;
 }
 
+.challenge-map-popup__content {
+  display: grid;
+  gap: 10px;
+  min-width: 220px;
+  color: #071317;
+}
+
+.challenge-map-popup__content .eyebrow {
+  margin: 0;
+}
+
+.challenge-map-popup__content h3 {
+  margin: 0;
+  color: #071317;
+  font-size: 1.05rem;
+  line-height: 1.2;
+}
+
+.challenge-map-popup__content p {
+  margin: 0;
+  color: #526970;
+  font-size: 0.93rem;
+  line-height: 1.45;
+}
+
+.challenge-map-popup__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.challenge-map-popup .challenge-map-popup__link,
+.challenge-map-popup .challenge-map-popup__link:link,
+.challenge-map-popup .challenge-map-popup__link:visited,
+.challenge-map-popup .challenge-map-popup__link:active {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  border-radius: 8px;
+  background: #198b6f;
+  color: #ffffff;
+  font-weight: 800;
+  text-decoration: none;
+  padding: 0 14px;
+  transition:
+    background 180ms ease,
+    transform 180ms ease;
+}
+
+.challenge-map-popup .challenge-map-popup__link:hover {
+  color: #ffffff;
+}
+
+.challenge-map-popup__link:hover {
+  background: #0f6c57;
+  transform: translateY(-1px);
+}
+
+.challenge-map-popup__link:focus-visible {
+  outline: 3px solid rgba(25, 139, 111, 0.32);
+  outline-offset: 3px;
+}
+
 .skeleton {
   background: linear-gradient(90deg, #eee, #ddd, #eee);
   background-size: 200% 100%;
