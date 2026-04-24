@@ -15,6 +15,7 @@ export type UserProfile = {
 export type Stat = {
   label: string
   value: number | string
+  helper?: string
 }
 
 export type Badge = {

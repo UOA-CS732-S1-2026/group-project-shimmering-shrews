@@ -8,6 +8,7 @@ import { getMyProfile, type LiveProfile } from '../services/profile'
 import type { Badge, HistoryItem, Stat, TabKey, UserProfile } from '../types/profile'
 import { useAuth } from '../context/useAuth'
 import { useLogout } from "../hooks/useLogout"
+import { Link } from "react-router-dom"
 
 const tabs: TabKey[] = ['badges', 'history']
 
@@ -78,9 +79,21 @@ function ProfilePage() {
     () =>
       profile
         ? [
-            { label: 'Level', value: profile.level },
-            { label: 'XP', value: profile.xp_earned },
-            { label: 'Streak', value: profile.streak_count },
+            {
+              label: 'Streak',
+              value: `${profile.streak_count} 🔥`,
+              helper: 'days in a row',
+            },
+            {
+              label: 'Badges',
+              value: profile.badges.filter((badge) => badge.earned).length,
+              helper: 'earned so far',
+            },
+            {
+              label: 'Challenges',
+              value: profile.challengesCompleted,
+              helper: 'city quests done',
+            },
           ]
         : [],
     [profile]
@@ -91,15 +104,15 @@ function ProfilePage() {
       <main className="container page page-profile">
         <div className="shell shell-profile">
           <nav className="topbar" aria-label="Main navigation">
-            <a href="/" aria-label="CityQuest home">
+            <Link to="/" aria-label="CityQuest home">
               CityQuest
-            </a>
-            <a className="logout-button" href="/login">
+            </Link>
+            <Link className="logout-button" to="/login">
               Login
-            </a>
+            </Link>
           </nav>
 
-          <p className="logout-message">Please sign in to view your profile.</p>
+          <p className="status-message">Please sign in to view your profile.</p>
         </div>
       </main>
     )
@@ -109,9 +122,9 @@ function ProfilePage() {
     <main className="container page page-profile">
       <div className="shell shell-profile">
         <nav className="topbar" aria-label="Main navigation">
-          <a href="/" aria-label="CityQuest home">
+          <Link to="/" aria-label="CityQuest home">
             CityQuest
-          </a>
+          </Link>
           <button className="logout-button" type="button" onClick={logout}>
             Logout
           </button>
@@ -128,15 +141,15 @@ function ProfilePage() {
           }
         </section>
 
-        {profileLoading ? <p className="logout-message">Loading profile...</p> : null}
-        {profileError ? <p className="logout-message">{profileError}</p> : null}
+        {profileLoading ? <p className="status-message">Loading...</p> : null}
+        {profileError ? <p className="status-message">{profileError}</p> : null}
 
         <section className="profile-content" aria-live="polite">
           <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
           {renderTabContent(activeTab, profileLoading, profile?.badges ?? [], historyItems)}
         </section>
 
-        {!loading && !isLoggedIn ? <p className="logout-message">You have been logged out.</p> : null}
+        {!loading && !isLoggedIn ? <p className="status-message">You have been logged out.</p> : null}
       </div>
       <BottomNav />
     </main>
@@ -157,7 +170,7 @@ function renderTabContent(
           <h2>City quest history</h2>
         </div>
         {loading ? (
-          <p className="logout-message">Loading history...</p>
+          <p className="status-message">Loading history...</p>
         ) : historyItems.length ? (
           <ul className="history-list">
             {historyItems.map((item) => (
@@ -171,7 +184,7 @@ function renderTabContent(
             ))}
           </ul>
         ) : (
-          <p className="logout-message">No recent challenge history yet.</p>
+          <p className="status-message">No recent challenge history yet.</p>
         )}
       </div>
     )
@@ -197,7 +210,7 @@ function renderTabContent(
           ))}
         </div>
       ) : (
-        <p className="logout-message">No badges available yet.</p>
+        <p className="status-message">No badges available yet.</p>
       )}
     </div>
   )

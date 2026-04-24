@@ -1,5 +1,5 @@
 import type { UserProfile } from '../types/profile'
-// import XPProgress from './XPProgress'
+import XPProgress from './XPProgress'
 
 type ProfileHeaderProps = {
   profile: UserProfile | null
@@ -22,6 +22,16 @@ function ProfileHeader({ profile, loading }: ProfileHeaderProps) {
             </div>
           </div>
         </div>
+        <div className="xp-progress" aria-hidden="true">
+          <div className="xp-progress__meta">
+            <span className="skeleton skeleton-text" />
+            <span className="skeleton skeleton-text" />
+          </div>
+          <div className="xp-progress__track">
+            <div className="xp-progress__bar" style={{ width: '40%' }} />
+          </div>
+          <p className="skeleton skeleton-text small" />
+        </div>
       </header>
     )
   }
@@ -41,11 +51,11 @@ function ProfileHeader({ profile, loading }: ProfileHeaderProps) {
         </div>
       </div>
 
-      {/* <XPProgress
+      <XPProgress
         currentXP={profile.xp_earned}
         levelStartXP={profile.xpForCurrentLevel}
         nextLevelXP={profile.xpForNextLevel}
-      /> */}
+      />
     </header>
   )
 }

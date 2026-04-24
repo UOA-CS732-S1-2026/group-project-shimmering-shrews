@@ -1,9 +1,7 @@
-import { useNavigate } from "react-router-dom";
 import { loginWithGoogle } from "../services/auth"
 import styles from "./LoginPage.module.css"
 
 const LoginPage = () => {
-  const navigate = useNavigate();
   // after login, navigate user to the page they initially tried to visit
   const from = new URLSearchParams(location.search).get("from") || "/";
 
@@ -11,7 +9,6 @@ const LoginPage = () => {
     try {
       sessionStorage.setItem("redirectAfterLogin", from)
       await loginWithGoogle()
-      navigate(from, {replace: true})
     } catch (err) {
       console.error("Login failed:", err)
     }

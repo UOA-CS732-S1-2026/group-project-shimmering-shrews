@@ -9,9 +9,10 @@ function StatCard({ stat, loading }: StatCardProps) {
   if (loading || !stat) {
     return (
       <article className="stat-card">
-      <span className="skeleton skeleton-text small"/>
-      <strong className="skeleton skeleton-text"/>
-    </article>
+        <span className="skeleton skeleton-text small"/>
+        <strong className="skeleton skeleton-text"/>
+        <p className="skeleton skeleton-text small"/>
+      </article>
     )
   }
 
@@ -19,7 +20,7 @@ function StatCard({ stat, loading }: StatCardProps) {
     <article className="stat-card">
       <span>{stat.label}</span>
       <strong>{stat.value}</strong>
-      {/* <p>{stat.helper}</p> */}
+      {stat.helper ? <p>{stat.helper}</p> : null}
     </article>
   )
 }

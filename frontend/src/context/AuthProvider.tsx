@@ -36,38 +36,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     let isActive = true
 
-    supabase.auth.getSession().then(async ({ data }) => {
+    supabase.auth.getSession().then(({ data }) => {
       if (!isActive) {
         return
       }
 
       setSession(data.session)
       setUser(data.session?.user ?? null)
+      setLoading(false)
 
       if (data.session) {
-        await syncUser().catch((error) => console.error(error))
-      }
-
-      if (isActive) {
-        setLoading(false)
+        void syncUser().catch((error) => console.error(error))
       }
     })
 
-    const { data } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!isActive) {
         return
       }
 
-      setLoading(true)
       setSession(session)
       setUser(session?.user ?? null)
+      setLoading(false)
 
       if (session) {
-        await syncUser().catch((error) => console.error(error))
-      }
-
-      if (isActive) {
-        setLoading(false)
+        void syncUser().catch((error) => console.error(error))
       }
     })
 
