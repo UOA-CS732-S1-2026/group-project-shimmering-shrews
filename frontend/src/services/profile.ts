@@ -1,5 +1,5 @@
 import { getSupabaseClient } from "../lib/supabase"
-import type { Badge, HistoryItem, UserProfile } from "../types/profile"
+import type { Badge, HistoryItem } from "../types/profile"
 
 type ApiResponse<T> = {
   success: boolean
@@ -7,7 +7,15 @@ type ApiResponse<T> = {
   message?: string
 }
 
-type BackendProfile = Omit<UserProfile, "avatarUrl"> & {
+type BackendProfile = {
+  name: string
+  xp: number
+  level: number
+  streak: number
+  badges: number
+  challengesCompleted: number
+  xpForCurrentLevel: number
+  xpForNextLevel: number
   badgeItems: Badge[]
   historyItems: HistoryItem[]
 }

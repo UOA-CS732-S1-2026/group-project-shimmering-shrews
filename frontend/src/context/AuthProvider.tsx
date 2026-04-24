@@ -1,13 +1,10 @@
-import { useEffect, useState } from "react"
-import type { ReactNode } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 import { AuthContext } from "./AuthContext"
 import { isSupabaseConfigured, supabase } from "../lib/supabase"
 import { syncUser } from "../services/auth"
 import type { Session, User } from "@supabase/supabase-js"
-import { useNavigate } from "react-router-dom"
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const navigate = useNavigate()
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(isSupabaseConfigured)
@@ -29,7 +26,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(null)
       setSession(null)
       setLoading(false)
-      navigate("/login", { replace: true })
     }
   }
 

@@ -42,7 +42,8 @@ export const getUserProfile = async (authId: string, email?: string) => {
     id: badge.id,
     name: badge.name,
     description: badge.description ?? 'Badge earned through your city adventures.',
-    icon: badge.name.charAt(0).toUpperCase() || 'B',
+    active_icon: badge.active_url ?? '/profile-placeholder.svg',
+    inactive_icon: badge.inactive_url ?? badge.active_url ?? '/profile-placeholder.svg',
     earned: badge.awarded_badge.length > 0,
   }))
 

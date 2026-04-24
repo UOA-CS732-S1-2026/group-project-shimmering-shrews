@@ -4,24 +4,32 @@ import BottomNav from '../components/BottomNav'
 import ProfileHeader from '../components/ProfileHeader'
 import StatCard from '../components/StatCard'
 import Tabs from '../components/Tabs'
-import { badges, historyItems, userProfile as mockUserProfile } from '../data/profileData'
 import { getMyProfile, type LiveProfile } from '../services/profile'
-import type { Stat, TabKey } from '../types/profile'
+import type { Badge, HistoryItem, Stat, TabKey, UserProfile } from '../types/profile'
 import { useAuth } from '../context/useAuth'
+import { useLogout } from "../hooks/useLogout"
 
 const tabs: TabKey[] = ['badges', 'history']
 
 function ProfilePage() {
   const [activeTab, setActiveTab] = useState<TabKey>('badges')
-  const [profile, setProfile] = useState<LiveProfile | null>(null)
-  const [profileError, setProfileError] = useState<string | null>(null)
-  const [profileLoading, setProfileLoading] = useState(false)
-  const { user, loading, logout } = useAuth()
+  const { user, session, loading } = useAuth()
+  const logout = useLogout()
   const isLoggedIn = !!user
 
+  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [historyItems, setHistoryItems] = useState<HistoryItem[]>([])
+  const [profileError, setProfileError] = useState<string | null>(null)
+  const [profileLoading, setProfileLoading] = useState(true)
+
   useEffect(() => {
-    if (loading || !user) {
+    if (loading) {
+      return
+    }
+
+    if (!user || !session) {
       setProfile(null)
+      setHistoryItems([])
       setProfileError(null)
       setProfileLoading(false)
       return
@@ -29,89 +37,53 @@ function ProfilePage() {
 
     let isActive = true
 
-    setProfileLoading(true)
-    setProfileError(null)
+    const fetchProfile = async () => {
+      setProfileLoading(true)
+      setProfileError(null)
 
-    getMyProfile()
-      .then((data) => {
-        if (isActive) {
-          setProfile(data)
+      try {
+        const liveProfile = await getMyProfile()
+
+        if (!isActive) {
+          return
         }
-      })
-      .catch((error) => {
-        console.error(error)
+
+        setProfile(mapLiveProfileToUserProfile(liveProfile))
+        setHistoryItems(liveProfile.historyItems)
+      } catch (error) {
+        console.error('Failed to load profile', error)
 
         if (isActive) {
-          setProfileError(error instanceof Error ? error.message : 'Could not load live profile data.')
+          setProfile(null)
+          setHistoryItems([])
+          setProfileError(
+            error instanceof Error ? error.message : 'Could not load live profile data.'
+          )
         }
-      })
-      .finally(() => {
+      } finally {
         if (isActive) {
           setProfileLoading(false)
         }
-      })
+      }
+    }
+
+    fetchProfile()
 
     return () => {
       isActive = false
     }
-  }, [loading, user])
+  }, [loading, session, user])
 
-  const currentProfile = useMemo(() => {
-    if (!profile) {
-      return {
-        ...mockUserProfile,
-        name: profileLoading ? 'Loading profile...' : 'Profile unavailable',
-        level: 0,
-        xp: 0,
-        streak: 0,
-        badges: 0,
-        challengesCompleted: 0,
-        xpForCurrentLevel: 0,
-        xpForNextLevel: 500,
-      }
-    }
-
-    return {
-      ...mockUserProfile,
-      ...profile,
-    }
-  }, [profile, profileLoading])
-
-  const currentBadges = useMemo(() => {
-    if (!profile) {
-      return []
-    }
-
-    return profile.badgeItems
-  }, [profile])
-
-  const currentHistory = useMemo(() => {
-    if (!profile) {
-      return []
-    }
-
-    return profile.historyItems
-  }, [profile])
-
-  const currentStats = useMemo<Stat[]>(
-    () => [
-      {
-        label: 'Streak',
-        value: `${currentProfile.streak} 🔥`,
-        helper: 'days in a row',
-      },
-      {
-        label: 'Badges',
-        value: currentProfile.badges,
-        helper: 'earned so far',
-      },
-      {
-        label: 'Challenges',
-        value: currentProfile.challengesCompleted,
-        helper: 'city quests done',
-      },
-    ],
-    [currentProfile]
+  const profileStats = useMemo<Stat[]>(
+    () =>
+      profile
+        ? [
+            { label: 'Level', value: profile.level },
+            { label: 'XP', value: profile.xp_earned },
+            { label: 'Streak', value: profile.streak_count },
+          ]
+        : [],
+    [profile]
   )
 
   if (!loading && !isLoggedIn) {
@@ -140,17 +112,20 @@ function ProfilePage() {
           <a href="/" aria-label="CityQuest home">
             CityQuest
           </a>
-          <button className="logout-button" type="button" onClick={() => logout()}>
+          <button className="logout-button" type="button" onClick={logout}>
             Logout
           </button>
         </nav>
 
-        <ProfileHeader profile={currentProfile} />
+        <ProfileHeader profile={profile} loading={profileLoading} />
 
         <section className="stats-grid" aria-label="Profile stats">
-          {currentStats.map((stat) => (
-            <StatCard key={stat.label} stat={stat} />
-          ))}
+          {profileLoading
+            ? ['1', '2', '3'].map((i) => <StatCard key={i} loading />)
+            : profileStats.map((stat) => (
+                <StatCard key={stat.label} stat={stat} />
+            ))
+          }
         </section>
 
         {profileLoading ? <p className="logout-message">Loading profile...</p> : null}
@@ -158,7 +133,7 @@ function ProfilePage() {
 
         <section className="profile-content" aria-live="polite">
           <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
-          {renderTabContent(activeTab, currentProfile.badges, currentBadges, currentHistory)}
+          {renderTabContent(activeTab, profileLoading, profile?.badges ?? [], historyItems)}
         </section>
 
         {!loading && !isLoggedIn ? <p className="logout-message">You have been logged out.</p> : null}
@@ -170,9 +145,9 @@ function ProfilePage() {
 
 function renderTabContent(
   activeTab: TabKey,
-  badgeCount: number,
-  badgeItems: typeof badges,
-  liveHistoryItems: typeof historyItems
+  loading: boolean,
+  badgeItems: Badge[],
+  historyItems: HistoryItem[]
 ) {
   if (activeTab === 'history') {
     return (
@@ -181,9 +156,11 @@ function renderTabContent(
           <p className="eyebrow">Recent Activity</p>
           <h2>City quest history</h2>
         </div>
-        {liveHistoryItems.length ? (
+        {loading ? (
+          <p className="logout-message">Loading history...</p>
+        ) : historyItems.length ? (
           <ul className="history-list">
-            {liveHistoryItems.map((item) => (
+            {historyItems.map((item) => (
               <li key={item.id}>
                 <div>
                   <strong>{item.title}</strong>
@@ -204,10 +181,16 @@ function renderTabContent(
     <div className="tab-panel" role="tabpanel">
       <div className="section-heading">
         <p className="eyebrow">Badge Vault</p>
-        <h2>{badgeCount} earned badges</h2>
+        <h2>{loading ? 'Loading badges...' : `${badgeItems.filter((badge) => badge.earned).length} earned badges`}</h2>
       </div>
 
-      {badgeItems.length ? (
+      {loading ? (
+        <div className="badge-grid">
+          {['1', '2', '3', '4', '5'].map((key) => (
+            <BadgeCard key={key} loading />
+          ))}
+        </div>
+      ) : badgeItems.length ? (
         <div className="badge-grid">
           {badgeItems.map((badge) => (
             <BadgeCard key={badge.id} badge={badge} />
@@ -218,6 +201,20 @@ function renderTabContent(
       )}
     </div>
   )
+}
+
+function mapLiveProfileToUserProfile(profile: LiveProfile): UserProfile {
+  return {
+    username: profile.name,
+    xp_earned: profile.xp,
+    level: profile.level,
+    streak_count: profile.streak,
+    badges: profile.badgeItems,
+    challengesCompleted: profile.challengesCompleted,
+    xpForCurrentLevel: profile.xpForCurrentLevel,
+    xpForNextLevel: profile.xpForNextLevel,
+    avatarUrl: '/profile-placeholder.svg',
+  }
 }
 
 export default ProfilePage

@@ -80,6 +80,8 @@ export const findBadgesByUserId = async (userId: number) => {
       id: true,
       name: true,
       description: true,
+      active_url: true,
+      inactive_url: true,
       awarded_badge: {
         where: {
           user_id: userId,

@@ -42,12 +42,6 @@ export default function ChallengeList({goToDetailView}: {goToDetailView: (challe
           .catch(() => setError("Could not load challenges."))
           .finally(() => setLoading(false))
       }, [])
-      if (loading) {
-        return <div style={containerStyle}>
-          <h1 style={titleStyle}>Today's Challenges</h1>
-          <p>Loading...</p>
-        </div>
-      }
       if (error) {
         return <div style={containerStyle}>
           <h1 style={titleStyle}>Today's Challenges</h1>
@@ -59,7 +53,27 @@ export default function ChallengeList({goToDetailView}: {goToDetailView: (challe
     }
 
     
-  function ChallengeCard({challenge, onClose}: {challenge: Challenge, onClose: (id: number) => void}) {
+  function ChallengeCard({challenge, onClose, loading}: {challenge?: Challenge, onClose: (id: number) => void, loading: boolean}) {
+    if (loading || !challenge) {
+      return (
+        <div style={{...cardStyle, cursor: "pointer", transition: "transform 0.2s"}}
+          onMouseEnter={(e) => {
+          (e.currentTarget as HTMLDivElement).style.transform = "scale(1.02)";
+          }}
+          onMouseLeave={(e) => {
+          (e.currentTarget as HTMLDivElement).style.transform = "scale(1)";
+          }}
+        >
+            <h2 style={challengeTitleStyle} className='skeleton skeleton-text' />
+            <p style={descriptionStyle} className='skeleton skeleton-text small'/>
+            <div style={rowStyle}>
+              <span style={{...badgeStyle, background: "#ddd"}}/>
+              <span style={xpStyle} className='skeleton skeleton-text'/>
+            </div>
+        </div>
+      )
+    }
+    
     return (
         <div style={{...cardStyle, cursor: "pointer", transition: "transform 0.2s"}}
           onClick={() => goToDetailView(challenge)}
@@ -99,14 +113,17 @@ export default function ChallengeList({goToDetailView}: {goToDetailView: (challe
     <div style={containerStyle}>
       <h1 style={titleStyle}>Today's Challenges</h1>
       <div>
-        {challenges.map((challenge) => (
-          <ChallengeCard 
-            key={challenge.id} 
-            challenge={challenge} 
-            onClose={handleClose} 
-          />
-
-        ))}
+        {loading
+          ? ['1', '2', '3', '4', '5', '6'].map((i) => <ChallengeCard key={i} onClose={handleClose} loading />)
+          : challenges.map((challenge) => (
+            <ChallengeCard 
+              key={challenge.id} 
+              challenge={challenge} 
+              onClose={handleClose} 
+              loading={loading}
+            />
+          ))
+        }
       </div>
     
         <div style={{
