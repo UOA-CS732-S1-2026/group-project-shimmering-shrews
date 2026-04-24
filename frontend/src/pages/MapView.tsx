@@ -1,19 +1,17 @@
 import { useState, useEffect } from 'react'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
-import { getChallenges } from '../services/challengeapi.ts'
+import { getChallenges } from '../services/challenges'
+import type { Challenge } from '../types/challenge'
 
 export default function MapView() {
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null)
-  const [challenges, setChallenges] = useState<any[]>([])
+  const [challenges, setChallenges] = useState<Challenge[]>([])
 
   useEffect(() => {
-    // Fetching all active challenges from database
     getChallenges().then((data) => {
-      console.log('Challenges from API:', data)
       setChallenges(data)
     })
 
-    // Get user's current device location and render map when received
     navigator.geolocation.getCurrentPosition((position) => {
       const { latitude, longitude } = position.coords
       setUserLocation([latitude, longitude])

@@ -375,8 +375,8 @@
   bottom: max(16px, env(safe-area-inset-bottom));
   z-index: 10;
   display: grid;
-  width: min(260px, calc(100% - 32px));
-  grid-template-columns: repeat(2, 1fr);
+  width: min(360px, calc(100% - 32px));
+  grid-template-columns: repeat(3, 1fr);
   gap: 8px;
   padding: 8px;
   border: 1px solid #d8ebf2;
