@@ -12,6 +12,7 @@ CREATE TYPE challenge_status AS ENUM ('in_progress', 'skipped', 'completed');
 -- USERS
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
+    auth_id VARCHAR(500) UNIQUE NOT NULL,
     username VARCHAR(100) UNIQUE NOT NULL,
     email VARCHAR(250) UNIQUE NOT NULL,
     user_role user_role NOT NULL,
@@ -24,21 +25,6 @@ CREATE TABLE users (
     level INTEGER NOT NULL DEFAULT 1,
     xp_earned INTEGER NOT NULL DEFAULT 0,
     streak_count INTEGER NOT NULL DEFAULT 0
-);
-
--- ACCOUNT (for auth providers)
-CREATE TABLE account (
-    provider TEXT NOT NULL,
-    provider_account_id TEXT NOT NULL,
-    user_id INTEGER NOT NULL,
-    account_type TEXT NOT NULL,
-
-    PRIMARY KEY (provider, provider_account_id),
-
-    CONSTRAINT fk_account_user
-        FOREIGN KEY (user_id)
-        REFERENCES users(id)
-        ON DELETE CASCADE
 );
 
 -- BADGES
@@ -94,6 +80,7 @@ CREATE TABLE challenge (
 CREATE TABLE awarded_badge (
     user_id INTEGER NOT NULL,
     badge_id INTEGER NOT NULL,
+    earned_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
     PRIMARY KEY(user_id, badge_id),
 
@@ -149,3 +136,6 @@ CREATE TABLE user_challenge (
         REFERENCES challenge(id)
         ON DELETE CASCADE
 );
+
+/* Speed up querying users on auth id */
+CREATE INDEX idx_users_auth_id ON users(auth_id);
