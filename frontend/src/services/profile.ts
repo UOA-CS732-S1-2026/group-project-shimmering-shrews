@@ -1,0 +1,69 @@
+import { getSupabaseClient } from "../lib/supabase"
+import type { Badge, HistoryItem } from "../types/profile"
+
+type ApiResponse<T> = {
+  success: boolean
+  data: T
+  message?: string
+}
+
+type BackendProfile = {
+  name: string
+  xp: number
+  level: number
+  streak: number
+  badges: number
+  challengesCompleted: number
+  xpForCurrentLevel: number
+  xpForNextLevel: number
+  badgeItems: Badge[]
+  historyItems: HistoryItem[]
+}
+
+const getBackendUrl = () => {
+  const url = import.meta.env.VITE_BACKEND_URL
+
+  if (!url) {
+    throw new Error("VITE_BACKEND_URL is not configured")
+  }
+
+  return url
+}
+
+export type LiveProfile = BackendProfile
+
+export const getMyProfile = async (): Promise<LiveProfile> => {
+  const supabase = getSupabaseClient()
+  const { data } = await supabase.auth.getSession()
+  const token = data.session?.access_token
+
+  if (!token) {
+    throw new Error("No authenticated session found")
+  }
+
+  const res = await fetch(`${getBackendUrl()}/api/profile/me`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  if (!res.ok) {
+    let message = "Failed to fetch profile"
+
+    try {
+      const errorJson = (await res.json()) as { message?: string }
+
+      if (errorJson.message) {
+        message = errorJson.message
+      }
+    } catch {
+      // Fall back to the generic message when the response body is not JSON.
+    }
+
+    throw new Error(message)
+  }
+
+  const json = (await res.json()) as ApiResponse<BackendProfile>
+
+  return json.data
+}

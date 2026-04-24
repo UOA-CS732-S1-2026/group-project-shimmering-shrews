@@ -1,11 +1,11 @@
 export type TabKey = 'badges' | 'history'
 
 export type UserProfile = {
-  name: string
-  xp: number
+  username: string
+  xp_earned: number
   level: number
-  streak: number
-  badges: number
+  streak_count: number
+  badges: Badge[]
   challengesCompleted: number
   xpForCurrentLevel: number
   xpForNextLevel: number
@@ -15,14 +15,15 @@ export type UserProfile = {
 export type Stat = {
   label: string
   value: number | string
-  helper: string
+  helper?: string
 }
 
 export type Badge = {
   id: number
   name: string
   description: string
-  icon: string
+  active_icon: string
+  inactive_icon: string
   earned: boolean
 }
 

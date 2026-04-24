@@ -1,4 +1,4 @@
-import { Outlet } from "react-router-dom";
+import { Link, Outlet } from "react-router-dom";
 
 export default function Layout() {
 
@@ -6,9 +6,9 @@ export default function Layout() {
     <div className="container">
       <header>
         <nav className="topbar" aria-label="Main navigation">
-          <a href="/" aria-label="CityQuest home">
+          <Link to="/" aria-label="CityQuest home">
             CityQuest
-          </a>
+          </Link>
         </nav>
       </header>
       

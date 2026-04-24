@@ -2,8 +2,12 @@ import { loginWithGoogle } from "../services/auth"
 import styles from "./LoginPage.module.css"
 
 const LoginPage = () => {
+  // after login, navigate user to the page they initially tried to visit
+  const from = new URLSearchParams(location.search).get("from") || "/";
+
   const handleGoogleLogin = async () => {
     try {
+      sessionStorage.setItem("redirectAfterLogin", from)
       await loginWithGoogle()
     } catch (err) {
       console.error("Login failed:", err)
