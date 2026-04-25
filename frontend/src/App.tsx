@@ -16,7 +16,7 @@ import './App.css'
 /**
  * Within the router, we specify what layout template to use for each group of children,
  * e.g. element: <TabsLayout /> will display each of that path's children wrapped in the TabsLayout template.
- * To protect a path (and subpaths), add loader: protectedLoader. This will verify that the user is logged in.
+ * To protect a path (and its children), wrap the element in <ProtectedRoute> tags. This will verify that the user is logged in.
  * If so, take them to the path they've specified, if not, then take them to the login page.
  */
 const router = createBrowserRouter([
