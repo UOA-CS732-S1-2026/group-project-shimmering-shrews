@@ -1,5 +1,4 @@
-import { createBrowserRouter, RouterProvider } from "react-router-dom"
-import React from 'react'
+import { createBrowserRouter, Navigate, RouterProvider } from "react-router-dom"
 
 import ChallengesRoute from "./pages/ChallengesRoute"
 import ChallengeRoute from "./pages/ChallengeRoute"
@@ -12,6 +11,7 @@ import TabsLayout from "./layouts/TabsLayout"
 import { AuthProvider } from "./context/AuthProvider"
 import './App.css'
 import { ProtectedRoute } from "./components/ProtectedRoute"
+import { useAuth } from "./context/useAuth"
 
 /**
  * Within the router, we specify what layout template to use for each group of children,
