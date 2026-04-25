@@ -1,4 +1,5 @@
-import { createBrowserRouter, Navigate, RouterProvider, useLocation } from "react-router-dom"
+import { createBrowserRouter, RouterProvider } from "react-router-dom"
+import React from 'react'
 
 import ChallengesRoute from "./pages/ChallengesRoute"
 import ChallengeRoute from "./pages/ChallengeRoute"
@@ -9,9 +10,14 @@ import AuthCallback from "./pages/AuthCallback"
 import Layout from "./layouts/MainLayout"
 import TabsLayout from "./layouts/TabsLayout"
 import { AuthProvider } from "./context/AuthProvider"
-import { useAuth } from "./context/useAuth"
 import './App.css'
+import { ProtectedRoute } from "./components/ProtectedRoute"
 
+/**
+ * Within the router, we specify what layout template to use for each group of children,
+ * e.g. element: <TabsLayout /> will display each of that path's children wrapped in the TabsLayout template.
+ * To make a path (and its children) accessible by logged in users only, wrap the element in <ProtectedRoute> tags.
+ */
 const router = createBrowserRouter([
   {
     path: "/",
@@ -34,7 +40,11 @@ const router = createBrowserRouter([
   },
   {
     path: "/profile",
-    element: <ProtectedProfilePage />,
+    element: (
+      <ProtectedRoute>
+        <ProfilePage />
+      </ProtectedRoute>
+    ),
   },
 ])
 
@@ -60,30 +70,4 @@ function HomeRedirect() {
   }
 
   return <Navigate to={user ? "/profile" : "/login"} replace />
-}
-
-function ProtectedProfilePage() {
-  const { user, loading } = useAuth()
-  const location = useLocation()
-
-  if (loading) {
-    return (
-      <main className="container page page-profile">
-        <div className="shell shell-profile">
-          <p className="status-message">Loading profile...</p>
-        </div>
-      </main>
-    )
-  }
-
-  if (!user) {
-    return (
-      <Navigate
-        to={`/login?from=${encodeURIComponent(location.pathname)}`}
-        replace
-      />
-    )
-  }
-
-  return <ProfilePage />
 }
