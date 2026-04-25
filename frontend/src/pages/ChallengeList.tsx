@@ -131,7 +131,7 @@ export default function ChallengeList({goToDetailView}: {goToDetailView: (challe
             flexDirection: "column",
             gap: "12px",
         }}>
-            <button onClick={() => navigate('/#map')} style={buttonStyle}>
+            <button onClick={() => navigate('/map')} style={buttonStyle}>
                 Map View
             </button>
             <button onClick={() => navigate('/profile')} style={buttonStyle}>

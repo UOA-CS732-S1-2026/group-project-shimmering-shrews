@@ -1,32 +1,27 @@
 import { createBrowserRouter, Navigate, RouterProvider, useLocation } from "react-router-dom"
-import React from 'react'
 
-import ChallengeList from "./pages/ChallengeList"
-import ChallengeDetailView from "./pages/ChallengeDetailView"
+import ChallengesRoute from "./pages/ChallengesRoute"
+import ChallengeRoute from "./pages/ChallengeRoute"
 import LoginPage from './pages/LoginPage'
+import MapView from "./pages/MapView"
 import ProfilePage from './pages/ProfilePage'
 import AuthCallback from "./pages/AuthCallback"
 import Layout from "./layouts/MainLayout"
 import TabsLayout from "./layouts/TabsLayout"
-import type { Challenge } from './types/challenge'
 import { AuthProvider } from "./context/AuthProvider"
 import { useAuth } from "./context/useAuth"
 import './App.css'
 
-/**
- * Within the router, we specify what layout template to use for each group of children,
- * e.g. element: <TabsLayout /> will display each of that path's children wrapped in the TabsLayout template.
- * To protect a path (and subpaths), add loader: protectedLoader. This will verify that the user is logged in.
- * If so, take them to the path they've specified, if not, then take them to the login page.
- */
 const router = createBrowserRouter([
   {
     path: "/",
     element: <TabsLayout />,
     children: [
-      { index: true, element: <ChallengeFlow /> },
-      { path: "challenges", element: <ChallengeFlow /> },
-      { path: "*", element: <ChallengeFlow /> },
+      { index: true, element: <HomeRedirect /> },
+      { path: "map", element: <MapView /> },
+      { path: "challenges", element: <ChallengesRoute /> },
+      { path: "challenges/:challengeId", element: <ChallengeRoute /> },
+      { path: "*", element: <Navigate to="/" replace /> },
     ],
   },
   {
@@ -46,32 +41,25 @@ const router = createBrowserRouter([
 export default function App() {
   return (
     <AuthProvider>
-      <RouterProvider router={router}/>
+      <RouterProvider router={router} />
     </AuthProvider>
   )
 }
 
-function ChallengeFlow() {
-  const [page, setPage] = React.useState<'ChallengeList' | 'ChallengeDetailView'>("ChallengeList")
-  const [selectedChallenge, setSelectedChallenge] = React.useState<Challenge | null>(null)
-  const [checkedInChallenges, setCheckedInChallenges] = React.useState<number[]>([])
-  return(
-    <div>
-      {page === "ChallengeList" && <ChallengeList goToDetailView={(challenge) => {
-        setSelectedChallenge(challenge)
-        setPage("ChallengeDetailView")
-      }} />}
-      {page === "ChallengeDetailView" && (
-        <ChallengeDetailView challenge={selectedChallenge}
-        checkedInChallenges={checkedInChallenges} 
-        setCheckedInChallenges={setCheckedInChallenges}
-        goToChallengeList={() => {
-        setPage("ChallengeList")}} />
-      )
-      
-      }
-    </div>
-  )
+function HomeRedirect() {
+  const { user, loading } = useAuth()
+
+  if (loading) {
+    return (
+      <main className="container page page-profile">
+        <div className="shell shell-profile">
+          <p className="status-message">Loading...</p>
+        </div>
+      </main>
+    )
+  }
+
+  return <Navigate to={user ? "/profile" : "/login"} replace />
 }
 
 function ProtectedProfilePage() {

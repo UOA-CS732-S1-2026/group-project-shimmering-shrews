@@ -26,3 +26,14 @@ export const getChallenges = async (): Promise<Challenge[]> => {
   const json = (await res.json()) as ApiResponse<Challenge[]>
   return json.data
 }
+
+export const getChallenge = async (challengeId: string): Promise<Challenge> => {
+  const res = await fetch(`${getBackendUrl()}/challenges/${challengeId}`)
+
+  if (!res.ok) {
+    throw new Error('Failed to fetch challenge')
+  }
+
+  const json = (await res.json()) as ApiResponse<Challenge>
+  return json.data
+}
