@@ -6,6 +6,12 @@ import type { Challenge } from '../types/challenge'
 import { badgeStyle, categoryColors, categoryColorsStrong, xpStyle } from '../styles/challengeStyle'
 import { DEV_SHOW_ALL } from '../config/featureFlags'
 import LocationPermissionDialog from '../components/LocationPermissionDialog.tsx'
+import {
+  LOCATION_PERMISSION_BANNER_MESSAGE,
+  LOCATION_PERMISSION_DIALOG_MESSAGE,
+  LOCATION_PERMISSION_DIALOG_TITLE,
+  LOCATION_PERMISSION_SETTINGS_GUIDANCE,
+} from '../config/locationPermissionContent'
 
 import L from "leaflet";
 
@@ -78,6 +84,7 @@ export default function MapView() {
   // how accurate our GPS reports itself to be 
   const [accuracy, setAccuracy] = useState<number | null>(null)
   const [challenges, setChallenges] = useState<Challenge[]>([])
+  const [challengesError, setChallengesError] = useState<string | null>(null)
   const [permissionStatus, setPermissionStatus] = useState<PermissionStatus>('not-asked')
   const [showPermissionDialog, setShowPermissionDialog] = useState(false)
   const [isRequestingLocation, setIsRequestingLocation] = useState(false)
@@ -166,6 +173,11 @@ export default function MapView() {
     getChallenges().then((data) => {
       if (isActive) {
         setChallenges(data)
+        setChallengesError(null)
+      }
+    }).catch(() => {
+      if (isActive) {
+        setChallengesError('Could not load challenges for the map.')
       }
     })
 
@@ -246,8 +258,8 @@ export default function MapView() {
     <div style={{ height: '100vh', width: '100%', display: 'flex', flexDirection: 'column' }}>
       <LocationPermissionDialog
         open={showPermissionDialog}
-        title="Enable Location Access"
-        message="We need your location to show nearby challenges and let you check in. Your location is only used to display challenges near you on the map."
+        title={LOCATION_PERMISSION_DIALOG_TITLE}
+        message={LOCATION_PERMISSION_DIALOG_MESSAGE}
         onAllow={handlePermissionDialogAllow}
         onCancel={handlePermissionDialogDeny}
       />
@@ -266,7 +278,7 @@ export default function MapView() {
           <div>
             <strong>Location access is required</strong>
             <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.9rem' }}>
-              Please enable location in your browser or device settings to see nearby challenges.
+              {LOCATION_PERMISSION_SETTINGS_GUIDANCE}
             </p>
           </div>
         </div>
@@ -287,7 +299,7 @@ export default function MapView() {
             borderRadius: '8px',
           }}>
             <p style={{ margin: 0, color: '#555', fontSize: '0.9rem' }}>
-              Enable location to use nearby challenge filtering and check-ins.
+              {LOCATION_PERMISSION_BANNER_MESSAGE}
             </p>
             {locationMessage && (
               <p style={{ margin: '8px 0 0', color: '#8a4b00', fontSize: '0.85rem' }}>
@@ -335,6 +347,12 @@ export default function MapView() {
               <li>Allow location for this website</li>
             </ul>
           </div>
+        )}
+
+        {challengesError && (
+          <p style={{ margin: '12px', color: '#8a4b00', fontSize: '0.9rem' }}>
+            {challengesError}
+          </p>
         )}
 
         {!locationRequired && !isInitializingLocation && (

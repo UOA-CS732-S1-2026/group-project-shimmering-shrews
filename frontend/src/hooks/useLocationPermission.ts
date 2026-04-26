@@ -16,6 +16,12 @@ export const useLocationPermission = () => {
   }
 
   const requestPermission = () => {
+    if (!navigator.geolocation) {
+      console.warn('Geolocation is not supported in this browser')
+      setPermissionStatus('not-asked')
+      return
+    }
+
     navigator.geolocation.getCurrentPosition(
       () => {
         setPermissionStatus('granted')
@@ -36,6 +42,8 @@ export const useLocationPermission = () => {
   }
 
   useEffect(() => {
+    let permissionQuery: globalThis.PermissionStatus | null = null
+
     const checkPermissionState = async () => {
       if (!navigator.permissions) {
         console.warn('Permissions API not available')
@@ -43,6 +51,7 @@ export const useLocationPermission = () => {
       }
       try {
         const result = await navigator.permissions.query({ name: 'geolocation' })
+        permissionQuery = result
         setPermissionStatus(mapPermissionState(result.state))
         result.onchange = () => {
           setPermissionStatus(mapPermissionState(result.state))
@@ -53,6 +62,12 @@ export const useLocationPermission = () => {
     }
 
     checkPermissionState()
+
+    return () => {
+      if (permissionQuery) {
+        permissionQuery.onchange = null
+      }
+    }
   }, [])
 
   return {

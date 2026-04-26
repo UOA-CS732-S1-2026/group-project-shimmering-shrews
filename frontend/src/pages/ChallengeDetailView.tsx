@@ -3,6 +3,7 @@ import { badgeStyle, buttonStyle, cardStyle, categoryColors, containerStyle, cha
 import type { Challenge } from '../types/challenge'
 import { useLocationPermission } from '../hooks/useLocationPermission'
 import { DEV_SHOW_ALL } from '../config/featureFlags'
+import { LOCATION_PERMISSION_CHECKIN_MESSAGE } from '../config/locationPermissionContent'
 
 export default function ChallengeDetailView({
     challenge,
@@ -103,7 +104,7 @@ export default function ChallengeDetailView({
                     </button>
                     {isCheckInDisabled && (
                         <p style={{fontSize: "0.9rem", color: "#999", marginTop: "0.5rem"}}>
-                            Enable location access in your browser settings to check in.
+                            {LOCATION_PERMISSION_CHECKIN_MESSAGE}
                         </p>
                     )}
                 </div>

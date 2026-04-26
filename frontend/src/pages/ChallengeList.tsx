@@ -6,6 +6,12 @@ import type { Challenge } from '../types/challenge'
 import { useLocationPermission } from '../hooks/useLocationPermission'
 import { DEV_SHOW_ALL } from '../config/featureFlags'
 import LocationPermissionDialog from '../components/LocationPermissionDialog.tsx'
+import {
+  LOCATION_PERMISSION_CHALLENGES_ACCURACY_MESSAGE,
+  LOCATION_PERMISSION_DIALOG_MESSAGE,
+  LOCATION_PERMISSION_DIALOG_TITLE,
+  LOCATION_PERMISSION_SETTINGS_GUIDANCE,
+} from '../config/locationPermissionContent'
 
 export default function ChallengeList({goToDetailView}: {goToDetailView: (challenge: Challenge) => void }) {
     const navigate = useNavigate()
@@ -33,8 +39,8 @@ export default function ChallengeList({goToDetailView}: {goToDetailView: (challe
     const permissionDialog = (
       <LocationPermissionDialog
         open={showPermissionDialog}
-        title="Enable Location Access"
-        message="We use your location to show nearby challenges and support check-ins. You can continue without enabling it, but location-based features will be limited."
+        title={LOCATION_PERMISSION_DIALOG_TITLE}
+        message={LOCATION_PERMISSION_DIALOG_MESSAGE}
         onAllow={allowPermissionRequest}
         onCancel={closePermissionDialog}
       />
@@ -78,7 +84,7 @@ export default function ChallengeList({goToDetailView}: {goToDetailView: (challe
           <p style={{color: '#666', marginBottom: '1rem'}}>Location access is required to view challenges.</p>
           <p style={{fontSize: '0.9rem', color: '#999', marginBottom: '1.5rem'}}>
             {permissionStatus === 'denied'
-              ? 'Please enable location in your browser or device settings.'
+              ? LOCATION_PERMISSION_SETTINGS_GUIDANCE
               : 'Allow location access to load nearby challenges.'}
           </p>
           <button onClick={openPermissionDialog} style={buttonStyle}>
@@ -165,7 +171,7 @@ export default function ChallengeList({goToDetailView}: {goToDetailView: (challe
           borderRadius: '8px',
         }}>
           <p style={{ margin: 0, color: '#555', fontSize: '0.9rem' }}>
-            Enable location to improve nearby challenge accuracy.
+            {LOCATION_PERMISSION_CHALLENGES_ACCURACY_MESSAGE}
           </p>
           <button onClick={openPermissionDialog} style={{ ...buttonStyle, marginTop: '8px' }}>
             Enable Location
