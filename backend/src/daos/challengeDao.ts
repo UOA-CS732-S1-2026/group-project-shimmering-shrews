@@ -74,6 +74,29 @@ export const findActiveChallengeById = async (id: number) => {
   })
 }
 
+// export const findActiveChallengesByCategory = async () => {
+//   const categories = await prisma.challenge_category.findMany({
+//     select: {
+//       id: true,
+//       name: true,
+//     },
+//   })
+
+//   const challenges = await Promise.all(
+//     categories.map((category) =>
+//       prisma.challenge.findFirst({
+//         where: {
+//           is_active: true,
+//           challenge_category_id: category.id,
+//         },
+//         select: challengeSelect,
+//       })
+//     )
+//   )
+
+//   return challenges.filter((challenge) => challenge !== null)
+// }
+
 export const findChallengeCategoriesByNames = async (names: string[]) => {
   return prisma.challenge_category.findMany({
     where: {
