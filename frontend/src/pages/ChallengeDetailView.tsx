@@ -1,6 +1,8 @@
 import React from 'react'
 import { badgeStyle, buttonStyle, cardStyle, categoryColors, containerStyle, challengeTitleStyle, titleStyle, xpStyle } from '../styles/challengeStyle'
 import type { Challenge } from '../types/challenge'
+import { useLocationPermission } from '../hooks/useLocationPermission'
+import { DEV_SHOW_ALL } from '../config/featureFlags'
 
 export default function ChallengeDetailView({
     challenge,
@@ -12,6 +14,8 @@ export default function ChallengeDetailView({
         checkedInChallenges: number[],
         setCheckedInChallenges: React.Dispatch<React.SetStateAction<number[]>>,
     }) {
+    const { permissionStatus } = useLocationPermission()
+    
     const detailDescriptionStyle = {
         margin:"6px 0", 
         color: "#555",
@@ -39,8 +43,14 @@ export default function ChallengeDetailView({
             style={buttonStyle}>Return to list</button>
         </div>
     }
+    
     const checkedIn = checkedInChallenges.includes(challenge.id)
+    const isCheckInDisabled = !DEV_SHOW_ALL && permissionStatus !== 'granted'
+    
     const checkIn = () => {
+        if (isCheckInDisabled) {
+            return
+        }
         setCheckedInChallenges((prev: number[]) => {
             if (checkedIn) {
                 return prev.filter(id => id !== challenge.id)
@@ -82,11 +92,20 @@ export default function ChallengeDetailView({
                 <div>
                     <button 
                         onClick={checkIn} 
+                        disabled={isCheckInDisabled}
+                        title={isCheckInDisabled ? "Location access required to check in" : ""}
                         style={{...checkInButtonStyle,
-                        background: checkedIn ? "gray" : "green",
+                        background: isCheckInDisabled ? "#ccc" : (checkedIn ? "gray" : "green"),
+                        cursor: isCheckInDisabled ? "not-allowed" : "pointer",
+                        opacity: isCheckInDisabled ? 0.6 : 1,
                         }}>
-                        {checkedIn ? "Checked In" : "Check In"}
-                    </button> 
+                        {isCheckInDisabled ? "Location Required" : (checkedIn ? "Checked In" : "Check In")}
+                    </button>
+                    {isCheckInDisabled && (
+                        <p style={{fontSize: "0.9rem", color: "#999", marginTop: "0.5rem"}}>
+                            Enable location access in your browser settings to check in.
+                        </p>
+                    )}
                 </div>
             </div>
             
