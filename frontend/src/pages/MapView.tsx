@@ -1,9 +1,40 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { MapContainer, TileLayer, Marker, Popup, Circle } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, Circle, CircleMarker } from 'react-leaflet'
 import { getChallenges } from '../services/challenges'
 import type { Challenge } from '../types/challenge'
-import { badgeStyle, categoryColors, xpStyle } from '../styles/challengeStyle'
+import { badgeStyle, categoryColors, categoryColorsStrong, xpStyle } from '../styles/challengeStyle'
+
+import L from "leaflet";
+
+function createTeardropIcon(challenge_category : Challenge["challenge_category"]) {
+  const teardrop = L.divIcon({
+    className: "challenge-marker",
+    html: `
+      <svg width="36" height="48" viewBox="0 0 24 24">
+        <!-- outer teardrop -->
+        <path
+          d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z"
+          fill="${categoryColorsStrong[challenge_category.name]}"
+          stroke="white"
+          stroke-width="1.6"
+        />
+
+        <!-- inner circle -->
+        <circle
+          cx="12"
+          cy="9"
+          r="2.3"
+          fill="white"
+        />
+      </svg>
+    `,
+    iconSize: [24, 24],
+    iconAnchor: [12, 24],
+  });
+
+  return teardrop
+}
 
 function getDistanceMetres(a: [number, number], b: [number, number]) {
   const R = 6371000
@@ -19,6 +50,8 @@ function getDistanceMetres(a: [number, number], b: [number, number]) {
 
 export default function MapView() {
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null)
+  // how accurate our GPS reports itself to be 
+  const [accuracy, setAccuracy] = useState<number | null>(null)
   const [challenges, setChallenges] = useState<Challenge[]>([])
   const radius = 500 // metres
 
@@ -26,10 +59,21 @@ export default function MapView() {
     getChallenges().then((data) => {
       setChallenges(data)
     })
-    navigator.geolocation.getCurrentPosition((position) => {
-      const { latitude, longitude } = position.coords
-      setUserLocation([latitude, longitude])
-    })
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude, accuracy } = position.coords
+        setUserLocation([latitude, longitude])
+        setAccuracy(accuracy)
+      },
+      (error) => {
+        console.error("Error getting location:", error);
+      },
+      {
+        enableHighAccuracy: true, // get precise location, not approximation
+        timeout: 10000,           // max time to wait (in ms)
+        maximumAge: 0             // use current location, not cached
+      }
+    )
   }, [])
 
 
@@ -37,14 +81,14 @@ export default function MapView() {
   // comment out the one you don't want to use. Insert whatever hardcoded values you wish
 
   // hardcoded location
-  const currUserLocation: [number, number] | null = [-36.8485, 174.7633]
+  // const currUserLocation: [number, number] | null = [-36.8485, 174.7633]
 
   // gps location
-  // const currUserLocation: [number, number] | null = userLocation
+  const currUserLocation: [number, number] | null = userLocation
 
   // showing all or radius bound challenges on map, for devevlopment pruposes
   // true for all, false for radius bound
-  const DEV_SHOW_ALL = false
+  const DEV_SHOW_ALL = true
 
 
   const nearbyChallenges = currUserLocation
@@ -71,22 +115,46 @@ export default function MapView() {
             url={`https://maps.geoapify.com/v1/tile/osm-bright/{z}/{x}/{y}.png?apiKey=${import.meta.env.VITE_GEOAPIFY_KEY}`}
             attribution="Geoapify"
           />
-          <Marker position={currUserLocation}>
+          <CircleMarker
+            center={currUserLocation}
+            radius={8}
+            pathOptions={{
+              color: "white",
+              weight: 2,
+              fillColor: "blue",
+              fillOpacity: 0.8
+            }}
+          >
             <Popup>You are here</Popup>
-          </Marker>
+          </CircleMarker>
           <Circle
             center={currUserLocation}
             radius={radius}
             pathOptions={{
               color: '#4a90e2',
+              weight: 2,
               fillColor: '#4a90e2',
-              fillOpacity: 0.1,
+              fillOpacity: 0.04,
             }}
           />
+          {/* Accuracy radius of how precise the user's location is */}
+          {accuracy && (
+            <Circle
+              center={currUserLocation}
+              radius={accuracy}
+              pathOptions={{
+                weight: 0,
+                fillColor: '#73a1d5',
+                fillOpacity: 0.15,
+                dashArray: '4 6'
+              }}
+            />
+          )}
           {nearbyChallenges.map((challenge) => (
             <Marker
               key={challenge.id}
               position={[Number(challenge.location.latitude), Number(challenge.location.longitude)]}
+              icon={createTeardropIcon(challenge.challenge_category)}
             >
               <Popup className="challenge-map-popup">
                 <div className="challenge-map-popup__content">
