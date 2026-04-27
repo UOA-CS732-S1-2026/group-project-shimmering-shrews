@@ -1,6 +1,6 @@
 import { userDAO } from '../daos/userDao'
 import { userChallengeDAO } from '../daos/userChallengeDao'
-import { findActiveChallengesByCategory, findAllActiveChallenges } from '../daos/challengeDao'
+import { findAllActiveChallenges } from '../daos/challengeDao'
 
 export const userChallengeService = {
   async getOrCreateTodayChallenges(authId: string) {
