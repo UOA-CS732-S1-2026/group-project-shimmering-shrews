@@ -1,4 +1,6 @@
 import type { Challenge } from '../types/challenge'
+import { getSupabaseClient } from "../lib/supabase"
+
 
 type ApiResponse<T> = {
   success: boolean
@@ -35,5 +37,30 @@ export const getChallenge = async (challengeId: string): Promise<Challenge> => {
   }
 
   const json = (await res.json()) as ApiResponse<Challenge>
+  return json.data
+}
+
+export const checkInChallenge = async ( challengeId: number): Promise<ApiResponse<Challenge>> => {
+  const supabase = getSupabaseClient()
+  const { data } = await supabase.auth.getSession()
+  const authId = data.session?.user?.id
+
+  if (!authId) {
+    throw new Error('User not authenticated')
+  }
+
+  const res = await fetch( `${getBackendUrl()}/challenges/${challengeId}/checkin`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({authId}),
+    }
+  )
+
+  if (!res.ok) throw new Error('Failed to check in')
+
+  const json = await res.json()
   return json.data
 }

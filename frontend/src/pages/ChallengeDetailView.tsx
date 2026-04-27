@@ -1,6 +1,20 @@
 import React from 'react'
 import { badgeStyle, buttonStyle, cardStyle, categoryColors, containerStyle, challengeTitleStyle, titleStyle, xpStyle } from '../styles/challengeStyle'
 import type { Challenge } from '../types/challenge'
+import { checkInChallenge } from '../services/challenges'
+
+
+function getDistanceMetres(a: [number, number], b: [number, number]) {
+  const R = 6371000
+  const lat1 = (a[0] * Math.PI) / 180
+  const lat2 = (b[0] * Math.PI) / 180
+  const dLat = ((b[0] - a[0]) * Math.PI) / 180
+  const dLon = ((b[1] - a[1]) * Math.PI) / 180
+  const x =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) * Math.sin(dLon / 2)
+  return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x))
+}
 
 export default function ChallengeDetailView({
     challenge,
@@ -39,16 +53,46 @@ export default function ChallengeDetailView({
             style={buttonStyle}>Return to list</button>
         </div>
     }
-    const checkedIn = checkedInChallenges.includes(challenge.id)
+    
+    
+    const checkedIn = challenge
+    
+    const MAX_DISTANCE = 600; // In metres
     const checkIn = () => {
-        setCheckedInChallenges((prev: number[]) => {
-            if (checkedIn) {
-                return prev.filter(id => id !== challenge.id)
-            } else {
-                return [...prev, challenge.id]
+        if (checkedIn) {
+            return; 
+        } // Prevent re-checking if already complete
+
+        if (!navigator.geolocation) {
+            alert("Geolocation is not supported by your browser.");
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                const { latitude, longitude } = position.coords;
+                
+                // Calculate distance from challenge
+                const distance = getDistanceMetres([latitude, longitude],[Number(challenge.location.latitude), Number(challenge.location.longitude)]);
+                if (distance <= MAX_DISTANCE) {
+                    try {
+                        await checkInChallenge(challenge.id);
+
+                        // REPLACE WITH XP AND BANNER POP UP
+                        alert( "Challenge sucessfully completed");
+                    } catch (error) {
+                        alert(`Failed to check into challenge. Please try again.`);
+                    } 
+                } else {
+                    // Too far
+                    alert(`You are too far away (${Math.round(distance)}m). You must be within ${MAX_DISTANCE}m of the challenge.`);
+                }
+            },
+            (error) => {
+                alert("Unable to retrieve your location. Please enable location services.");
             }
-        })
-    }
+        );
+    };
 
 
     return (
@@ -95,4 +139,4 @@ export default function ChallengeDetailView({
             style={buttonStyle}>Return to list</button>
         </div>
     );
-    }
+}

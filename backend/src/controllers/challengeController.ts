@@ -35,9 +35,8 @@ export const getChallenge = asyncHandler(async (req: Request, res: Response) => 
 
 export const checkInChallenge = asyncHandler(async (req: Request, res: Response) => {
   const challengeId = parseId(req.params.id, 'Challenge id')
-  const { userId } = req.body as { userId?: number }
-  const parsedUserId = parseId(String(userId ?? ''), 'User id')
-  const checkIn = await checkInToChallenge(challengeId, parsedUserId)
+  const { authId } = req.body as { authId: string }
+  const checkIn = await checkInToChallenge(challengeId, authId)
 
   res.status(200).json({
     success: true,
