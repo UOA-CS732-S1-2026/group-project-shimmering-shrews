@@ -10,29 +10,25 @@ export const userChallengeService = {
       throw new Error("User not found");
     }
 
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
-
-    const endOfDay = new Date(startOfDay);
-    endOfDay.setDate(endOfDay.getDate() + 1);
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
 
     let userChallenges =
       await userChallengeDAO.getTodayUserChallengesByUserId(
-        user.id, 
-        startOfDay, 
-        endOfDay
+        user.id,
+        today 
+        
     );
 
     if (userChallenges.length === 0) {
     const challenges = await findAllActiveChallenges();
 
-    await userChallengeDAO.createTodayUserChallenges(user.id, challenges);
+    await userChallengeDAO.createTodayUserChallenges(user.id, challenges, today);
 
     userChallenges =
         await userChallengeDAO.getTodayUserChallengesByUserId(
         user.id,
-        startOfDay,
-        endOfDay
+        today
         );
     }
     return userChallenges.map((uc) => uc.challenge);

@@ -120,6 +120,9 @@ export const createChallenges = async (data: Prisma.challengeCreateManyInput[]) 
 
 export const completeUserChallenge = async (challengeId: number, userId: number) => {
   return prisma.$transaction(async (tx) => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
     const [challenge, user, existingUserChallenge] = await Promise.all([
       tx.challenge.findFirst({
         where: {
@@ -132,9 +135,7 @@ export const completeUserChallenge = async (challengeId: number, userId: number)
         },
       }),
       tx.users.findUnique({
-        where: {
-          id: userId,
-        },
+        where: { id: userId },
         select: {
           id: true,
           xp_earned: true,
@@ -143,12 +144,11 @@ export const completeUserChallenge = async (challengeId: number, userId: number)
           last_completed_challenge: true,
         },
       }),
-      tx.user_challenge.findUnique({
+      tx.user_challenge.findFirst({
         where: {
-          user_id_challenge_id: {
-            user_id: userId,
-            challenge_id: challengeId,
-          },
+          user_id: userId,
+          challenge_id: challengeId,
+          assigned_date: today,
         },
       }),
     ])
@@ -169,32 +169,31 @@ export const completeUserChallenge = async (challengeId: number, userId: number)
       completedAt
     )
 
-    const completedUserChallenge = await tx.user_challenge.upsert({
-      where: {
-        user_id_challenge_id: {
-          user_id: userId,
-          challenge_id: challengeId,
-        },
-      },
-      update: {
-        status: 'completed',
-        completed_at: completedAt,
-        skipped_at: null,
-        xp_worth: challenge.xp_worth,
-      },
-      create: {
-        user_id: userId,
-        challenge_id: challengeId,
-        status: 'completed',
-        completed_at: completedAt,
-        xp_worth: challenge.xp_worth,
-      },
-    })
+    const completedUserChallenge = existingUserChallenge
+      ? await tx.user_challenge.update({
+          where: {
+            id: existingUserChallenge.id,
+          },
+          data: {
+            status: 'completed',
+            completed_at: completedAt,
+            skipped_at: null,
+            xp_worth: challenge.xp_worth,
+          },
+        })
+      : await tx.user_challenge.create({
+          data: {
+            user_id: userId,
+            challenge_id: challengeId,
+            assigned_date: today,
+            status: 'completed',
+            completed_at: completedAt,
+            xp_worth: challenge.xp_worth,
+          },
+        })
 
     await tx.users.update({
-      where: {
-        id: userId,
-      },
+      where: { id: userId },
       data: {
         xp_earned: nextXpEarned,
         level: calculateLevel(nextXpEarned),
