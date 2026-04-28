@@ -55,12 +55,11 @@ export default function ChallengeDetailView({
     }
     
     
-    const checkedIn = challenge
+    const checkedIn = checkedInChallenges.includes(challenge.id);
     
-    const MAX_DISTANCE = 600; // In metres
+    const MAX_DISTANCE = 700; // In metres
     const checkIn = () => {
-        if (checkedIn) {
-            return; 
+        if (checkedIn) { return; 
         } // Prevent re-checking if already complete
 
         if (!navigator.geolocation) {
@@ -77,6 +76,8 @@ export default function ChallengeDetailView({
                 if (distance <= MAX_DISTANCE) {
                     try {
                         await checkInChallenge(challenge.id);
+
+                        setCheckedInChallenges(prev => [...prev, challenge.id]);
 
                         // REPLACE WITH XP AND BANNER POP UP
                         alert( "Challenge sucessfully completed");
