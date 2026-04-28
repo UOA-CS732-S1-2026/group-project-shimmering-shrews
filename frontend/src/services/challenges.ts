@@ -43,9 +43,9 @@ export const getChallenge = async (challengeId: string): Promise<Challenge> => {
 export const checkInChallenge = async ( challengeId: number): Promise<ApiResponse<Challenge>> => {
   const supabase = getSupabaseClient()
   const { data } = await supabase.auth.getSession()
-  const authId = data.session?.user?.id
+  const token = data.session?.access_token
 
-  if (!authId) {
+  if (!token) {
     throw new Error('User not authenticated')
   }
 
@@ -54,8 +54,9 @@ export const checkInChallenge = async ( challengeId: number): Promise<ApiRespons
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({authId}),
+      
     }
   )
 
