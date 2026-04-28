@@ -2,6 +2,7 @@ import "dotenv/config";
 import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
+type ChallengeCategory = Awaited<ReturnType<typeof prisma.challenge_category.findMany>>[number]
 
 async function main() {
   console.log('Seeding database.')
@@ -17,15 +18,36 @@ async function main() {
   })
 
   const categories = await prisma.challenge_category.findMany()
-  const foodCategory = categories.find((c) => c.name === 'Food')
-  const fitnessCategory = categories.find((c) => c.name === 'Fitness')
-  const socialCategory = categories.find((c) => c.name === 'Social')
+  const foodCategory = categories.find((c: ChallengeCategory) => c.name === 'Food')
+  const fitnessCategory = categories.find((c: ChallengeCategory) => c.name === 'Fitness')
+  const socialCategory = categories.find((c: ChallengeCategory) => c.name === 'Social')
 
   if (!foodCategory || !fitnessCategory || !socialCategory) {
     throw new Error('Failed to seed challenge categories')
   }
 
-  // 2. Seed locations safely
+  // 2. Seed a test badge safely
+  const existingTestBadge = await prisma.badge.findFirst({
+    where: { name: 'Test Badge' },
+  })
+
+  if (!existingTestBadge) {
+    await prisma.badge.create({
+      data: {
+        name: 'Test Badge',
+        achievement_criteria: {
+          type: 'test',
+          description: 'Awarded for verifying badge seed data.',
+        },
+        target_value: 1,
+        description: 'Badge used to validate badge seeding.',
+        active_url: 'https://example.com/badges/test-badge-active.png',
+        inactive_url: 'https://example.com/badges/test-badge-inactive.png',
+      },
+    })
+  }
+
+  // 3. Seed locations safely
   // Note: skipDuplicates only works if the table has a unique constraint.
   // Since your current schema does not enforce uniqueness on location name,
   // we use findFirst + create instead.
@@ -69,7 +91,7 @@ async function main() {
       },
     }))
 
-  // 3. Seed challenges safely
+  // 4. Seed challenges safely
   // Schema  does not enforce uniqueness on challenge name,
   // so we use findFirst + create here too.
 

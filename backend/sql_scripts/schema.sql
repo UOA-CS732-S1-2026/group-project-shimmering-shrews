@@ -80,7 +80,7 @@ CREATE TABLE challenge (
 CREATE TABLE awarded_badge (
     user_id INTEGER NOT NULL,
     badge_id INTEGER NOT NULL,
-    achievement_date TIMESTAMP NOT NULL DEFAULT NOW()
+    earned_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
     PRIMARY KEY(user_id, badge_id),
 
@@ -154,3 +154,6 @@ CREATE TABLE user_challenge (
         REFERENCES challenge(id)
         ON DELETE CASCADE
 );
+
+/* Speed up querying users on auth id */
+CREATE INDEX idx_users_auth_id ON users(auth_id);

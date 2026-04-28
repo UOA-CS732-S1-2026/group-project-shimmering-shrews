@@ -1,11 +1,26 @@
-# CityQuest Frontend
+# CityQuest Frontend - US03 User Profile
+
+This frontend contains the **US03_user_profile** work for CityQuest. It is a profile page where a user can view their progress, badges, quest history, and account actions.
+
+## What This Page Includes
+
+- Profile page for `John Doe`
+- Generic profile placeholder image
+- XP and level display
+- XP progress bar
+- Stats cards for streak, badges, and completed city quests
+- Badge grid with earned and locked city exploration badges(p.s badges have not been designed yet using placeholders for now)
+- Activity history tab
+- Logout button with simple feedback message
+- Bottom navigation with map and selected profile icons
+- Mock data only, no backend required
 
 ## Tech Stack
 
 - React
 - TypeScript
 - Vite
-- Plain CSS
+- CSS
 
 ## Useful Files
 
