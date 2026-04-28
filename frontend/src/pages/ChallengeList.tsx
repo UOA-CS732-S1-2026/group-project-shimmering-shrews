@@ -1,7 +1,7 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getUserChallenges } from '../services/userChallenges'
-import { badgeStyle, buttonStyle, cardStyle, categoryColors, containerStyle, challengeTitleStyle, titleStyle, xpStyle } from '../styles/challengeStyle'
+import { badgeStyle, buttonStyle, cardStyle, categoryColors, containerStyle, challengeTitleStyle, titleStyle, xpStyle, challengeStatusColors, challengeStatusText } from '../styles/challengeStyle'
 import type { UserChallenge } from '../types/userChallenge'
 
 
@@ -106,8 +106,8 @@ export default function ChallengeList({goToDetailView}: {goToDetailView: (userCh
               <span style={xpStyle}>
                 {challenge.xp_worth} XP
               </span>
-              <span style={badgeStyle}>
-                {userChallenge.status}
+              <span style={{...badgeStyle, background: challengeStatusColors[userChallenge.status] || "#ddd"}}>
+                {challengeStatusText[userChallenge.status]}
               </span>
             </div>
         </div>

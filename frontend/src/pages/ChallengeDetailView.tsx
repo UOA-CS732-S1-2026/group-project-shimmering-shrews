@@ -1,6 +1,6 @@
 import React from 'react'
-import { badgeStyle, buttonStyle, cardStyle, categoryColors, containerStyle, challengeTitleStyle, titleStyle, xpStyle } from '../styles/challengeStyle'
-import type { Challenge } from '../types/challenge'
+import { badgeStyle, buttonStyle, cardStyle, categoryColors, containerStyle, challengeTitleStyle, titleStyle, xpStyle, challengeStatusColors, challengeStatusText} from '../styles/challengeStyle'
+import type { UserChallenge } from '../types/userChallenge'
 import { checkInChallenge } from '../services/challenges'
 
 
@@ -16,16 +16,14 @@ function getDistanceMetres(a: [number, number], b: [number, number]) {
   return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x))
 }
 
+
 export default function ChallengeDetailView({
-    challenge,
-    checkedInChallenges,
-    setCheckedInChallenges,
+    userChallenge,
     goToChallengeList, 
     }: {goToChallengeList: () => void, 
-        challenge: Challenge | null,
-        checkedInChallenges: number[],
-        setCheckedInChallenges: React.Dispatch<React.SetStateAction<number[]>>,
+        userChallenge: UserChallenge | null,
     }) {
+        
     const detailDescriptionStyle = {
         margin:"6px 0", 
         color: "#555",
@@ -44,7 +42,7 @@ export default function ChallengeDetailView({
         alignSelf: "flex-end",
         } as const
     
-    if (!challenge) {
+    if (!userChallenge) {
         return <div style={containerStyle}>
             <h1 style={titleStyle}>Challenge Details</h1>
             <p>Challenge not found.</p>
@@ -55,18 +53,21 @@ export default function ChallengeDetailView({
     }
     
     
-    const checkedIn = checkedInChallenges.includes(challenge.id);
+    const {challenge} = userChallenge;
     
     const MAX_DISTANCE = 700; // In metres
+
+    const isCompleted = userChallenge.status === "completed"
+    const isLocked = userChallenge.status !== "in_progress"
+
     const checkIn = () => {
-        if (checkedIn) { return; 
-        } // Prevent re-checking if already complete
+        if ( isLocked! ) return  // Prevent re-checking if already completed or skipped
 
         if (!navigator.geolocation) {
             alert("Geolocation is not supported by your browser.");
             return;
         }
-
+        
         navigator.geolocation.getCurrentPosition(
             async (position) => {
                 const { latitude, longitude } = position.coords;
@@ -77,10 +78,9 @@ export default function ChallengeDetailView({
                     try {
                         await checkInChallenge(challenge.id);
 
-                        setCheckedInChallenges(prev => [...prev, challenge.id]);
-
                         // REPLACE WITH XP AND BANNER POP UP
                         alert( "Challenge sucessfully completed");
+                        window.location.reload()
                     } catch (error) {
                         alert(`Failed to check into challenge. Please try again.`);
                     } 
@@ -121,23 +121,31 @@ export default function ChallengeDetailView({
                     <span style={{...badgeStyle, background: categoryColors[challenge.challenge_category.name] || "#ddd"}}>
                         {challenge.challenge_category.name}
                     </span>
+
                     <span style={xpStyle}>{challenge.xp_worth} XP</span>
+
+                    <span style={{...badgeStyle, background: challengeStatusColors[userChallenge.status] || "#ddd"}}>
+                            {challengeStatusText[userChallenge.status]}
+                    </span>
                     </div> 
                 </div>
                 <div>
                     <button 
-                        onClick={checkIn} 
+                        onClick={checkIn}
+                        disabled={isCompleted || isLocked} 
                         style={{...checkInButtonStyle,
-                        background: checkedIn ? "gray" : "green",
+                        background: isCompleted ? "gray" : "green",
+                        cursor: isCompleted ? "not-allowed" : "pointer",
+                        opacity: isLocked ? 0.6 : 1,
                         }}>
-                        {checkedIn ? "Checked In" : "Check In"}
+                         {isCompleted ? "COMPLETED" : isLocked? "NOT AVAILABLE" : "CHECK IN"}
                     </button> 
                 </div>
             </div>
             
-            <button 
-            onClick={goToChallengeList}
-            style={buttonStyle}>Return to list</button>
+            <button onClick={goToChallengeList} style={buttonStyle}> 
+                Return to list 
+                </button>
         </div>
     );
 }
