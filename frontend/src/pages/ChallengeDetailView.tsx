@@ -1,6 +1,7 @@
 import React from 'react'
 import { badgeStyle, buttonStyle, cardStyle, categoryColors, containerStyle, challengeTitleStyle, titleStyle, xpStyle } from '../styles/challengeStyle'
 import type { Challenge } from '../types/challenge'
+import { checkInChallenge } from '../services/challenges'
 
 export default function ChallengeDetailView({
     challenge,
@@ -12,6 +13,8 @@ export default function ChallengeDetailView({
         checkedInChallenges: number[],
         setCheckedInChallenges: React.Dispatch<React.SetStateAction<number[]>>,
     }) {
+    const [checkingIn, setCheckingIn] = React.useState(false)
+    const [checkInError, setCheckInError] = React.useState<string | null>(null)
     const detailDescriptionStyle = {
         margin:"6px 0", 
         color: "#555",
@@ -40,14 +43,26 @@ export default function ChallengeDetailView({
         </div>
     }
     const checkedIn = checkedInChallenges.includes(challenge.id)
-    const checkIn = () => {
-        setCheckedInChallenges((prev: number[]) => {
-            if (checkedIn) {
-                return prev.filter(id => id !== challenge.id)
-            } else {
-                return [...prev, challenge.id]
-            }
-        })
+    const checkIn = async () => {
+        if (checkedIn || checkingIn) {
+            return
+        }
+
+        setCheckingIn(true)
+        setCheckInError(null)
+
+        try {
+            await checkInChallenge(challenge.id)
+            setCheckedInChallenges((prev: number[]) => (
+                prev.includes(challenge.id) ? prev : [...prev, challenge.id]
+            ))
+        } catch (error) {
+            setCheckInError(
+                error instanceof Error ? error.message : 'Could not check in to challenge.'
+            )
+        } finally {
+            setCheckingIn(false)
+        }
     }
 
 
@@ -82,11 +97,14 @@ export default function ChallengeDetailView({
                 <div>
                     <button 
                         onClick={checkIn} 
+                        disabled={checkedIn || checkingIn}
                         style={{...checkInButtonStyle,
                         background: checkedIn ? "gray" : "green",
+                        cursor: checkedIn || checkingIn ? "not-allowed" : "pointer",
                         }}>
-                        {checkedIn ? "Checked In" : "Check In"}
+                        {checkingIn ? "Checking In..." : checkedIn ? "Checked In" : "Check In"}
                     </button> 
+                    {checkInError ? <p style={{ color: "#b00020", marginTop: "10px" }}>{checkInError}</p> : null}
                 </div>
             </div>
             

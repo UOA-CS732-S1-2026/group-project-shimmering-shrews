@@ -1,5 +1,35 @@
 import prisma from '../config/prisma'
-import { buildUsernameFromAuth } from '../utils/username'
+import {
+  generateExploratoryUsername,
+  isExploratoryUsername,
+} from '../utils/username'
+
+type AuthProfileInput = {
+  authId: string
+  email: string
+}
+
+const MAX_USERNAME_ATTEMPTS = 250
+
+const findAvailableUsername = async (authId: string) => {
+  for (let attempt = 1; attempt <= MAX_USERNAME_ATTEMPTS; attempt += 1) {
+    const candidate = generateExploratoryUsername()
+    const existingUser = await prisma.users.findUnique({
+      where: {
+        username: candidate,
+      },
+      select: {
+        auth_id: true,
+      },
+    })
+
+    if (!existingUser || existingUser.auth_id === authId) {
+      return candidate
+    }
+  }
+
+  throw new Error('Could not generate a unique username')
+}
 
 export const findUserProfileByAuthId = async (authId: string) => {
   return prisma.users.findUnique({
@@ -16,7 +46,55 @@ export const findUserProfileByAuthId = async (authId: string) => {
   })
 }
 
-export const upsertUserProfileByAuth = async (authId: string, email: string) => {
+export const syncUserProfileByAuth = async ({
+  authId,
+  email,
+}: AuthProfileInput) => {
+  const existingProfile = await prisma.users.findUnique({
+    where: {
+      auth_id: authId,
+    },
+    select: {
+      id: true,
+      username: true,
+      email: true,
+      level: true,
+      xp_earned: true,
+      streak_count: true,
+    },
+  })
+
+  if (existingProfile) {
+    const updateData: {
+      username?: string
+    } = {}
+
+    if (!isExploratoryUsername(existingProfile.username)) {
+      updateData.username = await findAvailableUsername(authId)
+    }
+
+    if (!updateData.username) {
+      return existingProfile
+    }
+
+    return prisma.users.update({
+      where: {
+        auth_id: authId,
+      },
+      data: updateData,
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        level: true,
+        xp_earned: true,
+        streak_count: true,
+      },
+    })
+  }
+
+  const username = await findAvailableUsername(authId)
+
   return prisma.users.upsert({
     where: {
       auth_id: authId,
@@ -25,17 +103,25 @@ export const upsertUserProfileByAuth = async (authId: string, email: string) => 
     create: {
       auth_id: authId,
       email,
-      username: buildUsernameFromAuth(email, authId),
+      username,
       user_role: 'user',
     },
     select: {
       id: true,
       username: true,
+      email: true,
       level: true,
       xp_earned: true,
       streak_count: true,
     },
   })
+}
+
+export const upsertUserProfileByAuth = async (
+  authId: string,
+  email: string
+) => {
+  return syncUserProfileByAuth({ authId, email })
 }
 
 export const countCompletedChallengesByUserId = async (userId: number) => {

@@ -1,5 +1,6 @@
 import { findAllActiveChallenges, findActiveChallengeById, findChallengeCategoriesByNames, createChallenges, completeUserChallenge } from '../daos/challengeDao'
 import { getLocationsWithoutChallenges } from '../daos/locationDao'
+import { syncUserProfileByAuth } from '../daos/profileDao'
 import { ApiError } from '../utils/ApiError'
 import { mapLocations } from '../utils/mapLocations' 
 
@@ -17,8 +18,12 @@ export const getChallengeDetails = async (challengeId: number) => {
   return challenge
 }
 
-export const checkInToChallenge = async (challengeId: number, userId: number) => {
-  const checkIn = await completeUserChallenge(challengeId, userId)
+export const checkInToChallenge = async (challengeId: number, authId: string, email: string) => {
+  const user = await syncUserProfileByAuth({
+    authId,
+    email,
+  })
+  const checkIn = await completeUserChallenge(challengeId, user.id)
 
   if (!checkIn) {
     throw new ApiError(404, 'Challenge not found')
