@@ -1,4 +1,3 @@
-import React from 'react'
 import { badgeStyle, buttonStyle, cardStyle, categoryColors, containerStyle, challengeTitleStyle, titleStyle, xpStyle, challengeStatusColors, challengeStatusText} from '../styles/challengeStyle'
 import type { UserChallenge } from '../types/userChallenge'
 import { checkInChallenge } from '../services/challenges'
@@ -81,7 +80,7 @@ export default function ChallengeDetailView({
                         // REPLACE WITH XP AND BANNER POP UP
                         alert( "Challenge sucessfully completed");
                         window.location.reload()
-                    } catch (error) {
+                    } catch {
                         alert(`Failed to check into challenge. Please try again.`);
                     } 
                 } else {
@@ -89,7 +88,7 @@ export default function ChallengeDetailView({
                     alert(`You are too far away (${Math.round(distance)}m). You must be within ${MAX_DISTANCE}m of the challenge.`);
                 }
             },
-            (error) => {
+            () => {
                 alert("Unable to retrieve your location. Please enable location services.");
             }
         );

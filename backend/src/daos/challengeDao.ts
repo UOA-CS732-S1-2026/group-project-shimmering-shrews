@@ -74,6 +74,29 @@ export const findActiveChallengeById = async (id: number) => {
   })
 }
 
+// export const findActiveChallengesByCategory = async () => {
+//   const categories = await prisma.challenge_category.findMany({
+//     select: {
+//       id: true,
+//       name: true,
+//     },
+//   })
+
+//   const challenges = await Promise.all(
+//     categories.map((category) =>
+//       prisma.challenge.findFirst({
+//         where: {
+//           is_active: true,
+//           challenge_category_id: category.id,
+//         },
+//         select: challengeSelect,
+//       })
+//     )
+//   )
+
+//   return challenges.filter((challenge) => challenge !== null)
+// }
+
 export const findChallengeCategoriesByNames = async (names: string[]) => {
   return prisma.challenge_category.findMany({
     where: {
@@ -103,8 +126,14 @@ export const completeUserChallenge = async (challengeId: number, userId: number)
         select: { id: true, xp_worth: true },
       }),
       tx.users.findUnique({
-        where: { id: userId},
-        select: { xp_earned: true, level: true, streak_count: true, last_completed_challenge: true },
+        where: { id: userId },
+        select: {
+          id: true,
+          xp_earned: true,
+          level: true,
+          streak_count: true,
+          last_completed_challenge: true,
+        },
       }),
     ])
 
@@ -122,28 +151,31 @@ export const completeUserChallenge = async (challengeId: number, userId: number)
 
     if (!latestUserChallenge) return null
 
-    if (latestUserChallenge.status === 'completed') return null
+    if (latestUserChallenge.status === 'completed') {
+      return latestUserChallenge
+    }
 
     const completedAt = new Date()
 
     const nextXpEarned = user.xp_earned + (latestUserChallenge.xp_worth ?? challenge.xp_worth)
 
-    const nextStreakCount = calculateNextStreakCount( user.last_completed_challenge, user.streak_count, completedAt )
+    const nextStreakCount = calculateNextStreakCount(
+      user.last_completed_challenge,
+      user.streak_count,
+      completedAt
+    )
 
     const completedUserChallenge = await tx.user_challenge.update({
       where: {
-        user_id_challenge_id_assigned_date: {
-          user_id: latestUserChallenge.user_id,
-          challenge_id: latestUserChallenge.challenge_id,
-          assigned_date: latestUserChallenge.assigned_date,
-        },
+        id: latestUserChallenge.id,
       },
       data: {
         status: 'completed',
         completed_at: completedAt,
-        xp_worth: latestUserChallenge.xp_worth,
-      }
-    });
+        skipped_at: null,
+        xp_worth: latestUserChallenge.xp_worth ?? challenge.xp_worth,
+      },
+    })
 
     await tx.users.update({
       where: { id: userId },
@@ -156,6 +188,5 @@ export const completeUserChallenge = async (challengeId: number, userId: number)
     })
 
     return completedUserChallenge
-
   })
 }
