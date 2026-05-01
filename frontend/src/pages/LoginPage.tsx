@@ -41,7 +41,7 @@ const LoginPage = () => {
         </div>
       </button>
 
-      <p className="eyebrow">Roam. Discover. Belong.</p>
+      <p className="eyebrow">Explore. Discover. Belong.</p>
 
       </div>
     </main>

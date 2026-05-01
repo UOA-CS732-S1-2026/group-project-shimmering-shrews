@@ -12,6 +12,7 @@ import { AuthProvider } from "./context/AuthProvider"
 import './App.css'
 import { ProtectedRoute } from "./components/ProtectedRoute"
 import { useAuth } from "./context/useAuth"
+import HomePage from "./pages/HomePage"
 
 /**
  * Within the router, we specify what layout template to use for each group of children,
@@ -21,17 +22,17 @@ import { useAuth } from "./context/useAuth"
 const router = createBrowserRouter([
   {
     path: "/",
+    element: <HomePage />,
+  },
+  {
     element: <TabsLayout />,
     children: [
-      { index: true, element: <HomeRedirect /> },
       { path: "map", element: <MapView /> },
       { path: "challenges", element: <ChallengesRoute /> },
       { path: "challenges/:challengeId", element: <ChallengeRoute /> },
-      { path: "*", element: <Navigate to="/" replace /> },
     ],
   },
   {
-    path: "/",
     element: <Layout />,
     children: [
       { path: "login", element: <LoginPage /> },
@@ -45,6 +46,10 @@ const router = createBrowserRouter([
         <ProfilePage />
       </ProtectedRoute>
     ),
+  },
+  {
+    path: "*",
+    element: <Navigate to="/" replace />,
   },
 ])
 
