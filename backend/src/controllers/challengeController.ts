@@ -2,6 +2,8 @@ import { Request, Response } from 'express'
 import { getAllChallenges, getChallengeDetails, checkInToChallenge, createNewChallenges } from '../services/challengeService'
 import { ApiError } from '../utils/ApiError'
 import { asyncHandler } from '../utils/asyncHandler'
+import type { AuthRequest } from '../middleware/auth'
+
 
 const parseId = (value: unknown, name: string) => {
   const rawValue = Array.isArray(value) ? undefined : value
@@ -35,9 +37,12 @@ export const getChallenge = asyncHandler(async (req: Request, res: Response) => 
 
 export const checkInChallenge = asyncHandler(async (req: Request, res: Response) => {
   const challengeId = parseId(req.params.id, 'Challenge id')
-  const { userId } = req.body as { userId?: number }
-  const parsedUserId = parseId(String(userId ?? ''), 'User id')
-  const checkIn = await checkInToChallenge(challengeId, parsedUserId)
+  const authUser = (req as AuthRequest).auth
+  if (!authUser?.sub) {
+    throw new ApiError(401, 'Authenticated user is missing')
+  }
+  
+  const checkIn = await checkInToChallenge(challengeId, authUser.sub)
 
   res.status(200).json({
     success: true,

@@ -1,12 +1,12 @@
 import { useNavigate } from 'react-router-dom'
 import ChallengeList from './ChallengeList'
-import type { Challenge } from '../types/challenge'
+import type { UserChallenge } from '../types/userChallenge'
 
 export default function ChallengesRoute() {
   const navigate = useNavigate()
 
-  const goToDetailView = (challenge: Challenge) => {
-    navigate(`/challenges/${challenge.id}`)
+  const goToDetailView = (userChallenge: UserChallenge) => {
+    navigate(`/challenges/${userChallenge.id}`)
   }
 
   return <ChallengeList goToDetailView={goToDetailView} />
