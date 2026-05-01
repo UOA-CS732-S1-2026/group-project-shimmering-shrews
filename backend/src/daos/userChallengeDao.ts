@@ -9,21 +9,28 @@ const userChallengeSelect = {
   assigned_at: true,
   completed_at: true,
   skipped_at: true,
-  assigned_date: true,
   id: true,
   challenge: {
     include: {
       challenge_category: true,
-      location: true,
+      location: {
+        select: {
+          id: true,
+          latitude: true,
+          longitude: true,
+        },
+      },
     }
   },
 } satisfies Prisma.user_challengeSelect
 
 export const findUserChallenges = async (userId: number) => {
-  return prisma.user_challenge.findMany({
+  const result = await prisma.user_challenge.findMany({
     where: { user_id: userId },
     select: userChallengeSelect,
   })
+
+  return result;
 }
 
 export const findUserChallenge = async (userChallengeId: number) => {
@@ -37,20 +44,36 @@ export const findUserChallenge = async (userChallengeId: number) => {
 
 export const userChallengeDAO = {
   async getTodayUserChallengesByUserId(userId: number, today: Date) {
-    return prisma.user_challenge.findMany({
+    const startOfDay = new Date(today)
+    startOfDay.setUTCHours(0, 0, 0, 0)
+
+    const endOfDay = new Date(today)
+    endOfDay.setUTCHours(23, 59, 59, 999)
+
+    const result = await prisma.user_challenge.findMany({
       where: {
         user_id: userId,
-        assigned_date: today,
+        assigned_at: {
+          gte: startOfDay,
+          lte: endOfDay,
+        }
       },
       include: {
         challenge: {
           include: {
             challenge_category: true,
-            location: true,
+            location: {
+              select: {
+                id: true,
+                latitude: true,
+                longitude: true,
+              },
+            },
           },
         },
       },
     })
+    return result
   },
 
   async createTodayUserChallenges(
@@ -62,7 +85,7 @@ export const userChallengeDAO = {
       data: challenges.map((challenge) => ({
         user_id: userId,
         challenge_id: challenge.id,
-        assigned_date: today,
+        assigned_at: today,
         status: "in_progress",
         xp_worth: challenge.xp_worth,
       })),

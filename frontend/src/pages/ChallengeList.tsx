@@ -76,7 +76,9 @@ export default function ChallengeList({goToDetailView}: {goToDetailView: (userCh
         </div>
       )
     }
+
     const { challenge } = userChallenge
+
     return (
         <div style={{...cardStyle, cursor: "pointer", transition: "transform 0.2s"}}
           onClick={() => goToDetailView(userChallenge)}

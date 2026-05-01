@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker, Popup, Circle, CircleMarker } from 'react-leaflet'
-import { getChallenges } from '../services/challenges'
-import type { Challenge } from '../types/challenge'
-import { badgeStyle, categoryColors, categoryColorsStrong, xpStyle } from '../styles/challengeStyle'
-
 import L from "leaflet";
+import MarkerClusterGroup from "react-leaflet-cluster"
+import  MarkerCluster from "react-leaflet-cluster"
+
+import type { Challenge } from '../types/challenge'
+import type { UserChallenge } from '../types/userChallenge'
+import { getUserChallenges } from '../services/userChallenges'
+import { badgeStyle, categoryColors, categoryColorsStrong, xpStyle } from '../styles/challengeStyle'
 
 function createTeardropIcon(challenge_category : Challenge["challenge_category"]) {
   const teardrop = L.divIcon({
@@ -52,12 +55,12 @@ export default function MapView() {
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null)
   // how accurate our GPS reports itself to be 
   const [accuracy, setAccuracy] = useState<number | null>(null)
-  const [challenges, setChallenges] = useState<Challenge[]>([])
+  const [userChallenges, setUserChallenges] = useState<UserChallenge[]>([])
   const radius = 500 // metres
 
   useEffect(() => {
-    getChallenges().then((data) => {
-      setChallenges(data)
+    getUserChallenges().then((data) => {
+      setUserChallenges(data)
     })
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -90,13 +93,14 @@ export default function MapView() {
   // true for all, false for radius bound
   const DEV_SHOW_ALL = true
 
+  console.log(userChallenges);
 
   const nearbyChallenges = currUserLocation
-    ? challenges.filter((challenge) =>
+    ? userChallenges.filter((uc) =>
         DEV_SHOW_ALL ||
         getDistanceMetres(currUserLocation, [
-          Number(challenge.location.latitude),
-          Number(challenge.location.longitude),
+          Number(uc.challenge.location.latitude),
+          Number(uc.challenge.location.longitude),
         ]) <= radius
       )
     : []
@@ -150,36 +154,105 @@ export default function MapView() {
               }}
             />
           )}
-          {nearbyChallenges.map((challenge) => (
+          <MarkerClusterGroup
+            maxClusterRadius={10}
+            spiderfyOnMaxZoom={true}
+            showCoverageOnHover={true}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            iconCreateFunction={(cluster : any) => {
+            const count = cluster.getChildCount()
+
+            return L.divIcon({
+              html: `
+                <div style="
+                  position: relative;
+                  width: 44px;
+                  height: 48px;
+                ">
+
+                  <!-- backmost pin (behind front pin) -->
+                  <svg style="
+                    position: absolute;
+                    left: 6px;
+                    top: 0px;
+                    opacity: 0.9;
+                  " width="36" height="48" viewBox="0 0 24 24">
+                    <path
+                      d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z"
+                      fill="#7ed321"
+                      stroke="white"
+                      stroke-width="1.6"
+                    />
+                    <circle cx="12" cy="9" r="2.3" fill="white" />
+                  </svg>
+
+                  <!-- Frontmost pin -->
+                  <svg style="
+                    position: absolute;
+                    left: 0px;
+                    top: 0px;
+                  " width="36" height="48" viewBox="0 0 24 24">
+                    <path
+                      d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z"
+                      fill="#4a90e2"
+                      stroke="white"
+                      stroke-width="1.6"
+                    />
+                  </svg>
+
+                  <!-- Display number of challenges in cluster -->
+                  <div style="
+                    position: absolute;
+                    left: 0;
+                    top: 11px;
+                    width: 36px;
+                    text-align: center;
+                    font-size: 10px;
+                    font-weight: bold;
+                    color: #ffffff;
+                    pointer-events: none;
+                    z-index: 10000;
+                  ">
+                    ${count}
+                  </div>
+
+                </div>
+              `,
+              iconSize: [44, 48],
+              className: "custom-cluster",
+            })
+          }}>
+          {nearbyChallenges.map((uc) => (
             <Marker
-              key={challenge.id}
-              position={[Number(challenge.location.latitude), Number(challenge.location.longitude)]}
-              icon={createTeardropIcon(challenge.challenge_category)}
+            key={uc.id}
+            position={[Number(uc.challenge.location.latitude), Number(uc.challenge.location.longitude)]}
+            icon={createTeardropIcon(uc.challenge.challenge_category)}
             >
               <Popup className="challenge-map-popup">
                 <div className="challenge-map-popup__content">
                   <p className="eyebrow">Nearby Challenge</p>
-                  <h3>{challenge.name}</h3>
-                  <p>{challenge.description ?? 'No description available.'}</p>
+                  <h3>{uc.challenge.name}</h3>
+                  <p>{uc.challenge.description ?? 'No description available.'}</p>
                   <div className="challenge-map-popup__meta">
                     <span
                       style={{
                         ...badgeStyle,
-                        background: categoryColors[challenge.challenge_category.name] || '#ddd',
+                        background: categoryColors[uc.challenge.challenge_category.name] || '#ddd',
                         marginRight: 0,
                       }}
-                    >
-                      {challenge.challenge_category.name}
+                      >
+                      {uc.challenge.challenge_category.name}
                     </span>
-                    <span style={xpStyle}>+{challenge.xp_worth} XP</span>
+                    <span style={xpStyle}>+{uc.challenge.xp_worth} XP</span>
                   </div>
-                  <Link className="challenge-map-popup__link" to={`/challenges/${challenge.id}`}>
+                  <Link className="challenge-map-popup__link" to={`/challenges/${uc.id}`}>
                     Open Full Detail
                   </Link>
                 </div>
               </Popup>
             </Marker>
           ))}
+          </MarkerClusterGroup>
         </MapContainer>
       )}
     </div>

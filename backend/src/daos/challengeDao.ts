@@ -145,7 +145,7 @@ export const completeUserChallenge = async (challengeId: number, userId: number)
         challenge_id: challengeId,
       },
       orderBy: {
-        assigned_date: 'desc',
+        assigned_at: 'desc',
       },
     })
 
