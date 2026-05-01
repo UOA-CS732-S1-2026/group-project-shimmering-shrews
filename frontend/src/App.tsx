@@ -26,7 +26,7 @@ const router = createBrowserRouter([
       { index: true, element: <HomeRedirect /> },
       { path: "map", element: <MapView /> },
       { path: "challenges", element: <ChallengesRoute /> },
-      { path: "challenges/:challengeId", element: <ChallengeRoute /> },
+      { path: "challenges/:userChallengeId", element: <ChallengeRoute /> },
       { path: "*", element: <Navigate to="/" replace /> },
     ],
   },

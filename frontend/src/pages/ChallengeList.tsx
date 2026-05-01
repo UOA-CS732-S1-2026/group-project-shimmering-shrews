@@ -1,13 +1,15 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getChallenges } from '../services/challenges'
-import { badgeStyle, buttonStyle, cardStyle, categoryColors, containerStyle, challengeTitleStyle, titleStyle, xpStyle } from '../styles/challengeStyle'
-import type { Challenge } from '../types/challenge'
+import { getUserChallenges } from '../services/userChallenges'
+import { badgeStyle, buttonStyle, cardStyle, categoryColors, containerStyle, challengeTitleStyle, titleStyle, xpStyle, challengeStatusColors, challengeStatusText } from '../styles/challengeStyle'
+import type { UserChallenge } from '../types/userChallenge'
 
-export default function ChallengeList({goToDetailView}: {goToDetailView: (challenge: Challenge) => void }) {
+
+export default function ChallengeList({goToDetailView}: {goToDetailView: (userChallenge: UserChallenge) => void }) {
     const navigate = useNavigate()
     const [loading, setLoading] = React.useState(true)
     const [error, setError] = React.useState<string | null>(null)
+
     const closeButtonStyle = {
       position: "absolute",
       top: "10px",
@@ -32,11 +34,12 @@ export default function ChallengeList({goToDetailView}: {goToDetailView: (challe
         gap: "10px",
         alignItems: "center",
     } as const
-    const [challenges, setChallenges] = React.useState<Challenge[]>([])
+
+    const [userChallenges, setUserChallenges] = React.useState<UserChallenge[]>([])
       React.useEffect(() => {
-        getChallenges()
+        getUserChallenges()
           .then(data => {
-            setChallenges(data)
+            setUserChallenges(data)
             setError(null)
           })
           .catch(() => setError("Could not load challenges."))
@@ -49,12 +52,12 @@ export default function ChallengeList({goToDetailView}: {goToDetailView: (challe
         </div>
       }
     const handleClose = (id: number) => {
-        setChallenges(prev => prev.filter(challenge => challenge.id !== id))
+        setUserChallenges(prev => prev.filter(userChallenge => userChallenge.id !== id))
     }
 
     
-  function ChallengeCard({challenge, onClose, loading}: {challenge?: Challenge, onClose: (id: number) => void, loading: boolean}) {
-    if (loading || !challenge) {
+  function ChallengeCard({userChallenge, onClose, loading}: {userChallenge?: UserChallenge, onClose: (id: number) => void, loading: boolean}) {
+    if (loading || !userChallenge) {
       return (
         <div style={{...cardStyle, cursor: "pointer", transition: "transform 0.2s"}}
           onMouseEnter={(e) => {
@@ -73,10 +76,10 @@ export default function ChallengeList({goToDetailView}: {goToDetailView: (challe
         </div>
       )
     }
-    
+    const { challenge } = userChallenge
     return (
         <div style={{...cardStyle, cursor: "pointer", transition: "transform 0.2s"}}
-          onClick={() => goToDetailView(challenge)}
+          onClick={() => goToDetailView(userChallenge)}
           onMouseEnter={(e) => {
           (e.currentTarget as HTMLDivElement).style.transform = "scale(1.02)";
           }}
@@ -86,7 +89,7 @@ export default function ChallengeList({goToDetailView}: {goToDetailView: (challe
         >
             <button style={closeButtonStyle} onClick={(e) => {
                 e.stopPropagation();
-                onClose(challenge.id);
+                onClose(userChallenge.id);
             }}>
                 x
             </button>
@@ -103,6 +106,9 @@ export default function ChallengeList({goToDetailView}: {goToDetailView: (challe
               <span style={xpStyle}>
                 {challenge.xp_worth} XP
               </span>
+              <span style={{...badgeStyle, background: challengeStatusColors[userChallenge.status] || "#ddd"}}>
+                {challengeStatusText[userChallenge.status]}
+              </span>
             </div>
         </div>
     )
@@ -115,10 +121,10 @@ export default function ChallengeList({goToDetailView}: {goToDetailView: (challe
       <div>
         {loading
           ? ['1', '2', '3', '4', '5', '6'].map((i) => <ChallengeCard key={i} onClose={handleClose} loading />)
-          : challenges.map((challenge) => (
+          : userChallenges.map((userChallenge) => (
             <ChallengeCard 
-              key={challenge.id} 
-              challenge={challenge} 
+              key={userChallenge.id} 
+              userChallenge={userChallenge} 
               onClose={handleClose} 
               loading={loading}
             />
@@ -141,6 +147,5 @@ export default function ChallengeList({goToDetailView}: {goToDetailView: (challe
         
     </div>
     
-
   )
 }
