@@ -73,7 +73,6 @@ model user_challenge {
   id            Int              @id @default(autoincrement())
   user_id       Int
   challenge_id  Int
-  assigned_date DateTime         @default(now()) @db.Date
   status        challenge_status
   xp_worth      Int
   assigned_at   DateTime         @default(now()) @db.Timestamp(6)
@@ -82,7 +81,7 @@ model user_challenge {
   challenge     challenge        @relation(fields: [challenge_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_uc_challenge")
   users         users            @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_uc_user")
 
-  @@unique([user_id, challenge_id, assigned_date])
+  @@unique([user_id, challenge_id, assigned_at])
 }
 
 model users {

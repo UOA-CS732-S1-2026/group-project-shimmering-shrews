@@ -8,7 +8,6 @@ export type UserChallenge = {
   assigned_at: Date
   completed_at?: Date | null
   skipped_at?: Date | null
-  assigned_date: Date
   id: number
   challenge: Challenge
 }
