@@ -6,6 +6,7 @@ import authRoute from "./routes/authRoute"
 import profileRoute from './routes/profileRoute'
 import userRoute from "./routes/userRoute"
 import { errorHandler } from './middleware/errorMiddleWare'
+import userChallengRoute from './routes/userChallengeRoute';
 
 const allowedOriginPattern = /^http:\/\/(localhost|127\.0\.0\.1):\d+$/
 
@@ -23,6 +24,7 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use('/challenges', challengeRoute);
+app.use('/user-challenges', userChallengRoute);
 
 app.get('/', (_req, res) => {
   res.send('API is running for Shimmering Shrews pretty app!');

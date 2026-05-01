@@ -2,7 +2,7 @@ import { findAllActiveChallenges, findActiveChallengeById, findChallengeCategori
 import { getLocationsWithoutChallenges } from '../daos/locationDao'
 import { syncUserProfileByAuth } from '../daos/profileDao'
 import { ApiError } from '../utils/ApiError'
-import { mapLocations } from '../utils/mapLocations' 
+import { mapLocations } from '../utils/mapLocations'
 
 export const getAllChallenges = async () => {
   return findAllActiveChallenges()
@@ -33,7 +33,7 @@ export const checkInToChallenge = async (challengeId: number, authId: string, em
 }
 
 export const createNewChallenges = async () => {
-  const locations = await getLocationsWithoutChallenges();
+  const locations = await getLocationsWithoutChallenges()
   const categories = await findChallengeCategoriesByNames(['Food', 'Fitness', 'Social'])
   const getCategoryId = (name: string) => {
     const category = categories.find((item) => item.name === name)
@@ -49,18 +49,16 @@ export const createNewChallenges = async () => {
     fitness: getCategoryId('Fitness'),
     social: getCategoryId('Social'),
   }
-  
-  // No locations without a challenge
-  if ( !locations.length ) { 
-    throw new ApiError(409, 'All locations have at least one challenge!');
+
+  if (!locations.length) {
+    throw new ApiError(409, 'All locations have at least one challenge!')
   }
 
   const data = []
 
   for (const location of locations) {
-    data.push(mapLocations(location, categoryIds));
+    data.push(mapLocations(location, categoryIds))
   }
-  
-  return createChallenges( data );
 
+  return createChallenges(data)
 }

@@ -56,7 +56,7 @@ export const checkInChallenge = asyncHandler(async (req: Request, res: Response)
 })
 
 export const createChallengesFromLocations = asyncHandler(async (_req: Request, res: Response) => {
-  const challenges = await createNewChallenges();
+  const challenges = await createNewChallenges()
 
   res.status(200).json({
     success: true,

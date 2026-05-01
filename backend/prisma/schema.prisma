@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DIRECT_URL")
+  url = env("DATABASE_URL")
 }
 
 model awarded_badge {
@@ -70,17 +70,19 @@ model user_badge_progress {
 }
 
 model user_challenge {
-  user_id      Int
-  challenge_id Int
-  status       challenge_status
-  xp_worth     Int
-  assigned_at  DateTime         @default(now()) @db.Timestamp(6)
-  completed_at DateTime?        @db.Timestamp(6)
-  skipped_at   DateTime?        @db.Timestamp(6)
-  challenge    challenge        @relation(fields: [challenge_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_uc_challenge")
-  users        users            @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_uc_user")
+  id            Int              @id @default(autoincrement())
+  user_id       Int
+  challenge_id  Int
+  assigned_date DateTime         @default(now()) @db.Date
+  status        challenge_status
+  xp_worth      Int
+  assigned_at   DateTime         @default(now()) @db.Timestamp(6)
+  completed_at  DateTime?        @db.Timestamp(6)
+  skipped_at    DateTime?        @db.Timestamp(6)
+  challenge     challenge        @relation(fields: [challenge_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_uc_challenge")
+  users         users            @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_uc_user")
 
-  @@id([user_id, challenge_id])
+  @@unique([user_id, challenge_id, assigned_date])
 }
 
 model users {

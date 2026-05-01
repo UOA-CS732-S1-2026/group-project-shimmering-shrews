@@ -45,7 +45,7 @@ export const checkInChallenge = async (challengeId: number): Promise<void> => {
   const token = data.session?.access_token
 
   if (!token) {
-    throw new Error('No authenticated session found')
+    throw new Error('User not authenticated')
   }
 
   const res = await fetch(`${getBackendUrl()}/challenges/${challengeId}/checkin`, {
@@ -56,7 +56,7 @@ export const checkInChallenge = async (challengeId: number): Promise<void> => {
   })
 
   if (!res.ok) {
-    let message = 'Failed to check in to challenge'
+    let message = 'Failed to check in'
 
     try {
       const errorJson = (await res.json()) as { message?: string }
