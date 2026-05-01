@@ -29,7 +29,7 @@ const router = createBrowserRouter([
     children: [
       { path: "map", element: <MapView /> },
       { path: "challenges", element: <ChallengesRoute /> },
-      { path: "challenges/:challengeId", element: <ChallengeRoute /> },
+      { path: "challenges/:userChallengeId", element: <ChallengeRoute /> },
     ],
   },
   {

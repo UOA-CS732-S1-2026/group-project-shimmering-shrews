@@ -1,7 +1,7 @@
 export const containerStyle = {
-        maxWidth: "300px",
-        minWidth: "300px",
-        minHeight: "100vh",
+        maxWidth: "30vh",
+        minWidth: "350px",
+        minHeight: "80vh",
         margin: "0 auto",
         background: "#8b004b",
         padding: "50px",
@@ -65,3 +65,17 @@ export const titleStyle = {
         fontSize: "24px",
         fontWeight: "bold",
     } as const
+
+export const challengeStatusColors: { [key: string]: string } = {
+        in_progress: "#f8ec6e",
+        skipped: "#a3a3a3",
+        completed: "#62e260",
+    }
+
+export const challengeStatusText: { [key: string]: string } = {
+        in_progress: 'In Progress',
+        skipped: 'Skipped',
+        completed: 'Completed',
+    }
+
+
