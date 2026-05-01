@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker, Popup, Circle, CircleMarker } from 'react-leaflet'
-import { getChallenges } from '../services/challenges'
 import type { Challenge } from '../types/challenge'
+import type { UserChallenge } from '../types/userChallenge'
+import { getUserChallenges } from '../services/userChallenges'
 import { badgeStyle, categoryColors, categoryColorsStrong, xpStyle } from '../styles/challengeStyle'
 
 import L from "leaflet";
@@ -52,12 +53,12 @@ export default function MapView() {
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null)
   // how accurate our GPS reports itself to be 
   const [accuracy, setAccuracy] = useState<number | null>(null)
-  const [challenges, setChallenges] = useState<Challenge[]>([])
+  const [userChallenges, setUserChallenges] = useState<UserChallenge[]>([])
   const radius = 500 // metres
 
   useEffect(() => {
-    getChallenges().then((data) => {
-      setChallenges(data)
+    getUserChallenges().then((data) => {
+      setUserChallenges(data)
     })
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -91,12 +92,12 @@ export default function MapView() {
   const DEV_SHOW_ALL = true
 
 
-  const nearbyChallenges = currUserLocation
-    ? challenges.filter((challenge) =>
+  const nearbyUserChallenges = currUserLocation
+    ? userChallenges.filter((userChallenge) =>
         DEV_SHOW_ALL ||
         getDistanceMetres(currUserLocation, [
-          Number(challenge.location.latitude),
-          Number(challenge.location.longitude),
+          Number(userChallenge.challenge.location.latitude),
+          Number(userChallenge.challenge.location.longitude),
         ]) <= radius
       )
     : []
@@ -150,30 +151,33 @@ export default function MapView() {
               }}
             />
           )}
-          {nearbyChallenges.map((challenge) => (
+          {nearbyUserChallenges.map((userChallenge) => (
             <Marker
-              key={challenge.id}
-              position={[Number(challenge.location.latitude), Number(challenge.location.longitude)]}
-              icon={createTeardropIcon(challenge.challenge_category)}
+              key={userChallenge.id}
+              position={[
+                Number(userChallenge.challenge.location.latitude),
+                Number(userChallenge.challenge.location.longitude),
+              ]}
+              icon={createTeardropIcon(userChallenge.challenge.challenge_category)}
             >
               <Popup className="challenge-map-popup">
                 <div className="challenge-map-popup__content">
                   <p className="eyebrow">Nearby Challenge</p>
-                  <h3>{challenge.name}</h3>
-                  <p>{challenge.description ?? 'No description available.'}</p>
+                  <h3>{userChallenge.challenge.name}</h3>
+                  <p>{userChallenge.challenge.description ?? 'No description available.'}</p>
                   <div className="challenge-map-popup__meta">
                     <span
                       style={{
                         ...badgeStyle,
-                        background: categoryColors[challenge.challenge_category.name] || '#ddd',
+                        background: categoryColors[userChallenge.challenge.challenge_category.name] || '#ddd',
                         marginRight: 0,
                       }}
                     >
-                      {challenge.challenge_category.name}
+                      {userChallenge.challenge.challenge_category.name}
                     </span>
-                    <span style={xpStyle}>+{challenge.xp_worth} XP</span>
+                    <span style={xpStyle}>+{userChallenge.challenge.xp_worth} XP</span>
                   </div>
-                  <Link className="challenge-map-popup__link" to={`/challenges/${challenge.id}`}>
+                  <Link className="challenge-map-popup__link" to={`/challenges/${userChallenge.id}`}>
                     Open Full Detail
                   </Link>
                 </div>
