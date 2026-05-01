@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker, Popup, Circle, CircleMarker } from 'react-leaflet'
 import L from "leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster"
-import  MarkerCluster from "react-leaflet-cluster"
 
 import type { Challenge } from '../types/challenge'
 import type { UserChallenge } from '../types/userChallenge'
