@@ -24,13 +24,12 @@ export default function HomePage() {
                 {/* Hero card */}
                 <section className={styles.hero}>
                     <div className={styles.logoContainer}>
-                        <MapPin size={70} className={styles.logoIcon}/>
+                        <MapPin size={80} className={styles.logoIcon}/>
                         <div className={styles.logo}>CityQuest</div>
                         <p className={styles.tagline}>Explore. Discover. Belong.</p>
                     </div>
                     <p className={styles.description}>
-                        CityQuest is a GPS-based adventure game that turns your city into a quest log. <br />
-                        {/* helps you explore your surroundings and discover hidden gems. <br /> */}
+                        CityQuest is a GPS-based adventure game that turns your city into a quest log.
                         Discover new places, complete interesting challenges, and earn rewards as you explore your city.
                     </p>
                     <Link className={styles.adventureButton} to="/map">
