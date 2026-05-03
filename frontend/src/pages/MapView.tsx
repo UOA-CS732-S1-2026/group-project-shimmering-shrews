@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import { MapContainer, TileLayer, Marker, Popup, Circle, CircleMarker, useMap } from 'react-leaflet'
+import { useState, useEffect, useMemo } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { MapContainer, TileLayer, Marker, Popup, Circle, CircleMarker, Polyline, useMap } from 'react-leaflet'
 import L from "leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster"
 
@@ -82,6 +82,8 @@ function RecenterMap({ center, zoom }: { center: [number, number], zoom: number 
 }
 
 export default function MapView() {
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null)
   // how accurate our GPS reports itself to be 
   const [accuracy, setAccuracy] = useState<number | null>(null)
@@ -93,6 +95,8 @@ export default function MapView() {
   const [isInitializingLocation, setIsInitializingLocation] = useState(true)
   const [locationMessage, setLocationMessage] = useState<string | null>(null)
   const radius = 500 // metres
+  const focusedUserChallengeId = Number(searchParams.get('focusUserChallengeId') || 0)
+  const returnTo = searchParams.get('returnTo') || '/challenges'
 
   const fetchCurrentLocation = (
     options: { showErrors?: boolean; onComplete?: () => void } = {}
@@ -256,6 +260,69 @@ export default function MapView() {
       )
     : []
 
+  const focusedUserChallenge = useMemo(
+    () => userChallenges.find((challenge) => challenge.id === focusedUserChallengeId),
+    [focusedUserChallengeId, userChallenges]
+  )
+
+  const focusedChallengeRoutePoints = useMemo(() => {
+    if (!focusedUserChallenge) {
+      return null
+    }
+
+    const startLat = Number(focusedUserChallenge.accepted_from_lat)
+    const startLng = Number(focusedUserChallenge.accepted_from_lng)
+    const endLat = Number(focusedUserChallenge.challenge.location.latitude)
+    const endLng = Number(focusedUserChallenge.challenge.location.longitude)
+
+    if (![startLat, startLng, endLat, endLng].every(Number.isFinite)) {
+      return null
+    }
+
+    return [
+      [startLat, startLng] as [number, number],
+      [endLat, endLng] as [number, number],
+    ]
+  }, [focusedUserChallenge])
+
+  const challengesForMap = useMemo(() => {
+    if (!focusedUserChallenge) {
+      return visibleChallenges
+    }
+
+    const isFocusedIncluded = visibleChallenges.some((challenge) => challenge.id === focusedUserChallenge.id)
+
+    if (isFocusedIncluded) {
+      return visibleChallenges
+    }
+
+    return [...visibleChallenges, focusedUserChallenge]
+  }, [focusedUserChallenge, visibleChallenges])
+
+  const routeMidpoint = useMemo(() => {
+    if (!focusedChallengeRoutePoints) {
+      return null
+    }
+
+    const [start, end] = focusedChallengeRoutePoints
+
+    return [
+      (start[0] + end[0]) / 2,
+      (start[1] + end[1]) / 2,
+    ] as [number, number]
+  }, [focusedChallengeRoutePoints])
+
+  const routeArrowIcon = useMemo(
+    () =>
+      L.divIcon({
+        className: 'route-arrow-icon',
+        html: '<div class="route-arrow-icon__content">➜</div>',
+        iconSize: [24, 24],
+        iconAnchor: [12, 12],
+      }),
+    []
+  )
+
   return (
     <div style={{ height: '100vh', width: '100%', display: 'flex', flexDirection: 'column' }}>
       <LocationPermissionDialog
@@ -288,6 +355,23 @@ export default function MapView() {
 
       {/* Main Content Area */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        {focusedUserChallenge && (
+          <div className="map-focus-banner">
+            <div>
+              <strong>{focusedUserChallenge.challenge.name}</strong>
+              <p>
+                Follow the guidance line, then return to challenge detail to check in.
+              </p>
+            </div>
+            <button
+              className="map-focus-banner__button"
+              onClick={() => navigate(returnTo)}
+            >
+              Return To Check In
+            </button>
+          </div>
+        )}
+
         {isInitializingLocation && (
           <p style={{ textAlign: 'center', marginTop: '2rem' }}>Loading your location...</p>
         )}
@@ -474,7 +558,7 @@ export default function MapView() {
               className: "custom-cluster",
             })
             }}>
-            {visibleChallenges.map((uc) => (
+            {challengesForMap.map((uc) => (
               <Marker
                 key={uc.id}
                 position={[Number(uc.challenge.location.latitude), Number(uc.challenge.location.longitude)]}
@@ -505,6 +589,26 @@ export default function MapView() {
               </Marker>
             ))}
             </MarkerClusterGroup>
+
+            {focusedChallengeRoutePoints && (
+              <>
+                <Polyline
+                  positions={focusedChallengeRoutePoints}
+                  pathOptions={{
+                    color: '#1f6feb',
+                    weight: 5,
+                    opacity: 0.9,
+                    className:
+                      focusedUserChallenge?.status === 'accepted'
+                        ? 'route-line route-line--animated'
+                        : 'route-line',
+                  }}
+                />
+                {routeMidpoint && (
+                  <Marker position={routeMidpoint} icon={routeArrowIcon} interactive={false} />
+                )}
+              </>
+            )}
           </MapContainer>
         )}
       </div>

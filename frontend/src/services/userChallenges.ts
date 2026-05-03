@@ -65,3 +65,81 @@ export const getUserChallenge = async (userChallengeId: string): Promise<UserCha
   const json = (await res.json()) as ApiResponse<UserChallenge>
   return json.data
 }
+
+const getAuthToken = async () => {
+  const supabase = getSupabaseClient()
+  const { data } = await supabase.auth.getSession()
+  const token = data.session?.access_token
+
+  if (!token) {
+    throw new Error('User not authenticated')
+  }
+
+  return token
+}
+
+export const acceptUserChallenge = async (
+  userChallengeId: number,
+  acceptedFromLat: number,
+  acceptedFromLng: number
+): Promise<UserChallenge> => {
+  const token = await getAuthToken()
+
+  const res = await fetch(`${getBackendUrl()}/user-challenges/${userChallengeId}/accept`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ acceptedFromLat, acceptedFromLng }),
+  })
+
+  if (!res.ok) {
+    throw new Error('Failed to accept challenge')
+  }
+
+  const json = (await res.json()) as ApiResponse<UserChallenge>
+  return json.data
+}
+
+export const cancelUserChallenge = async (userChallengeId: number): Promise<UserChallenge> => {
+  const token = await getAuthToken()
+
+  const res = await fetch(`${getBackendUrl()}/user-challenges/${userChallengeId}/cancel`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  if (!res.ok) {
+    throw new Error('Failed to cancel challenge')
+  }
+
+  const json = (await res.json()) as ApiResponse<UserChallenge>
+  return json.data
+}
+
+export const checkInUserChallenge = async (
+  userChallengeId: number,
+  completedFromLat: number,
+  completedFromLng: number
+): Promise<UserChallenge> => {
+  const token = await getAuthToken()
+
+  const res = await fetch(`${getBackendUrl()}/user-challenges/${userChallengeId}/checkin`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ completedFromLat, completedFromLng }),
+  })
+
+  if (!res.ok) {
+    throw new Error('Failed to check in')
+  }
+
+  const json = (await res.json()) as ApiResponse<UserChallenge>
+  return json.data
+}

@@ -7,7 +7,11 @@ const userChallengeSelect = {
   status: true,
   xp_worth: true,
   assigned_at: true,
+  accepted_at: true,
+  accepted_from_lat: true,
+  accepted_from_lng: true,
   completed_at: true,
+  cancelled_at: true,
   skipped_at: true,
   id: true,
   challenge: {
@@ -37,6 +41,16 @@ export const findUserChallenge = async (userChallengeId: number) => {
   return prisma.user_challenge.findFirst({
     where: {
       id: userChallengeId,
+    },
+    select: userChallengeSelect,
+  })
+}
+
+export const findUserChallengeForUser = async (userChallengeId: number, userId: number) => {
+  return prisma.user_challenge.findFirst({
+    where: {
+      id: userChallengeId,
+      user_id: userId,
     },
     select: userChallengeSelect,
   })
@@ -90,6 +104,79 @@ export const userChallengeDAO = {
         xp_worth: challenge.xp_worth,
       })),
       skipDuplicates: true,
+    })
+  },
+
+  async acceptUserChallenge(
+    userChallengeId: number,
+    userId: number,
+    acceptedFromLat: number,
+    acceptedFromLng: number
+  ) {
+    const userChallenge = await prisma.user_challenge.findFirst({
+      where: {
+        id: userChallengeId,
+        user_id: userId,
+      },
+      select: userChallengeSelect,
+    })
+
+    if (!userChallenge) {
+      return null
+    }
+
+    if (userChallenge.status === 'completed') {
+      return userChallenge
+    }
+
+    const acceptedAt = new Date()
+
+    return prisma.user_challenge.update({
+      where: {
+        id: userChallengeId,
+      },
+      data: {
+        status: 'accepted',
+        accepted_at: acceptedAt,
+        accepted_from_lat: acceptedFromLat,
+        accepted_from_lng: acceptedFromLng,
+        cancelled_at: null,
+      },
+      select: userChallengeSelect,
+    })
+  },
+
+  async cancelUserChallenge(userChallengeId: number, userId: number) {
+    const userChallenge = await prisma.user_challenge.findFirst({
+      where: {
+        id: userChallengeId,
+        user_id: userId,
+      },
+    })
+
+    if (!userChallenge) {
+      return null
+    }
+
+    if (userChallenge.status === 'completed' || userChallenge.status === 'cancelled') {
+      return prisma.user_challenge.findFirst({
+        where: {
+          id: userChallengeId,
+          user_id: userId,
+        },
+        select: userChallengeSelect,
+      })
+    }
+
+    return prisma.user_challenge.update({
+      where: {
+        id: userChallengeId,
+      },
+      data: {
+        status: 'cancelled',
+        cancelled_at: new Date(),
+      },
+      select: userChallengeSelect,
     })
   },
 }

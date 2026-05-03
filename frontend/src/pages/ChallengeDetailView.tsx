@@ -10,8 +10,14 @@ import {
   titleStyle,
   xpStyle,
 } from '../styles/challengeStyle'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import type { UserChallenge } from '../types/userChallenge'
-import { checkInChallenge } from '../services/challenges'
+import {
+  acceptUserChallenge,
+  cancelUserChallenge,
+  checkInUserChallenge,
+} from '../services/userChallenges'
 import { useLocationPermission } from '../hooks/useLocationPermission'
 import { DEV_SHOW_ALL } from '../config/featureFlags'
 import { LOCATION_PERMISSION_CHECKIN_MESSAGE } from '../config/locationPermissionContent'
@@ -35,7 +41,14 @@ export default function ChallengeDetailView({
   goToChallengeList: () => void
   userChallenge: UserChallenge | null
 }) {
+  const navigate = useNavigate()
+  const [activeUserChallenge, setActiveUserChallenge] = useState<UserChallenge | null>(userChallenge)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const { permissionStatus } = useLocationPermission()
+
+  useEffect(() => {
+    setActiveUserChallenge(userChallenge)
+  }, [userChallenge])
 
   const detailDescriptionStyle = {
     margin: '6px 0',
@@ -55,7 +68,7 @@ export default function ChallengeDetailView({
     alignSelf: 'flex-end',
   } as const
 
-  if (!userChallenge) {
+  if (!activeUserChallenge) {
     return (
       <div style={containerStyle}>
         <h1 style={titleStyle}>Challenge Details</h1>
@@ -67,12 +80,15 @@ export default function ChallengeDetailView({
     )
   }
 
-  const { challenge } = userChallenge
+  const { challenge } = activeUserChallenge
   const maxDistance = 700
-  const isCompleted = userChallenge.status === 'completed'
-  const isLocked = userChallenge.status !== 'in_progress'
+  const isCompleted = activeUserChallenge.status === 'completed'
+  const isCancelled = activeUserChallenge.status === 'cancelled'
+  const isAccepted = activeUserChallenge.status === 'accepted'
+  const canAccept = activeUserChallenge.status === 'in_progress' || activeUserChallenge.status === 'cancelled'
+  const canCancel = activeUserChallenge.status === 'accepted'
   const isLocationBlocked = !DEV_SHOW_ALL && permissionStatus !== 'granted'
-  const isCheckInDisabled = isCompleted || isLocked || isLocationBlocked
+  const isCheckInDisabled = isCompleted || isCancelled || isLocationBlocked || isSubmitting
 
   const checkIn = () => {
     if (isCheckInDisabled) return
@@ -96,10 +112,17 @@ export default function ChallengeDetailView({
         }
 
         try {
-          await checkInChallenge(challenge.id)
+          setIsSubmitting(true)
+          const updated = await checkInUserChallenge(
+            activeUserChallenge.id,
+            latitude,
+            longitude
+          )
+          setActiveUserChallenge(updated)
           alert('Challenge sucessfully completed')
-          window.location.reload()
+          setIsSubmitting(false)
         } catch {
+          setIsSubmitting(false)
           alert('Failed to check into challenge. Please try again.')
         }
       },
@@ -109,13 +132,63 @@ export default function ChallengeDetailView({
     )
   }
 
+  const acceptChallenge = () => {
+    if (!canAccept || isSubmitting) return
+
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by your browser.')
+      return
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          setIsSubmitting(true)
+          const accepted = await acceptUserChallenge(
+            activeUserChallenge.id,
+            latitude,
+            longitude
+          )
+          setActiveUserChallenge(accepted)
+          setIsSubmitting(false)
+        } catch {
+          setIsSubmitting(false)
+          alert('Failed to accept challenge. Please try again.')
+        }
+      },
+      () => {
+        alert('Unable to retrieve your location. Please enable location services.')
+      }
+    )
+  }
+
+  const cancelChallenge = async () => {
+    if (!canCancel || isSubmitting) return
+
+    try {
+      setIsSubmitting(true)
+      const cancelled = await cancelUserChallenge(activeUserChallenge.id)
+      setActiveUserChallenge(cancelled)
+      setIsSubmitting(false)
+    } catch {
+      setIsSubmitting(false)
+      alert('Failed to cancel challenge. Please try again.')
+    }
+  }
+
+  const openRoute = () => {
+    navigate(`/map?focusUserChallengeId=${activeUserChallenge.id}&returnTo=/challenges/${activeUserChallenge.id}`)
+  }
+
   const checkInLabel = isCompleted
     ? 'COMPLETED'
-    : isLocked
-      ? 'NOT AVAILABLE'
+    : isCancelled
+      ? 'CANCELLED'
       : isLocationBlocked
         ? 'Location Required'
-        : 'CHECK IN'
+        : isSubmitting
+          ? 'WORKING...'
+          : 'CHECK IN'
 
   return (
     <div style={containerStyle}>
@@ -147,25 +220,80 @@ export default function ChallengeDetailView({
               {challenge.challenge_category.name}
             </span>
             <span style={xpStyle}>{challenge.xp_worth} XP</span>
-            <span style={{ ...badgeStyle, background: challengeStatusColors[userChallenge.status] || '#ddd' }}>
-              {challengeStatusText[userChallenge.status]}
+            <span
+              className={isAccepted ? 'challenge-status--accepted' : undefined}
+              style={{ ...badgeStyle, background: challengeStatusColors[activeUserChallenge.status] || '#ddd' }}
+            >
+              {challengeStatusText[activeUserChallenge.status]}
             </span>
           </div>
         </div>
         <div>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            {canAccept && (
+              <button
+                onClick={acceptChallenge}
+                disabled={isSubmitting}
+                style={{
+                  ...checkInButtonStyle,
+                  marginTop: 0,
+                  background: '#1463c7',
+                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                  opacity: isSubmitting ? 0.6 : 1,
+                }}
+              >
+                {isSubmitting ? 'Working...' : 'ACCEPT'}
+              </button>
+            )}
+
+            {isAccepted && (
+              <button
+                onClick={openRoute}
+                style={{
+                  ...checkInButtonStyle,
+                  marginTop: 0,
+                  background: '#7a52cc',
+                }}
+              >
+                VIEW ROUTE
+              </button>
+            )}
+
+            {canCancel && (
+              <button
+                onClick={cancelChallenge}
+                disabled={isSubmitting}
+                style={{
+                  ...checkInButtonStyle,
+                  marginTop: 0,
+                  background: '#a32638',
+                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                  opacity: isSubmitting ? 0.6 : 1,
+                }}
+              >
+                CANCEL CHALLENGE
+              </button>
+            )}
+          </div>
+
           <button
             onClick={checkIn}
             disabled={isCheckInDisabled}
             title={isLocationBlocked ? 'Location access required to check in' : ''}
             style={{
               ...checkInButtonStyle,
-              background: isCompleted ? 'gray' : isLocationBlocked ? '#ccc' : 'green',
+              background: isCompleted || isCancelled ? 'gray' : isLocationBlocked ? '#ccc' : 'green',
               cursor: isCheckInDisabled ? 'not-allowed' : 'pointer',
               opacity: isCheckInDisabled ? 0.6 : 1,
             }}
           >
             {checkInLabel}
           </button>
+          {isAccepted && (
+            <p style={{ fontSize: '0.9rem', color: '#5c4799', marginTop: '0.5rem' }}>
+              You are on the way. Use View Route, then return here to check in.
+            </p>
+          )}
           {isLocationBlocked && (
             <p style={{ fontSize: '0.9rem', color: '#999', marginTop: '0.5rem' }}>
               {LOCATION_PERMISSION_CHECKIN_MESSAGE}
