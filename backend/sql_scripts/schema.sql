@@ -7,7 +7,7 @@ GRANT ALL ON SCHEMA public TO public;
 
 -- ENUM TYPES
 CREATE TYPE user_role AS ENUM ('user', 'admin');
-CREATE TYPE challenge_status AS ENUM ('in_progress', 'skipped', 'completed');
+CREATE TYPE challenge_status AS ENUM ('in_progress', 'accepted', 'skipped', 'completed');
 
 -- USERS
 CREATE TABLE users (
@@ -17,10 +17,10 @@ CREATE TABLE users (
     email VARCHAR(250) UNIQUE NOT NULL,
     user_role user_role NOT NULL,
 
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
-    last_completed_challenge TIMESTAMP,
+    last_completed_challenge TIMESTAMPTZ,
 
     level INTEGER NOT NULL DEFAULT 1,
     xp_earned INTEGER NOT NULL DEFAULT 0,
@@ -62,7 +62,7 @@ CREATE TABLE challenge (
     category_id INTEGER NOT NULL,
     xp_worth INTEGER NOT NULL DEFAULT 0,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     description VARCHAR(1000),
 
     CONSTRAINT fk_challenge_location
@@ -120,9 +120,9 @@ CREATE TABLE user_challenge (
     challenge_id INTEGER NOT NULL,
     status challenge_status NOT NULL,
     xp_worth INTEGER NOT NULL,
-    assigned_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    completed_at TIMESTAMP,
-    skipped_at TIMESTAMP,
+    assigned_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    completed_at TIMESTAMPTZ,
+    skipped_at TIMESTAMPTZ,
 
     PRIMARY KEY(user_id, challenge_id),
 
@@ -139,3 +139,10 @@ CREATE TABLE user_challenge (
 
 /* Speed up querying users on auth id */
 CREATE INDEX idx_users_auth_id ON users(auth_id);
+
+/* No user can have more than one stat record for a single category,
+   but they can if the category is null
+*/
+CREATE UNIQUE INDEX user_category_unique
+ON user_stat (user_id, category_id)
+WHERE category_id IS NOT NULL;

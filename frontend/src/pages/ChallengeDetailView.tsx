@@ -13,6 +13,9 @@ import {
 } from '../styles/challengeStyle'
 import type { UserChallenge } from '../types/userChallenge'
 import { checkInChallenge } from '../services/challenges'
+import { useLocationPermission } from '../hooks/useLocationPermission'
+import { DEV_SHOW_ALL } from '../config/featureFlags'
+import { LOCATION_PERMISSION_CHECKIN_MESSAGE } from '../config/locationPermissionContent'
 
 const MAX_DISTANCE_METRES = 700
 
@@ -36,14 +39,17 @@ export default function ChallengeDetailView({
   goToChallengeList: () => void
   userChallenge: UserChallenge | null
 }) {
+  const { permissionStatus } = useLocationPermission()
   const [checkingIn, setCheckingIn] = useState(false)
   const [checkInError, setCheckInError] = useState<string | null>(null)
+
   const detailDescriptionStyle = {
     margin: '6px 0',
     color: '#555',
     textAlign: 'left',
     fontSize: '14px',
   } as const
+
   const checkInButtonStyle = {
     marginTop: '20px',
     padding: '10px 20px',
@@ -70,9 +76,11 @@ export default function ChallengeDetailView({
   const { challenge } = userChallenge
   const isCompleted = userChallenge.status === 'completed'
   const isLocked = userChallenge.status !== 'in_progress'
+  const isLocationBlocked = !DEV_SHOW_ALL && permissionStatus !== 'granted'
+  const isCheckInDisabled = isCompleted || isLocked || isLocationBlocked || checkingIn
 
   const checkIn = () => {
-    if (isLocked || checkingIn) {
+    if (isCheckInDisabled) {
       return
     }
 
@@ -118,6 +126,16 @@ export default function ChallengeDetailView({
     )
   }
 
+  const checkInLabel = checkingIn
+    ? 'CHECKING IN...'
+    : isCompleted
+      ? 'COMPLETED'
+      : isLocked
+        ? 'NOT AVAILABLE'
+        : isLocationBlocked
+          ? 'Location Required'
+          : 'CHECK IN'
+
   return (
     <div style={containerStyle}>
       <h1 style={titleStyle}>Challenge Details</h1>
@@ -156,16 +174,22 @@ export default function ChallengeDetailView({
         <div>
           <button
             onClick={checkIn}
-            disabled={isLocked || checkingIn}
+            disabled={isCheckInDisabled}
+            title={isLocationBlocked ? 'Location access required to check in' : ''}
             style={{
               ...checkInButtonStyle,
-              background: isCompleted ? 'gray' : 'green',
-              cursor: isLocked || checkingIn ? 'not-allowed' : 'pointer',
-              opacity: isLocked ? 0.6 : 1,
+              background: isCompleted ? 'gray' : isLocationBlocked ? '#ccc' : 'green',
+              cursor: isCheckInDisabled ? 'not-allowed' : 'pointer',
+              opacity: isCheckInDisabled ? 0.6 : 1,
             }}
           >
-            {checkingIn ? 'CHECKING IN...' : isCompleted ? 'COMPLETED' : isLocked ? 'NOT AVAILABLE' : 'CHECK IN'}
+            {checkInLabel}
           </button>
+          {isLocationBlocked && (
+            <p style={{ fontSize: '0.9rem', color: '#999', marginTop: '0.5rem' }}>
+              {LOCATION_PERMISSION_CHECKIN_MESSAGE}
+            </p>
+          )}
           {checkInError ? <p style={{ color: '#b00020', marginTop: '10px' }}>{checkInError}</p> : null}
         </div>
       </div>
