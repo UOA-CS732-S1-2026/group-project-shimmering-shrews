@@ -74,6 +74,29 @@ export const findActiveChallengeById = async (id: number) => {
   })
 }
 
+// export const findActiveChallengesByCategory = async () => {
+//   const categories = await prisma.challenge_category.findMany({
+//     select: {
+//       id: true,
+//       name: true,
+//     },
+//   })
+
+//   const challenges = await Promise.all(
+//     categories.map((category) =>
+//       prisma.challenge.findFirst({
+//         where: {
+//           is_active: true,
+//           challenge_category_id: category.id,
+//         },
+//         select: challengeSelect,
+//       })
+//     )
+//   )
+
+//   return challenges.filter((challenge) => challenge !== null)
+// }
+
 export const findChallengeCategoriesByNames = async (names: string[]) => {
   return prisma.challenge_category.findMany({
     where: {
@@ -97,21 +120,13 @@ export const createChallenges = async (data: Prisma.challengeCreateManyInput[]) 
 
 export const completeUserChallenge = async (challengeId: number, userId: number) => {
   return prisma.$transaction(async (tx) => {
-    const [challenge, user, existingUserChallenge] = await Promise.all([
+    const [challenge, user] = await Promise.all([
       tx.challenge.findFirst({
-        where: {
-          id: challengeId,
-          is_active: true,
-        },
-        select: {
-          id: true,
-          xp_worth: true,
-        },
+        where: { id: challengeId, is_active: true },
+        select: { id: true, xp_worth: true },
       }),
       tx.users.findUnique({
-        where: {
-          id: userId,
-        },
+        where: { id: userId },
         select: {
           id: true,
           xp_earned: true,
@@ -120,58 +135,50 @@ export const completeUserChallenge = async (challengeId: number, userId: number)
           last_completed_challenge: true,
         },
       }),
-      tx.user_challenge.findUnique({
-        where: {
-          user_id_challenge_id: {
-            user_id: userId,
-            challenge_id: challengeId,
-          },
-        },
-      }),
     ])
 
-    if (!challenge || !user) {
-      return null
-    }
+    if (!challenge || !user) return null
 
-    if (existingUserChallenge?.status === 'completed') {
-      return existingUserChallenge
+    const latestUserChallenge = await tx.user_challenge.findFirst({
+      where: {
+        user_id: userId,
+        challenge_id: challengeId,
+      },
+      orderBy: {
+        assigned_date: 'desc',
+      },
+    })
+
+    if (!latestUserChallenge) return null
+
+    if (latestUserChallenge.status === 'completed') {
+      return latestUserChallenge
     }
 
     const completedAt = new Date()
-    const nextXpEarned = user.xp_earned + challenge.xp_worth
+
+    const nextXpEarned = user.xp_earned + (latestUserChallenge.xp_worth ?? challenge.xp_worth)
+
     const nextStreakCount = calculateNextStreakCount(
       user.last_completed_challenge,
       user.streak_count,
       completedAt
     )
 
-    const completedUserChallenge = await tx.user_challenge.upsert({
+    const completedUserChallenge = await tx.user_challenge.update({
       where: {
-        user_id_challenge_id: {
-          user_id: userId,
-          challenge_id: challengeId,
-        },
+        id: latestUserChallenge.id,
       },
-      update: {
+      data: {
         status: 'completed',
         completed_at: completedAt,
         skipped_at: null,
-        xp_worth: challenge.xp_worth,
-      },
-      create: {
-        user_id: userId,
-        challenge_id: challengeId,
-        status: 'completed',
-        completed_at: completedAt,
-        xp_worth: challenge.xp_worth,
+        xp_worth: latestUserChallenge.xp_worth ?? challenge.xp_worth,
       },
     })
 
     await tx.users.update({
-      where: {
-        id: userId,
-      },
+      where: { id: userId },
       data: {
         xp_earned: nextXpEarned,
         level: calculateLevel(nextXpEarned),

@@ -1,62 +1,49 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import ChallengeDetailView from './ChallengeDetailView'
-import { getChallenge } from '../services/challenges'
-import type { Challenge } from '../types/challenge'
+import type { UserChallenge } from '../types/userChallenge'
+import { getUserChallenge } from '../services/userChallenges'
 
 export default function ChallengeRoute() {
   const navigate = useNavigate()
-  const { challengeId } = useParams()
-  const hasValidChallengeId = Boolean(challengeId)
-  const [challenge, setChallenge] = useState<Challenge | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { userChallengeId } = useParams()
+
+  const [userChallenge, setUserChallenge] = useState<UserChallenge | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [checkedInChallenges, setCheckedInChallenges] = useState<number[]>([])
+
+  const isLoading = userChallenge === null && error === null
 
   useEffect(() => {
-    if (!hasValidChallengeId || !challengeId) {
-      return
-    }
+    if (!userChallengeId) return
 
     let isActive = true
 
-    getChallenge(challengeId)
+    getUserChallenge(userChallengeId)
       .then((data) => {
-        if (!isActive) {
-          return
-        }
-
-        setChallenge(data)
-        setError(null)
+        if (!isActive) return
+        setUserChallenge(data)
       })
       .catch(() => {
-        if (isActive) {
-          setChallenge(null)
-          setError('Could not load challenge details.')
-        }
-      })
-      .finally(() => {
-        if (isActive) {
-          setLoading(false)
-        }
+        if (!isActive) return
+        setError('Could not load challenge details.')
       })
 
     return () => {
       isActive = false
     }
-  }, [challengeId, hasValidChallengeId])
+  }, [userChallengeId])
 
-  if (!hasValidChallengeId) {
+  if (!userChallengeId) {
     return (
       <main className="container page page-profile">
         <div className="shell shell-profile">
-          <p className="status-message">Challenge not found.</p>
+          <p className="status-message">User challenge id not found.</p>
         </div>
       </main>
     )
   }
 
-  if (loading) {
+  if (isLoading) {
     return (
       <main className="container page page-profile">
         <div className="shell shell-profile">
@@ -76,11 +63,19 @@ export default function ChallengeRoute() {
     )
   }
 
+  if (!userChallenge) {
+    return (
+      <main className="container page page-profile">
+        <div className="shell shell-profile">
+          <p className="status-message">Challenge details not found.</p>
+        </div>
+      </main>
+    )
+  }
+
   return (
     <ChallengeDetailView
-      challenge={challenge}
-      checkedInChallenges={checkedInChallenges}
-      setCheckedInChallenges={setCheckedInChallenges}
+      userChallenge={userChallenge}
       goToChallengeList={() => navigate('/challenges')}
     />
   )
