@@ -1,7 +1,6 @@
 CREATE OR REPLACE FUNCTION update_user_stats_on_challenge_complete()
 RETURNS TRIGGER AS $$
 DECLARE
-    v_xp INTEGER;
     v_category_id INTEGER;
 BEGIN
 
