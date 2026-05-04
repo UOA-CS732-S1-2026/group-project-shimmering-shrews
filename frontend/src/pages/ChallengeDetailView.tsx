@@ -86,11 +86,12 @@ export default function ChallengeDetailView({
   const { challenge } = activeUserChallenge
   const isCompleted = activeUserChallenge.status === 'completed'
   const isCancelled = activeUserChallenge.status === 'cancelled'
+  const isExpired = activeUserChallenge.status === 'expired'
   const isAccepted = activeUserChallenge.status === 'accepted'
   const canAccept = activeUserChallenge.status === 'in_progress' || activeUserChallenge.status === 'cancelled'
   const canCancel = activeUserChallenge.status === 'accepted'
   const isLocationBlocked = !DEV_SHOW_ALL && permissionStatus !== 'granted'
-  const isCheckInDisabled = isCompleted || isCancelled || isLocationBlocked || isSubmitting
+  const isCheckInDisabled = !isAccepted || isCompleted || isCancelled || isExpired || isLocationBlocked || isSubmitting
 
   const checkIn = () => {
     if (isCheckInDisabled) return
@@ -185,8 +186,12 @@ export default function ChallengeDetailView({
 
   const checkInLabel = isCompleted
     ? 'COMPLETED'
+    : isExpired
+      ? 'EXPIRED'
     : isCancelled
       ? 'CANCELLED'
+      : !isAccepted
+        ? 'ACCEPT REQUIRED'
       : isLocationBlocked
         ? 'Location Required'
         : isSubmitting
@@ -285,7 +290,7 @@ export default function ChallengeDetailView({
             title={isLocationBlocked ? 'Location access required to check in' : ''}
             style={{
               ...checkInButtonStyle,
-              background: isCompleted || isCancelled ? 'gray' : isLocationBlocked ? '#ccc' : 'green',
+              background: isCompleted || isCancelled || isExpired ? 'gray' : isLocationBlocked ? '#ccc' : 'green',
               cursor: isCheckInDisabled ? 'not-allowed' : 'pointer',
               opacity: isCheckInDisabled ? 0.6 : 1,
             }}
@@ -295,6 +300,16 @@ export default function ChallengeDetailView({
           {isAccepted && (
             <p style={{ fontSize: '0.9rem', color: '#5c4799', marginTop: '0.5rem' }}>
               You are on the way. Use View Route, then return here to check in.
+            </p>
+          )}
+          {!isAccepted && !isCompleted && !isCancelled && !isExpired && (
+            <p style={{ fontSize: '0.9rem', color: '#555', marginTop: '0.5rem' }}>
+              Accept this challenge first to enable check in.
+            </p>
+          )}
+          {isExpired && (
+            <p style={{ fontSize: '0.9rem', color: '#555', marginTop: '0.5rem' }}>
+              This challenge expired at the end of its assigned day.
             </p>
           )}
           {isLocationBlocked && (

@@ -81,6 +81,7 @@ model user_challenge {
   accepted_from_lng Decimal?     @db.Decimal(9, 6)
   completed_at  DateTime?        @db.Timestamp(6)
   cancelled_at  DateTime?        @db.Timestamp(6)
+  expired_at    DateTime?        @db.Timestamp(6)
   skipped_at    DateTime?        @db.Timestamp(6)
   challenge     challenge        @relation(fields: [challenge_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_uc_challenge")
   users         users            @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_uc_user")
@@ -111,6 +112,7 @@ enum challenge_status {
   cancelled
   skipped
   completed
+  expired
 }
 
 enum user_role {

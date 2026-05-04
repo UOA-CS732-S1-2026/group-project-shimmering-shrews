@@ -70,6 +70,7 @@ export const challengeStatusColors: { [key: string]: string } = {
         in_progress: "#f8ec6e",
     accepted: "#8ac7ff",
     cancelled: "#f5a0a0",
+        expired: "#d7c2ff",
         skipped: "#a3a3a3",
         completed: "#62e260",
     }
@@ -78,6 +79,7 @@ export const challengeStatusText: { [key: string]: string } = {
         in_progress: 'In Progress',
     accepted: 'Accepted',
     cancelled: 'Cancelled',
+        expired: 'Expired',
         skipped: 'Skipped',
         completed: 'Completed',
     }

@@ -12,6 +12,7 @@ const userChallengeSelect = {
   accepted_from_lng: true,
   completed_at: true,
   cancelled_at: true,
+  expired_at: true,
   skipped_at: true,
   id: true,
   challenge: {
@@ -57,6 +58,26 @@ export const findUserChallengeForUser = async (userChallengeId: number, userId: 
 }
 
 export const userChallengeDAO = {
+  async expireOpenChallengesBeforeDate(userId: number, cutoffDate: Date) {
+    return prisma.user_challenge.updateMany({
+      where: {
+        user_id: userId,
+        assigned_at: {
+          lt: cutoffDate,
+        },
+        status: {
+          in: ['in_progress', 'accepted'],
+        },
+      },
+      data: {
+        status: 'expired',
+        expired_at: cutoffDate,
+        cancelled_at: null,
+        skipped_at: null,
+      },
+    })
+  },
+
   async getTodayUserChallengesByUserId(userId: number, today: Date) {
     const startOfDay = new Date(today)
     startOfDay.setUTCHours(0, 0, 0, 0)
@@ -129,6 +150,10 @@ export const userChallengeDAO = {
       return userChallenge
     }
 
+    if (userChallenge.status === 'expired') {
+      return userChallenge
+    }
+
     const acceptedAt = new Date()
 
     return prisma.user_challenge.update({
@@ -141,6 +166,7 @@ export const userChallengeDAO = {
         accepted_from_lat: acceptedFromLat,
         accepted_from_lng: acceptedFromLng,
         cancelled_at: null,
+        expired_at: null,
       },
       select: userChallengeSelect,
     })
@@ -158,7 +184,11 @@ export const userChallengeDAO = {
       return null
     }
 
-    if (userChallenge.status === 'completed' || userChallenge.status === 'cancelled') {
+    if (
+      userChallenge.status === 'completed' ||
+      userChallenge.status === 'cancelled' ||
+      userChallenge.status === 'expired'
+    ) {
       return prisma.user_challenge.findFirst({
         where: {
           id: userChallengeId,
@@ -175,6 +205,7 @@ export const userChallengeDAO = {
       data: {
         status: 'cancelled',
         cancelled_at: new Date(),
+        expired_at: null,
       },
       select: userChallengeSelect,
     })

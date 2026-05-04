@@ -66,6 +66,7 @@ const userChallengeResponseSelect = {
   accepted_from_lng: true,
   completed_at: true,
   cancelled_at: true,
+  expired_at: true,
   skipped_at: true,
   id: true,
   challenge: {
@@ -193,7 +194,7 @@ export const completeUserChallenge = async (challengeId: number, userId: number)
       return latestUserChallenge
     }
 
-    if (latestUserChallenge.status === 'cancelled') {
+    if (latestUserChallenge.status !== 'accepted') {
       return null
     }
 
@@ -215,6 +216,7 @@ export const completeUserChallenge = async (challengeId: number, userId: number)
         status: 'completed',
         completed_at: completedAt,
         skipped_at: null,
+        expired_at: null,
         xp_worth: latestUserChallenge.xp_worth ?? challenge.xp_worth,
       },
     })
@@ -265,7 +267,7 @@ export const completeUserChallengeByUserChallengeId = async (
       return userChallenge
     }
 
-    if (userChallenge.status === 'cancelled') {
+    if (userChallenge.status !== 'accepted') {
       return null
     }
 
@@ -287,6 +289,7 @@ export const completeUserChallengeByUserChallengeId = async (
         completed_at: completedAt,
         skipped_at: null,
         cancelled_at: null,
+        expired_at: null,
         xp_worth: xpWorth,
       },
       select: userChallengeResponseSelect,

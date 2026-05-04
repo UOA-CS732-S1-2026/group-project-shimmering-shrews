@@ -54,6 +54,8 @@ export const userChallengeService = {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
+    await userChallengeDAO.expireOpenChallengesBeforeDate(user.id, today)
+
     let userChallenges = await userChallengeDAO.getTodayUserChallengesByUserId(user.id, today)
 
     if (userChallenges.length === 0) {
@@ -126,6 +128,14 @@ export const userChallengeService = {
 
     if (!userChallenge) {
       throw new ApiError(404, 'User challenge not found')
+    }
+
+    if (userChallenge.status === 'completed') {
+      return userChallenge
+    }
+
+    if (userChallenge.status !== 'accepted') {
+      throw new ApiError(409, 'Challenge must be accepted before check in')
     }
 
     const challengeLocation = userChallenge.challenge?.location

@@ -6,6 +6,7 @@ export type UserChallengeStatus =
   | 'cancelled'
   | 'skipped'
   | 'completed'
+  | 'expired'
 
 export type UserChallenge = {
   user_id: number
@@ -18,6 +19,7 @@ export type UserChallenge = {
   accepted_from_lng?: number | string | null
   completed_at?: Date | null
   cancelled_at?: Date | null
+  expired_at?: Date | null
   skipped_at?: Date | null
   id: number
   challenge: Challenge
