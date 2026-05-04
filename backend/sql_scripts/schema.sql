@@ -114,6 +114,24 @@ CREATE TABLE user_badge_progress (
         ON DELETE CASCADE
 );
 
+CREATE TABLE user_stat (
+    user_id INTEGER NOT NULL,
+    category_id INTEGER NOT NULL,
+    current_value INTEGER NOT NULL DEFAULT 0,
+
+    PRIMARY KEY (user_id, category_id),
+
+    CONSTRAINT fk_us_user
+        FOREIGN KEY (user_id)
+        REFERENCES users(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_us_category
+        FOREIGN KEY (category_id)
+        REFERENCES challenge_category(id)
+        ON DELETE CASCADE,
+);
+
 -- USER CHALLENGE
 CREATE TABLE user_challenge (
     user_id INTEGER NOT NULL,

@@ -33,6 +33,7 @@
   text-decoration: none;
 }
 
+.topbar a.button,
 .logout-button {
   border: 0;
   border-radius: 8px;
@@ -48,11 +49,13 @@
     transform 180ms ease;
 }
 
+.topbar a.button:hover,
 .logout-button:hover {
   background: #c93d51;
   transform: translateY(-1px);
 }
 
+.topbar a.button:focus-visible,
 .logout-button:focus-visible,
 .tabs__button:focus-visible {
   outline: 3px solid rgba(25, 139, 111, 0.32);
