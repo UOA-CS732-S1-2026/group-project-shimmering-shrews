@@ -11,6 +11,22 @@ import { useLogout } from "../hooks/useLogout"
 import { Link } from "react-router-dom"
 
 const tabs: TabKey[] = ['badges', 'history']
+const fallbackAvatarUrl = '/profile-placeholder.svg'
+
+const getGoogleAvatarUrl = (metadata: Record<string, unknown> | undefined) => {
+  const avatarUrl = metadata?.avatar_url
+  const picture = metadata?.picture
+
+  if (typeof avatarUrl === 'string' && avatarUrl.trim()) {
+    return avatarUrl
+  }
+
+  if (typeof picture === 'string' && picture.trim()) {
+    return picture
+  }
+
+  return fallbackAvatarUrl
+}
 
 function ProfilePage() {
   const [activeTab, setActiveTab] = useState<TabKey>('badges')
@@ -49,7 +65,7 @@ function ProfilePage() {
           return
         }
 
-        setProfile(mapLiveProfileToUserProfile(liveProfile))
+        setProfile(mapLiveProfileToUserProfile(liveProfile, getGoogleAvatarUrl(user.user_metadata)))
         setHistoryItems(liveProfile.historyItems)
       } catch (error) {
         console.error('Failed to load profile', error)
@@ -216,7 +232,7 @@ function renderTabContent(
   )
 }
 
-function mapLiveProfileToUserProfile(profile: LiveProfile): UserProfile {
+function mapLiveProfileToUserProfile(profile: LiveProfile, avatarUrl: string): UserProfile {
   return {
     username: profile.name,
     xp_earned: profile.xp,
@@ -226,7 +242,7 @@ function mapLiveProfileToUserProfile(profile: LiveProfile): UserProfile {
     challengesCompleted: profile.challengesCompleted,
     xpForCurrentLevel: profile.xpForCurrentLevel,
     xpForNextLevel: profile.xpForNextLevel,
-    avatarUrl: '/profile-placeholder.svg',
+    avatarUrl,
   }
 }
 

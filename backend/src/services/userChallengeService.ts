@@ -1,19 +1,36 @@
-import { ApiError } from '../utils/ApiError'
-import { userDAO } from '../daos/userDao'
+import {
+  completeUserChallengeByUserChallengeId,
+  findAllActiveChallenges,
+} from '../daos/challengeDao'
 import {
   findUserChallengeForUser,
   findUserChallenges,
   userChallengeDAO,
 } from '../daos/userChallengeDao'
-import {
-  completeUserChallengeByUserChallengeId,
-  findAllActiveChallenges,
-} from '../daos/challengeDao'
+import { userDAO } from '../daos/userDao'
 import { ALLOWED_COMPLETION_RADIUS_METERS } from '../config/constants'
+import { ApiError } from '../utils/ApiError'
+
+import { DAILY_CHALLENGE_LIMIT, filterChallengesByRadius } from './challengeService'
+
+const toRad = (deg: number) => (deg * Math.PI) / 180
+
+const haversineDistanceMetres = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+  const earthRadiusMetres = 6371000
+  const dLat = toRad(lat2 - lat1)
+  const dLon = toRad(lon2 - lon1)
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+
+  return earthRadiusMetres * c
+}
 
 export const getUserChallenges = async (authId: string) => {
   const user = await userDAO.getUserByAuthId(authId)
   const userId = user?.id
+
   if (!userId) {
     throw new ApiError(404, 'User not found')
   }
@@ -44,7 +61,12 @@ export const getUserChallenge = async (authId: string, userChallengeId: number) 
 }
 
 export const userChallengeService = {
-  async getOrCreateTodayChallenges(authId: string) {
+  async getOrCreateTodayChallenges(
+    authId: string,
+    lat: number,
+    lng: number,
+    radiusKm: number
+  ) {
     const user = await userDAO.getUserByAuthId(authId)
 
     if (!user) {
@@ -52,16 +74,20 @@ export const userChallengeService = {
     }
 
     const today = new Date()
-    today.setHours(0, 0, 0, 0)
+    today.setUTCHours(0, 0, 0, 0)
 
     await userChallengeDAO.expireOpenChallengesBeforeDate(user.id, today)
 
     let userChallenges = await userChallengeDAO.getTodayUserChallengesByUserId(user.id, today)
 
     if (userChallenges.length === 0) {
-      const challenges = await findAllActiveChallenges()
+      const allChallenges = await findAllActiveChallenges()
+      const nearbyChallenges = filterChallengesByRadius(allChallenges, lat, lng, radiusKm)
+      const limitedChallenges = nearbyChallenges.slice(0, DAILY_CHALLENGE_LIMIT)
 
-      await userChallengeDAO.createTodayUserChallenges(user.id, challenges, today)
+      if (limitedChallenges.length > 0) {
+        await userChallengeDAO.createTodayUserChallenges(user.id, limitedChallenges)
+      }
 
       userChallenges = await userChallengeDAO.getTodayUserChallengesByUserId(user.id, today)
     }
@@ -123,7 +149,6 @@ export const userChallengeService = {
       throw new ApiError(404, 'User not found')
     }
 
-    // verify the user's provided location is within an acceptable distance of the challenge location
     const userChallenge = await findUserChallengeForUser(userChallengeId, user.id)
 
     if (!userChallenge) {
@@ -139,31 +164,23 @@ export const userChallengeService = {
     }
 
     const challengeLocation = userChallenge.challenge?.location
+
     if (!challengeLocation || challengeLocation.latitude == null || challengeLocation.longitude == null) {
       throw new ApiError(400, 'Challenge location is not set')
     }
 
-    const lat1 = Number(challengeLocation.latitude)
-    const lon1 = Number(challengeLocation.longitude)
-    const lat2 = Number(completedFromLat)
-    const lon2 = Number(completedFromLng)
-
-    const toRad = (deg: number) => (deg * Math.PI) / 180
-    const haversine = (aLat: number, aLon: number, bLat: number, bLon: number) => {
-      const R = 6371000 // meters
-      const dLat = toRad(bLat - aLat)
-      const dLon = toRad(bLon - aLon)
-      const A =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) * Math.sin(dLon / 2) * Math.sin(dLon / 2)
-      const C = 2 * Math.atan2(Math.sqrt(A), Math.sqrt(1 - A))
-      return R * C
-    }
-
-    const distanceMeters = haversine(lat1, lon1, lat2, lon2)
+    const distanceMeters = haversineDistanceMetres(
+      Number(challengeLocation.latitude),
+      Number(challengeLocation.longitude),
+      Number(completedFromLat),
+      Number(completedFromLng)
+    )
 
     if (distanceMeters > ALLOWED_COMPLETION_RADIUS_METERS) {
-      throw new ApiError(409, `User is not within required distance to complete challenge (${Math.round(distanceMeters)}m away, must be within ${ALLOWED_COMPLETION_RADIUS_METERS}m)`)
+      throw new ApiError(
+        409,
+        `User is not within required distance to complete challenge (${Math.round(distanceMeters)}m away, must be within ${ALLOWED_COMPLETION_RADIUS_METERS}m)`
+      )
     }
 
     const checkIn = await completeUserChallengeByUserChallengeId(userChallengeId, user.id)

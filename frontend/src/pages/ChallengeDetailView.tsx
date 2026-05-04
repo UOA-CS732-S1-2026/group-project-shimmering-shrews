@@ -1,3 +1,14 @@
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+
+import { DEV_SHOW_ALL } from '../config/featureFlags'
+import { LOCATION_PERMISSION_CHECKIN_MESSAGE } from '../config/locationPermissionContent'
+import { useLocationPermission } from '../hooks/useLocationPermission'
+import {
+  acceptUserChallenge,
+  cancelUserChallenge,
+  checkInUserChallenge,
+} from '../services/userChallenges'
 import {
   badgeStyle,
   buttonStyle,
@@ -10,31 +21,21 @@ import {
   titleStyle,
   xpStyle,
 } from '../styles/challengeStyle'
-import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import type { UserChallenge } from '../types/userChallenge'
-import {
-  acceptUserChallenge,
-  cancelUserChallenge,
-  checkInUserChallenge,
-} from '../services/userChallenges'
-import { useLocationPermission } from '../hooks/useLocationPermission'
-import { DEV_SHOW_ALL } from '../config/featureFlags'
-import { LOCATION_PERMISSION_CHECKIN_MESSAGE } from '../config/locationPermissionContent'
 
-// IMPORTANT: Must match backend/src/config/constants.ts ALLOWED_COMPLETION_RADIUS_METERS
 const ALLOWED_COMPLETION_RADIUS_METERS = 700
 
 function getDistanceMetres(a: [number, number], b: [number, number]) {
-  const R = 6371000
+  const earthRadiusMetres = 6371000
   const lat1 = (a[0] * Math.PI) / 180
   const lat2 = (b[0] * Math.PI) / 180
   const dLat = ((b[0] - a[0]) * Math.PI) / 180
   const dLon = ((b[1] - a[1]) * Math.PI) / 180
-  const x =
+  const h =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) * Math.sin(dLon / 2)
-  return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x))
+
+  return earthRadiusMetres * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h))
 }
 
 export default function ChallengeDetailView({
@@ -45,9 +46,10 @@ export default function ChallengeDetailView({
   userChallenge: UserChallenge | null
 }) {
   const navigate = useNavigate()
+  const { permissionStatus } = useLocationPermission()
   const [activeUserChallenge, setActiveUserChallenge] = useState<UserChallenge | null>(userChallenge)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const { permissionStatus } = useLocationPermission()
+  const [actionError, setActionError] = useState<string | null>(null)
 
   useEffect(() => {
     setActiveUserChallenge(userChallenge)
@@ -93,13 +95,20 @@ export default function ChallengeDetailView({
   const isLocationBlocked = !DEV_SHOW_ALL && permissionStatus !== 'granted'
   const isCheckInDisabled = !isAccepted || isCompleted || isCancelled || isExpired || isLocationBlocked || isSubmitting
 
+  const handleActionError = (error: unknown, fallbackMessage: string) => {
+    setActionError(error instanceof Error ? error.message : fallbackMessage)
+  }
+
   const checkIn = () => {
     if (isCheckInDisabled) return
 
     if (!navigator.geolocation) {
-      alert('Geolocation is not supported by your browser.')
+      setActionError('Geolocation is not supported by your browser.')
       return
     }
+
+    setIsSubmitting(true)
+    setActionError(null)
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
@@ -110,27 +119,25 @@ export default function ChallengeDetailView({
         )
 
         if (distance > ALLOWED_COMPLETION_RADIUS_METERS) {
-          alert(`You are too far away (${Math.round(distance)}m). You must be within ${ALLOWED_COMPLETION_RADIUS_METERS}m of the challenge.`)
+          setActionError(
+            `You are too far away (${Math.round(distance)}m). You must be within ${ALLOWED_COMPLETION_RADIUS_METERS}m of the challenge.`
+          )
+          setIsSubmitting(false)
           return
         }
 
         try {
-          setIsSubmitting(true)
-          const updated = await checkInUserChallenge(
-            activeUserChallenge.id,
-            latitude,
-            longitude
-          )
+          const updated = await checkInUserChallenge(activeUserChallenge.id, latitude, longitude)
           setActiveUserChallenge(updated)
-          alert('Challenge sucessfully completed')
+        } catch (error) {
+          handleActionError(error, 'Failed to check into challenge. Please try again.')
+        } finally {
           setIsSubmitting(false)
-        } catch {
-          setIsSubmitting(false)
-          alert('Failed to check into challenge. Please try again.')
         }
       },
       () => {
-        alert('Unable to retrieve your location. Please enable location services.')
+        setActionError('Unable to retrieve your location. Please enable location services.')
+        setIsSubmitting(false)
       }
     )
   }
@@ -139,29 +146,28 @@ export default function ChallengeDetailView({
     if (!canAccept || isSubmitting) return
 
     if (!navigator.geolocation) {
-      alert('Geolocation is not supported by your browser.')
+      setActionError('Geolocation is not supported by your browser.')
       return
     }
+
+    setIsSubmitting(true)
+    setActionError(null)
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         try {
           const { latitude, longitude } = position.coords
-          setIsSubmitting(true)
-          const accepted = await acceptUserChallenge(
-            activeUserChallenge.id,
-            latitude,
-            longitude
-          )
+          const accepted = await acceptUserChallenge(activeUserChallenge.id, latitude, longitude)
           setActiveUserChallenge(accepted)
+        } catch (error) {
+          handleActionError(error, 'Failed to accept challenge. Please try again.')
+        } finally {
           setIsSubmitting(false)
-        } catch {
-          setIsSubmitting(false)
-          alert('Failed to accept challenge. Please try again.')
         }
       },
       () => {
-        alert('Unable to retrieve your location. Please enable location services.')
+        setActionError('Unable to retrieve your location. Please enable location services.')
+        setIsSubmitting(false)
       }
     )
   }
@@ -169,14 +175,16 @@ export default function ChallengeDetailView({
   const cancelChallenge = async () => {
     if (!canCancel || isSubmitting) return
 
+    setIsSubmitting(true)
+    setActionError(null)
+
     try {
-      setIsSubmitting(true)
       const cancelled = await cancelUserChallenge(activeUserChallenge.id)
       setActiveUserChallenge(cancelled)
+    } catch (error) {
+      handleActionError(error, 'Failed to cancel challenge. Please try again.')
+    } finally {
       setIsSubmitting(false)
-    } catch {
-      setIsSubmitting(false)
-      alert('Failed to cancel challenge. Please try again.')
     }
   }
 
@@ -184,19 +192,19 @@ export default function ChallengeDetailView({
     navigate(`/map?focusUserChallengeId=${activeUserChallenge.id}&returnTo=/challenges/${activeUserChallenge.id}`)
   }
 
-  const checkInLabel = isCompleted
-    ? 'COMPLETED'
-    : isExpired
-      ? 'EXPIRED'
-    : isCancelled
-      ? 'CANCELLED'
-      : !isAccepted
-        ? 'ACCEPT REQUIRED'
-      : isLocationBlocked
-        ? 'Location Required'
-        : isSubmitting
-          ? 'WORKING...'
-          : 'CHECK IN'
+  const checkInLabel = isSubmitting
+    ? 'WORKING...'
+    : isCompleted
+      ? 'COMPLETED'
+      : isExpired
+        ? 'EXPIRED'
+        : isCancelled
+          ? 'CANCELLED'
+          : !isAccepted
+            ? 'ACCEPT REQUIRED'
+            : isLocationBlocked
+              ? 'Location Required'
+              : 'CHECK IN'
 
   return (
     <div style={containerStyle}>
@@ -222,6 +230,7 @@ export default function ChallengeDetailView({
               display: 'flex',
               gap: '10px',
               alignItems: 'center',
+              flexWrap: 'wrap',
             }}
           >
             <span style={{ ...badgeStyle, background: categoryColors[challenge.challenge_category.name] || '#ddd' }}>
@@ -236,6 +245,7 @@ export default function ChallengeDetailView({
             </span>
           </div>
         </div>
+
         <div>
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
             {canAccept && (
@@ -257,10 +267,13 @@ export default function ChallengeDetailView({
             {isAccepted && (
               <button
                 onClick={openRoute}
+                disabled={isSubmitting}
                 style={{
                   ...checkInButtonStyle,
                   marginTop: 0,
                   background: '#7a52cc',
+                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                  opacity: isSubmitting ? 0.6 : 1,
                 }}
               >
                 VIEW ROUTE
@@ -297,6 +310,7 @@ export default function ChallengeDetailView({
           >
             {checkInLabel}
           </button>
+
           {isAccepted && (
             <p style={{ fontSize: '0.9rem', color: '#5c4799', marginTop: '0.5rem' }}>
               You are on the way. Use View Route, then return here to check in.
@@ -317,6 +331,7 @@ export default function ChallengeDetailView({
               {LOCATION_PERMISSION_CHECKIN_MESSAGE}
             </p>
           )}
+          {actionError ? <p style={{ color: '#b00020', marginTop: '10px' }}>{actionError}</p> : null}
         </div>
       </div>
 

@@ -60,16 +60,21 @@ export const getChallenge = asyncHandler(async (req: Request, res: Response) => 
 
 export const getTodayUserChallenges = asyncHandler(async (req: Request, res: Response) => {
   const authUser = (req as AuthRequest).auth
-  if (!authUser?.sub) {
-    throw new ApiError(401, 'Authenticated user is missing')
+  if (!authUser?.sub) throw new ApiError(401, 'Authenticated user is missing')
+
+  const lat = parseFloat(req.query.lat as string)
+  const lng = parseFloat(req.query.lng as string)
+  const radius = parseFloat(req.query.radius as string) || 5 // default 5km
+
+  if (isNaN(lat) || isNaN(lng)) {
+    throw new ApiError(400, 'lat and lng query params are required')
   }
 
-  const data = await userChallengeService.getOrCreateTodayChallenges(authUser.sub)
+  const data = await userChallengeService.getOrCreateTodayChallenges(
+    authUser.sub, lat, lng, radius
+  )
 
-  res.status(200).json({
-    success: true,
-    data,
-  })
+  res.status(200).json({ success: true, data })
 })
 
 export const acceptUserChallenge = asyncHandler(async (req: Request, res: Response) => {
