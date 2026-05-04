@@ -31,8 +31,6 @@ CREATE TABLE users (
 CREATE TABLE badge (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
-    achievement_criteria JSONB NOT NULL,
-    target_value INTEGER NOT NULL,
     description VARCHAR(100),
     active_url VARCHAR(500),
     inactive_url VARCHAR(500)
@@ -95,31 +93,13 @@ CREATE TABLE awarded_badge (
         ON DELETE CASCADE
 );
 
--- USER BADGE PROGRESS
-CREATE TABLE user_badge_progress (
-    user_id INTEGER NOT NULL,
-    badge_id INTEGER NOT NULL,
-    current_value INTEGER NOT NULL,
-
-    PRIMARY KEY(user_id, badge_id),
-
-    CONSTRAINT fk_ubp_user
-        FOREIGN KEY (user_id)
-        REFERENCES users(id)
-        ON DELETE CASCADE,
-
-    CONSTRAINT fk_ubp_badge
-        FOREIGN KEY (badge_id)
-        REFERENCES badge(id)
-        ON DELETE CASCADE
-);
-
 CREATE TABLE user_stat (
+    id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL,
-    category_id INTEGER NOT NULL,
+    category_id INTEGER,
     current_value INTEGER NOT NULL DEFAULT 0,
-
-    PRIMARY KEY (user_id, category_id),
+    name VARCHAR(100) NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
     CONSTRAINT fk_us_user
         FOREIGN KEY (user_id)
@@ -129,7 +109,26 @@ CREATE TABLE user_stat (
     CONSTRAINT fk_us_category
         FOREIGN KEY (category_id)
         REFERENCES challenge_category(id)
-        ON DELETE CASCADE,
+        ON DELETE CASCADE
+);
+
+CREATE TABLE badge_criteria (
+    id SERIAL PRIMARY KEY,
+    badge_id INTEGER NOT NULL,
+    stat_name VARCHAR(100) NOT NULL,
+    category_id INTEGER,
+    target_value INTEGER NOT NULL,
+
+    FOREIGN KEY (badge_id) REFERENCES badge(id) ON DELETE CASCADE,
+    FOREIGN KEY (category_id) REFERENCES challenge_category(id) ON DELETE CASCADE
+);
+
+CREATE TABLE badge_stat_map (
+    badge_id INTEGER NOT NULL,
+    stat_name VARCHAR(100) NOT NULL,
+    category_id INTEGER,
+
+    PRIMARY KEY (badge_id, stat_name, category_id)
 );
 
 -- USER CHALLENGE
@@ -163,4 +162,14 @@ CREATE INDEX idx_users_auth_id ON users(auth_id);
 */
 CREATE UNIQUE INDEX user_category_unique
 ON user_stat (user_id, category_id)
+WHERE category_id IS NOT NULL;
+
+/* No badge can have multiple criteria referencing the same stat name */
+CREATE UNIQUE INDEX badge_criteria_global_unique
+ON badge_criteria (badge_id, stat_name)
+WHERE category_id IS NULL;
+
+/* No badge can have multiple criteria referencing the same category */
+CREATE UNIQUE INDEX badge_criteria_category_unique
+ON badge_criteria (badge_id, category_id)
 WHERE category_id IS NOT NULL;
