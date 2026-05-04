@@ -15,8 +15,8 @@ BEGIN
 
         /* Update total challenges completed stat */
         INSERT INTO user_stat (user_id, category_id, name, current_value, updated_at)
-        VALUES (NEW.user_id, NULL, 'challenges_completed', 1, NOW())
-        ON CONFLICT (user_id, name, category_id)
+        VALUES (NEW.user_id, 0, 'challenges_completed', 1, NOW())
+        ON CONFLICT (user_id, category_id, name)
         DO UPDATE
         SET current_value = user_stat.current_value + 1,
             updated_at = NOW();
@@ -35,7 +35,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_check_badges_on_stat_change
+CREATE TRIGGER trg_update_user_stats_on_challenge_completion
 AFTER INSERT OR UPDATE ON user_challenge
 FOR EACH ROW
-EXECUTE FUNCTION check_badges_on_stat_change();
+EXECUTE FUNCTION update_user_stats_on_challenge_complete();

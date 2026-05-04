@@ -96,7 +96,7 @@ CREATE TABLE awarded_badge (
 CREATE TABLE user_stat (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL,
-    category_id INTEGER,
+    category_id INTEGER NOT NULL,
     current_value INTEGER NOT NULL DEFAULT 0,
     name VARCHAR(100) NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
