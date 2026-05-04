@@ -24,20 +24,17 @@ import {
   LOCATION_PERMISSION_SETTINGS_GUIDANCE,
 } from '../config/locationPermissionContent'
 
-
 export default function ChallengeList({
   goToDetailView,
 }: {
   goToDetailView: (userChallenge: UserChallenge) => void
 }) {
   const navigate = useNavigate()
-  const { permissionStatus, requestPermission, userLocation } = useLocationPermission()
+  const { permissionStatus, requestPermission } = useLocationPermission()
   const [showPermissionDialog, setShowPermissionDialog] = React.useState(false)
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
   const [userChallenges, setUserChallenges] = React.useState<UserChallenge[]>([])
-  const DEFAULT_LOCATION: [number, number] = [-36.8485, 174.7633]
-  const RADIUS_KM = 5
 
   const closeButtonStyle = {
     position: 'absolute',
@@ -84,22 +81,25 @@ export default function ChallengeList({
       setLoading(false)
       return
     }
-  
-    const lat = DEV_SHOW_ALL ? DEFAULT_LOCATION[0] : userLocation?.[0]
-    const lng = DEV_SHOW_ALL ? DEFAULT_LOCATION[1] : userLocation?.[1]
-    const radius = DEV_SHOW_ALL ? 99999 : RADIUS_KM
-  
-    if (!DEV_SHOW_ALL && !userLocation) return
-  
+
     setLoading(true)
-    getUserChallenges(lat, lng, radius)
+    getUserChallenges()
       .then((data) => {
         setUserChallenges(data)
         setError(null)
       })
       .catch(() => setError('Could not load challenges.'))
       .finally(() => setLoading(false))
-  }, [isListDisabled, userLocation])
+  }, [isListDisabled])
+
+  if (error) {
+    return (
+      <div style={containerStyle}>
+        <h1 style={titleStyle}>Today's Challenges</h1>
+        <p>{error}</p>
+      </div>
+    )
+  }
 
   if (isListDisabled) {
     return (

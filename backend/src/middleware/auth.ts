@@ -18,27 +18,47 @@ export interface AuthRequest extends Request {
 const supabaseJwtMiddleware = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const token = req.headers.authorization?.split(" ")[1]
+
     if (!token) {
       return next(new ApiError(401, "No token provided"))
     }
 
-    const { data, error } = await supabase.auth.getUser(token)
-    if (error || !data?.user) {
+    // Use Supabase's built-in JWT verification
+    // Uses claims so our server can verify the user without making a round trip to the DB
+    const { data, error } = await supabase.auth.getClaims(token)
+
+    if (error || !data?.claims) {
       return next(new ApiError(401, "Invalid token"))
     }
 
-    if (!data.user.id) {
-      return next(new ApiError(401, "Invalid token payload"))
+    const { claims } = data
+
+    if (!claims.sub) {
+      return next(new Error("Invalid token payload"))
     }
 
     req.auth = {
-      sub: data.user.id,
-      email: data.user.email,
+      ...claims,
     }
+
+
+    // ;(req as AuthRequest).auth = {
+    // sub: user.id,
+    // email: user.email,
+    // user,
+
     next()
   } catch (err) {
     next(err)
   }
+}
+
+const debugMiddleware = (req: Request, _res: Response, next: NextFunction) => {
+  console.log("➡️ Incoming request:", req.method, req.path)
+  console.log("🔑 Auth header:", req.headers.authorization)
+  const token = req.headers.authorization?.split(" ")[1]
+  console.log("🧾 Extracted token:", token?.substring(0, 50) + "...")
+  next()
 }
 
 console.log("requireAuth initialised")
@@ -52,14 +72,21 @@ export const attachUser = (
   next()
 }
 
+/* If this is specified, the API can only be called if the user has a session,
+ * I.e. user must be signed in
+*/
 export const requireAuth = [supabaseJwtMiddleware]
 
+/* if this is specified, the user can only make a API call
+* to a path with param :userID if that id matches the ID in their session
+* I.e. a user can only query themself.
+*/
 export const requireSelf = (
   req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
   if (req.params.id !== req.auth?.sub) {
-    return res.status(403).json({ error: 'Forbidden' })
+    return res.status(403).json({ error: 'Forbidden'})
   }
 }
