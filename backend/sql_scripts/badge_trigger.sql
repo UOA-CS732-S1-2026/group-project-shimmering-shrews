@@ -22,7 +22,7 @@ BEGIN
             FROM badge_criteria bc
             LEFT JOIN user_stat us
               ON us.user_id = NEW.user_id
-             AND us.stat_name = bc.stat_name
+             AND us.name = bc.stat_name
              AND (
                   (bc.category_id IS NULL AND us.category_id IS NULL)
                   OR (bc.category_id = us.category_id)
@@ -44,3 +44,8 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_check_badges_on_stat_change
+AFTER INSERT OR UPDATE ON user_stat
+FOR EACH ROW
+EXECUTE FUNCTION check_badges_on_stat_change();

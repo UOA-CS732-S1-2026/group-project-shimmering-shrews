@@ -124,7 +124,7 @@ CREATE TABLE badge_criteria (
 );
 
 CREATE TABLE badge_stat_map (
-    id INTEGER SERIAL,
+    id SERIAL,
     badge_id INTEGER NOT NULL,
     stat_name VARCHAR(100) NOT NULL,
     category_id INTEGER,
