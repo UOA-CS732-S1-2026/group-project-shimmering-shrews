@@ -37,3 +37,8 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_check_badges_on_stat_change
+AFTER INSERT OR UPDATE ON user_challenge
+FOR EACH ROW
+EXECUTE FUNCTION check_badges_on_stat_change();
