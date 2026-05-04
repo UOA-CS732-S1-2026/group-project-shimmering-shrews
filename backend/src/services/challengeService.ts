@@ -4,6 +4,39 @@ import { syncUserProfileByAuth } from '../daos/profileDao'
 import { ApiError } from '../utils/ApiError'
 import { mapLocations } from '../utils/mapLocations'
 
+export const DAILY_CHALLENGE_LIMIT = 3
+
+const toRad = (deg: number) => (deg * Math.PI) / 180
+
+export const haversineDistance = (
+  lat1: number, lng1: number,
+  lat2: number, lng2: number
+): number => {
+  const R = 6371 // km
+  const dLat = toRad(lat2 - lat1)
+  const dLng = toRad(lng2 - lng1)
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
+export const filterChallengesByRadius = <
+  T extends { location: { latitude: { toNumber(): number } | number; longitude: { toNumber(): number } | number } | null }
+>(
+  challenges: T[],
+  lat: number,
+  lng: number,
+  radiusKm: number
+): T[] => {
+  return challenges.filter((c) => {
+    if (!c.location) return false
+    const cLat = Number(c.location.latitude)
+    const cLng = Number(c.location.longitude)
+    return haversineDistance(lat, lng, cLat, cLng) <= radiusKm
+  })
+}
+
 export const getAllChallenges = async () => {
   return findAllActiveChallenges()
 }
