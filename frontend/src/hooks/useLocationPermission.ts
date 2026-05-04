@@ -4,14 +4,11 @@ type PermissionStatus = 'not-asked' | 'granted' | 'denied'
 
 export const useLocationPermission = () => {
   const [permissionStatus, setPermissionStatus] = useState<PermissionStatus>('not-asked')
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null)
 
   const mapPermissionState = (state: string): PermissionStatus => {
-    if (state === 'granted') {
-      return 'granted'
-    }
-    if (state === 'denied') {
-      return 'denied'
-    }
+    if (state === 'granted') return 'granted'
+    if (state === 'denied') return 'denied'
     return 'not-asked'
   }
 
@@ -21,10 +18,10 @@ export const useLocationPermission = () => {
       setPermissionStatus('not-asked')
       return
     }
-
     navigator.geolocation.getCurrentPosition(
-      () => {
+      (position) => {
         setPermissionStatus('granted')
+        setUserLocation([position.coords.latitude, position.coords.longitude])
       },
       (error) => {
         if (error.code === error.PERMISSION_DENIED) {
@@ -33,11 +30,7 @@ export const useLocationPermission = () => {
         }
         setPermissionStatus('not-asked')
       },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
-      }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     )
   }
 
@@ -53,6 +46,16 @@ export const useLocationPermission = () => {
         const result = await navigator.permissions.query({ name: 'geolocation' })
         permissionQuery = result
         setPermissionStatus(mapPermissionState(result.state))
+
+        if (result.state === 'granted') {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              setUserLocation([position.coords.latitude, position.coords.longitude])
+            },
+            () => {}
+          )
+        }
+
         result.onchange = () => {
           setPermissionStatus(mapPermissionState(result.state))
         }
@@ -62,16 +65,10 @@ export const useLocationPermission = () => {
     }
 
     checkPermissionState()
-
     return () => {
-      if (permissionQuery) {
-        permissionQuery.onchange = null
-      }
+      if (permissionQuery) permissionQuery.onchange = null
     }
   }, [])
 
-  return {
-    permissionStatus,
-    requestPermission,
-  }
+  return { permissionStatus, requestPermission, userLocation }
 }
