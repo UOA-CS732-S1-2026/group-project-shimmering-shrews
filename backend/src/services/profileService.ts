@@ -6,8 +6,8 @@ import {
   upsertUserProfileByAuth,
 } from '../daos/profileDao'
 import { ApiError } from '../utils/ApiError'
-
-const XP_PER_LEVEL = 500
+import { getXpForLevelStart, getXpForNextLevel } from '../utils/leveling'
+import { isExploratoryUsername } from '../utils/username'
 
 const formatCompletedDate = (date: Date | null) => {
   if (!date) {
@@ -21,10 +21,13 @@ const formatCompletedDate = (date: Date | null) => {
   })}`
 }
 
-export const getUserProfile = async (authId: string, email?: string) => {
+export const getUserProfile = async (
+  authId: string,
+  email?: string
+) => {
   let profile = await findUserProfileByAuthId(authId)
 
-  if (!profile) {
+  if (!profile || !isExploratoryUsername(profile.username)) {
     if (!email) {
       throw new ApiError(404, 'User profile not found')
     }
@@ -47,8 +50,8 @@ export const getUserProfile = async (authId: string, email?: string) => {
     earned: badge.awarded_badge.length > 0,
   }))
 
-  const xpForCurrentLevel = Math.max(0, (profile.level - 1) * XP_PER_LEVEL)
-  const xpForNextLevel = Math.max(profile.level * XP_PER_LEVEL, profile.xp_earned + XP_PER_LEVEL)
+  const xpForCurrentLevel = getXpForLevelStart(profile.level)
+  const xpForNextLevel = getXpForNextLevel(profile.level)
 
   return {
     name: profile.username,

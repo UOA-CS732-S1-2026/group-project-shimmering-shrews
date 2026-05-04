@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker, Popup, Circle, CircleMarker, useMap } from 'react-leaflet'
-import { getChallenges } from '../services/challenges'
 import type { Challenge } from '../types/challenge'
+import type { UserChallenge } from '../types/userChallenge'
+import { getUserChallenges } from '../services/userChallenges'
 import { badgeStyle, categoryColors, categoryColorsStrong, xpStyle } from '../styles/challengeStyle'
 import { DEV_SHOW_ALL } from '../config/featureFlags'
 import LocationPermissionDialog from '../components/LocationPermissionDialog.tsx'
@@ -13,7 +14,7 @@ import {
   LOCATION_PERMISSION_SETTINGS_GUIDANCE,
 } from '../config/locationPermissionContent'
 
-import L from "leaflet";
+import L from 'leaflet'
 
 type PermissionStatus = 'not-asked' | 'granted' | 'denied'
 const DEFAULT_MAP_CENTER: [number, number] = [-36.8485, 174.7633]
@@ -28,9 +29,9 @@ function mapPermissionState(state: string): PermissionStatus {
   return 'not-asked'
 }
 
-function createTeardropIcon(challenge_category : Challenge["challenge_category"]) {
+function createTeardropIcon(challenge_category: Challenge['challenge_category']) {
   const teardrop = L.divIcon({
-    className: "challenge-marker",
+    className: 'challenge-marker',
     html: `
       <svg width="36" height="48" viewBox="0 0 24 24">
         <!-- outer teardrop -->
@@ -52,7 +53,7 @@ function createTeardropIcon(challenge_category : Challenge["challenge_category"]
     `,
     iconSize: [24, 24],
     iconAnchor: [12, 24],
-  });
+  })
 
   return teardrop
 }
@@ -69,7 +70,7 @@ function getDistanceMetres(a: [number, number], b: [number, number]) {
   return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x))
 }
 
-function RecenterMap({ center, zoom }: { center: [number, number], zoom: number }) {
+function RecenterMap({ center, zoom }: { center: [number, number]; zoom: number }) {
   const map = useMap()
 
   useEffect(() => {
@@ -81,16 +82,15 @@ function RecenterMap({ center, zoom }: { center: [number, number], zoom: number 
 
 export default function MapView() {
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null)
-  // how accurate our GPS reports itself to be 
   const [accuracy, setAccuracy] = useState<number | null>(null)
-  const [challenges, setChallenges] = useState<Challenge[]>([])
+  const [userChallenges, setUserChallenges] = useState<UserChallenge[]>([])
   const [challengesError, setChallengesError] = useState<string | null>(null)
   const [permissionStatus, setPermissionStatus] = useState<PermissionStatus>('not-asked')
   const [showPermissionDialog, setShowPermissionDialog] = useState(false)
   const [isRequestingLocation, setIsRequestingLocation] = useState(false)
   const [isInitializingLocation, setIsInitializingLocation] = useState(true)
   const [locationMessage, setLocationMessage] = useState<string | null>(null)
-  const radius = 500 // metres
+  const radius = 500
 
   const fetchCurrentLocation = (
     options: { showErrors?: boolean; onComplete?: () => void } = {}
@@ -123,7 +123,7 @@ export default function MapView() {
         onComplete?.()
       },
       (error) => {
-        console.error("Error getting location:", error)
+        console.error('Error getting location:', error)
         if (error.code === error.PERMISSION_DENIED) {
           setPermissionStatus('denied')
           if (showErrors) {
@@ -137,10 +137,8 @@ export default function MapView() {
           if (showErrors) {
             setLocationMessage('Location request timed out. Please try again.')
           }
-        } else {
-          if (showErrors) {
-            setLocationMessage('Could not get location. Please try again.')
-          }
+        } else if (showErrors) {
+          setLocationMessage('Could not get location. Please try again.')
         }
         setIsRequestingLocation(false)
         onComplete?.()
@@ -148,12 +146,11 @@ export default function MapView() {
       {
         enableHighAccuracy: true,
         timeout: 10000,
-        maximumAge: 0
+        maximumAge: 0,
       }
     )
   }
 
-  // Request location permission via dialog first, then geolocation
   const requestLocationPermission = () => {
     setShowPermissionDialog(true)
   }
@@ -170,16 +167,18 @@ export default function MapView() {
   useEffect(() => {
     let isActive = true
 
-    getChallenges().then((data) => {
-      if (isActive) {
-        setChallenges(data)
-        setChallengesError(null)
-      }
-    }).catch(() => {
-      if (isActive) {
-        setChallengesError('Could not load challenges for the map.')
-      }
-    })
+    getUserChallenges()
+      .then((data) => {
+        if (isActive) {
+          setUserChallenges(data)
+          setChallengesError(null)
+        }
+      })
+      .catch(() => {
+        if (isActive) {
+          setChallengesError('Could not load challenges for the map.')
+        }
+      })
 
     const runPermissionCheck = async () => {
       if (!navigator.permissions) {
@@ -230,26 +229,19 @@ export default function MapView() {
     }
   }, [])
 
-  // values for location, either device gps or hardcoded for dev purposes
-  // comment out the one you don't want to use. Insert whatever hardcoded values you wish
-
-  // hardcoded location
-  // const currUserLocation: [number, number] | null = [-36.8485, 174.7633]
-
-  // gps location
   const currUserLocation: [number, number] | null = userLocation
   const mapCenter: [number, number] = currUserLocation ?? DEFAULT_MAP_CENTER
 
-  // Determine if we should show location-required state
   const locationRequired = !DEV_SHOW_ALL && permissionStatus === 'denied'
   const showChallengesOnMap = DEV_SHOW_ALL || permissionStatus === 'granted'
 
-  const visibleChallenges = showChallengesOnMap
-    ? challenges.filter((challenge) =>
-        DEV_SHOW_ALL || !currUserLocation ||
+  const visibleUserChallenges = showChallengesOnMap
+    ? userChallenges.filter((userChallenge) =>
+        DEV_SHOW_ALL ||
+        !currUserLocation ||
         getDistanceMetres(currUserLocation, [
-          Number(challenge.location.latitude),
-          Number(challenge.location.longitude),
+          Number(userChallenge.challenge.location.latitude),
+          Number(userChallenge.challenge.location.longitude),
         ]) <= radius
       )
     : []
@@ -264,17 +256,18 @@ export default function MapView() {
         onCancel={handlePermissionDialogDeny}
       />
 
-      {/* Location Denied Banner */}
       {locationRequired && (
-        <div style={{
-          backgroundColor: '#fff3cd',
-          borderBottom: '2px solid #ffc107',
-          padding: '1rem',
-          color: '#856404',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
+        <div
+          style={{
+            backgroundColor: '#fff3cd',
+            borderBottom: '2px solid #ffc107',
+            padding: '1rem',
+            color: '#856404',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
           <div>
             <strong>Location access is required</strong>
             <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.9rem' }}>
@@ -284,20 +277,21 @@ export default function MapView() {
         </div>
       )}
 
-      {/* Main Content Area */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         {isInitializingLocation && (
           <p style={{ textAlign: 'center', marginTop: '2rem' }}>Loading your location...</p>
         )}
 
         {permissionStatus !== 'granted' && (
-          <div style={{
-            margin: '12px',
-            padding: '10px 12px',
-            background: '#f5f7fa',
-            border: '1px solid #d9dee7',
-            borderRadius: '8px',
-          }}>
+          <div
+            style={{
+              margin: '12px',
+              padding: '10px 12px',
+              background: '#f5f7fa',
+              border: '1px solid #d9dee7',
+              borderRadius: '8px',
+            }}
+          >
             <p style={{ margin: 0, color: '#555', fontSize: '0.9rem' }}>
               {LOCATION_PERMISSION_BANNER_MESSAGE}
             </p>
@@ -318,7 +312,7 @@ export default function MapView() {
                 borderRadius: '4px',
                 cursor: isRequestingLocation ? 'not-allowed' : 'pointer',
                 opacity: isRequestingLocation ? 0.7 : 1,
-                fontSize: '0.95rem'
+                fontSize: '0.95rem',
               }}
             >
               {isRequestingLocation ? 'Requesting Location...' : 'Enable Location'}
@@ -326,17 +320,18 @@ export default function MapView() {
           </div>
         )}
 
-        {/* Location Denied - DEV_SHOW_ALL is false */}
         {locationRequired && !userLocation && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '100%',
-            flexDirection: 'column',
-            gap: '1rem',
-            color: '#666'
-          }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '100%',
+              flexDirection: 'column',
+              gap: '1rem',
+              color: '#666',
+            }}
+          >
             <p>Location access denied.</p>
             <p style={{ fontSize: '0.9rem', color: '#999' }}>
               To enable location in your browser:
@@ -372,10 +367,10 @@ export default function MapView() {
                   center={currUserLocation}
                   radius={8}
                   pathOptions={{
-                    color: "white",
+                    color: 'white',
                     weight: 2,
-                    fillColor: "blue",
-                    fillOpacity: 0.8
+                    fillColor: 'blue',
+                    fillOpacity: 0.8,
                   }}
                 >
                   <Popup>You are here</Popup>
@@ -398,36 +393,39 @@ export default function MapView() {
                       weight: 0,
                       fillColor: '#73a1d5',
                       fillOpacity: 0.15,
-                      dashArray: '4 6'
+                      dashArray: '4 6',
                     }}
                   />
                 )}
               </>
             )}
-            {visibleChallenges.map((challenge) => (
+            {visibleUserChallenges.map((userChallenge) => (
               <Marker
-                key={challenge.id}
-                position={[Number(challenge.location.latitude), Number(challenge.location.longitude)]}
-                icon={createTeardropIcon(challenge.challenge_category)}
+                key={userChallenge.id}
+                position={[
+                  Number(userChallenge.challenge.location.latitude),
+                  Number(userChallenge.challenge.location.longitude),
+                ]}
+                icon={createTeardropIcon(userChallenge.challenge.challenge_category)}
               >
                 <Popup className="challenge-map-popup">
                   <div className="challenge-map-popup__content">
                     <p className="eyebrow">Nearby Challenge</p>
-                    <h3>{challenge.name}</h3>
-                    <p>{challenge.description ?? 'No description available.'}</p>
+                    <h3>{userChallenge.challenge.name}</h3>
+                    <p>{userChallenge.challenge.description ?? 'No description available.'}</p>
                     <div className="challenge-map-popup__meta">
                       <span
                         style={{
                           ...badgeStyle,
-                          background: categoryColors[challenge.challenge_category.name] || '#ddd',
+                          background: categoryColors[userChallenge.challenge.challenge_category.name] || '#ddd',
                           marginRight: 0,
                         }}
                       >
-                        {challenge.challenge_category.name}
+                        {userChallenge.challenge.challenge_category.name}
                       </span>
-                      <span style={xpStyle}>+{challenge.xp_worth} XP</span>
+                      <span style={xpStyle}>+{userChallenge.challenge.xp_worth} XP</span>
                     </div>
-                    <Link className="challenge-map-popup__link" to={`/challenges/${challenge.id}`}>
+                    <Link className="challenge-map-popup__link" to={`/challenges/${userChallenge.id}`}>
                       Open Full Detail
                     </Link>
                   </div>

@@ -49,7 +49,7 @@ export const userChallengeService = {
     if (userChallenges.length === 0) {
       const challenges = await findAllActiveChallenges()
 
-      await userChallengeDAO.createTodayUserChallenges(user.id, challenges, today)
+      await userChallengeDAO.createTodayUserChallenges(user.id, challenges)
 
       userChallenges = await userChallengeDAO.getTodayUserChallengesByUserId(user.id, today)
     }

@@ -27,7 +27,7 @@ export const getUserChallenges = async (): Promise<UserChallenge[]> => {
     throw new Error('User not authenticated')
   }
 
-  const res = await fetch(`${getBackendUrl()}/user-challenges`, {
+  const res = await fetch(`${getBackendUrl()}/user-challenges/today`, {
     headers: { Authorization: `Bearer ${token}` },
   })
 

@@ -1,7 +1,7 @@
 import prisma from '../config/prisma'
 import type { Prisma } from '@prisma/client'
+import { calculateLevel } from '../utils/leveling'
 
-const XP_PER_LEVEL = 500
 const MS_PER_DAY = 1000 * 60 * 60 * 24
 
 const startOfUtcDay = (date: Date) =>
@@ -30,8 +30,6 @@ const calculateNextStreakCount = (
 
   return 1
 }
-
-const calculateLevel = (xpEarned: number) => Math.floor(xpEarned / XP_PER_LEVEL) + 1
 
 const challengeSelect = {
   id: true,
@@ -145,7 +143,7 @@ export const completeUserChallenge = async (challengeId: number, userId: number)
         challenge_id: challengeId,
       },
       orderBy: {
-        assigned_date: 'desc',
+        assigned_at: 'desc',
       },
     })
 

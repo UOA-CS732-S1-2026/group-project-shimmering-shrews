@@ -4,7 +4,6 @@ import { ApiError } from '../utils/ApiError'
 import { asyncHandler } from '../utils/asyncHandler'
 import type { AuthRequest } from '../middleware/auth'
 
-
 const parseId = (value: unknown, name: string) => {
   const rawValue = Array.isArray(value) ? undefined : value
   const id = Number(rawValue)
@@ -38,11 +37,16 @@ export const getChallenge = asyncHandler(async (req: Request, res: Response) => 
 export const checkInChallenge = asyncHandler(async (req: Request, res: Response) => {
   const challengeId = parseId(req.params.id, 'Challenge id')
   const authUser = (req as AuthRequest).auth
+
   if (!authUser?.sub) {
     throw new ApiError(401, 'Authenticated user is missing')
   }
-  
-  const checkIn = await checkInToChallenge(challengeId, authUser.sub)
+
+  if (!authUser.email) {
+    throw new ApiError(401, 'Authenticated user email is missing')
+  }
+
+  const checkIn = await checkInToChallenge(challengeId, authUser.sub, authUser.email)
 
   res.status(200).json({
     success: true,
@@ -52,7 +56,7 @@ export const checkInChallenge = asyncHandler(async (req: Request, res: Response)
 })
 
 export const createChallengesFromLocations = asyncHandler(async (_req: Request, res: Response) => {
-  const challenges = await createNewChallenges();
+  const challenges = await createNewChallenges()
 
   res.status(200).json({
     success: true,

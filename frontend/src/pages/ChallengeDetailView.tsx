@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   badgeStyle,
   buttonStyle,
@@ -16,6 +17,8 @@ import { useLocationPermission } from '../hooks/useLocationPermission'
 import { DEV_SHOW_ALL } from '../config/featureFlags'
 import { LOCATION_PERMISSION_CHECKIN_MESSAGE } from '../config/locationPermissionContent'
 
+const MAX_DISTANCE_METRES = 700
+
 function getDistanceMetres(a: [number, number], b: [number, number]) {
   const R = 6371000
   const lat1 = (a[0] * Math.PI) / 180
@@ -25,6 +28,7 @@ function getDistanceMetres(a: [number, number], b: [number, number]) {
   const x =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) * Math.sin(dLon / 2)
+
   return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x))
 }
 
@@ -36,6 +40,8 @@ export default function ChallengeDetailView({
   userChallenge: UserChallenge | null
 }) {
   const { permissionStatus } = useLocationPermission()
+  const [checkingIn, setCheckingIn] = useState(false)
+  const [checkInError, setCheckInError] = useState<string | null>(null)
 
   const detailDescriptionStyle = {
     margin: '6px 0',
@@ -68,19 +74,23 @@ export default function ChallengeDetailView({
   }
 
   const { challenge } = userChallenge
-  const maxDistance = 700
   const isCompleted = userChallenge.status === 'completed'
   const isLocked = userChallenge.status !== 'in_progress'
   const isLocationBlocked = !DEV_SHOW_ALL && permissionStatus !== 'granted'
-  const isCheckInDisabled = isCompleted || isLocked || isLocationBlocked
+  const isCheckInDisabled = isCompleted || isLocked || isLocationBlocked || checkingIn
 
   const checkIn = () => {
-    if (isCheckInDisabled) return
-
-    if (!navigator.geolocation) {
-      alert('Geolocation is not supported by your browser.')
+    if (isCheckInDisabled) {
       return
     }
+
+    if (!navigator.geolocation) {
+      setCheckInError('Geolocation is not supported by your browser.')
+      return
+    }
+
+    setCheckingIn(true)
+    setCheckInError(null)
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
@@ -90,32 +100,41 @@ export default function ChallengeDetailView({
           [Number(challenge.location.latitude), Number(challenge.location.longitude)]
         )
 
-        if (distance > maxDistance) {
-          alert(`You are too far away (${Math.round(distance)}m). You must be within ${maxDistance}m of the challenge.`)
+        if (distance > MAX_DISTANCE_METRES) {
+          setCheckInError(
+            `You are too far away (${Math.round(distance)}m). You must be within ${MAX_DISTANCE_METRES}m of the challenge.`
+          )
+          setCheckingIn(false)
           return
         }
 
         try {
           await checkInChallenge(challenge.id)
-          alert('Challenge sucessfully completed')
           window.location.reload()
-        } catch {
-          alert('Failed to check into challenge. Please try again.')
+        } catch (error) {
+          setCheckInError(
+            error instanceof Error ? error.message : 'Failed to check into challenge. Please try again.'
+          )
+        } finally {
+          setCheckingIn(false)
         }
       },
       () => {
-        alert('Unable to retrieve your location. Please enable location services.')
+        setCheckInError('Unable to retrieve your location. Please enable location services.')
+        setCheckingIn(false)
       }
     )
   }
 
-  const checkInLabel = isCompleted
-    ? 'COMPLETED'
-    : isLocked
-      ? 'NOT AVAILABLE'
-      : isLocationBlocked
-        ? 'Location Required'
-        : 'CHECK IN'
+  const checkInLabel = checkingIn
+    ? 'CHECKING IN...'
+    : isCompleted
+      ? 'COMPLETED'
+      : isLocked
+        ? 'NOT AVAILABLE'
+        : isLocationBlocked
+          ? 'Location Required'
+          : 'CHECK IN'
 
   return (
     <div style={containerStyle}>
@@ -171,6 +190,7 @@ export default function ChallengeDetailView({
               {LOCATION_PERMISSION_CHECKIN_MESSAGE}
             </p>
           )}
+          {checkInError ? <p style={{ color: '#b00020', marginTop: '10px' }}>{checkInError}</p> : null}
         </div>
       </div>
 
