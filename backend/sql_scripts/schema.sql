@@ -190,3 +190,6 @@ WHERE category_id IS NULL;
 CREATE UNIQUE INDEX badge_stat_map_criteria_category_unique
 ON badge_stat_map (badge_id, category_id)
 WHERE category_id IS NOT NULL;
+
+CREATE UNIQUE INDEX user_stat_unique
+ON user_stat (user_id, category_id, name);
