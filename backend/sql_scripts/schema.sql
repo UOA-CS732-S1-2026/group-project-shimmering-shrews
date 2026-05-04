@@ -128,7 +128,15 @@ CREATE TABLE badge_stat_map (
     stat_name VARCHAR(100) NOT NULL,
     category_id INTEGER,
 
-    PRIMARY KEY (badge_id, stat_name, category_id)
+    PRIMARY KEY (badge_id, stat_name, category_id),
+
+    FOREIGN KEY (badge_id)
+    REFERENCES badge(id)
+    ON DELETE CASCADE,
+
+    FOREIGN KEY (category_id)
+    REFERENCES challenge_category(id)
+    ON DELETE CASCADE
 );
 
 -- USER CHALLENGE
