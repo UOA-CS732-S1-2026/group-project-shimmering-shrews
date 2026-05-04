@@ -35,10 +35,6 @@ async function main() {
     await prisma.badge.create({
       data: {
         name: 'Test Badge',
-        achievement_criteria: {
-          type: 'test',
-          description: 'Awarded for verifying badge seed data.',
-        },
         target_value: 1,
         description: 'Badge used to validate badge seeding.',
         active_url: 'https://example.com/badges/test-badge-active.png',

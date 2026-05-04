@@ -124,11 +124,10 @@ CREATE TABLE badge_criteria (
 );
 
 CREATE TABLE badge_stat_map (
+    id INTEGER SERIAL,
     badge_id INTEGER NOT NULL,
     stat_name VARCHAR(100) NOT NULL,
     category_id INTEGER,
-
-    PRIMARY KEY (badge_id, stat_name, category_id),
 
     FOREIGN KEY (badge_id)
     REFERENCES badge(id)
@@ -173,11 +172,21 @@ ON user_stat (user_id, category_id)
 WHERE category_id IS NOT NULL;
 
 /* No badge can have multiple criteria referencing the same stat name */
-CREATE UNIQUE INDEX badge_criteria_global_unique
+CREATE UNIQUE INDEX badge_criteria_name_unique
 ON badge_criteria (badge_id, stat_name)
 WHERE category_id IS NULL;
 
 /* No badge can have multiple criteria referencing the same category */
 CREATE UNIQUE INDEX badge_criteria_category_unique
 ON badge_criteria (badge_id, category_id)
+WHERE category_id IS NOT NULL;
+
+/* No badge stat map can have multiple criteria referencing the same stat name */
+CREATE UNIQUE INDEX badge_stat_map_criteria_name_unique
+ON badge_stat_map (badge_id, stat_name)
+WHERE category_id IS NULL;
+
+/* No badge can have multiple criteria referencing the same category */
+CREATE UNIQUE INDEX badge_stat_map_criteria_category_unique
+ON badge_stat_map (badge_id, category_id)
 WHERE category_id IS NOT NULL;
