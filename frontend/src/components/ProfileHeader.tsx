@@ -42,6 +42,9 @@ function ProfileHeader({ profile, loading }: ProfileHeaderProps) {
         <img className="profile-header__avatar"
           src={profile.avatarUrl ?? '/profile-placeholder.svg'}
           alt={`${profile.username} avatar`}
+          onError={(event) => {
+            event.currentTarget.src = '/profile-placeholder.svg'
+          }}
         />
         <div>
           <h1>{profile.username}</h1>

@@ -18,27 +18,13 @@ const getBackendUrl = () => {
 }
 
 export const getChallenges = async (): Promise<Challenge[]> => {
-  const supabase = getSupabaseClient()
-
-  const { data } = await supabase.auth.getSession()
-
-  const token = data.session?.access_token
-
-  if (!token) {
-    throw new Error('User not authenticated')
-  }
-
-  const res = await fetch(`${getBackendUrl()}/user-challenges/today`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  })
+  const res = await fetch(`${getBackendUrl()}/challenges`)
 
   if (!res.ok) {
     throw new Error('Failed to fetch challenges')
   }
 
-  const json = await res.json()
+  const json = (await res.json()) as ApiResponse<Challenge[]>
   return json.data
 }
 
@@ -53,7 +39,7 @@ export const getChallenge = async (challengeId: string): Promise<Challenge> => {
   return json.data
 }
 
-export const checkInChallenge = async ( challengeId: number): Promise<ApiResponse<Challenge>> => {
+export const checkInChallenge = async (challengeId: number): Promise<void> => {
   const supabase = getSupabaseClient()
   const { data } = await supabase.auth.getSession()
   const token = data.session?.access_token
@@ -62,19 +48,26 @@ export const checkInChallenge = async ( challengeId: number): Promise<ApiRespons
     throw new Error('User not authenticated')
   }
 
-  const res = await fetch( `${getBackendUrl()}/challenges/${challengeId}/checkin`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-         Authorization: `Bearer ${token}`,
-      },
-      
+  const res = await fetch(`${getBackendUrl()}/challenges/${challengeId}/checkin`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  if (!res.ok) {
+    let message = 'Failed to check in'
+
+    try {
+      const errorJson = (await res.json()) as { message?: string }
+
+      if (errorJson.message) {
+        message = errorJson.message
+      }
+    } catch {
+      // Keep the generic message when the response body is not JSON.
     }
-  )
 
-  if (!res.ok) throw new Error('Failed to check in')
-
-  const json = await res.json()
-  return json.data
+    throw new Error(message)
+  }
 }

@@ -9,7 +9,6 @@ const userChallengeSelect = {
   assigned_at: true,
   completed_at: true,
   skipped_at: true,
-  assigned_date: true,
   id: true,
   challenge: {
     include: {
@@ -37,10 +36,19 @@ export const findUserChallenge = async (userChallengeId: number) => {
 
 export const userChallengeDAO = {
   async getTodayUserChallengesByUserId(userId: number, today: Date) {
+    const startOfDay = new Date(today)
+    startOfDay.setUTCHours(0, 0, 0, 0)
+
+    const endOfDay = new Date(today)
+    endOfDay.setUTCHours(23, 59, 59, 999)
+
     return prisma.user_challenge.findMany({
       where: {
         user_id: userId,
-        assigned_date: today,
+        assigned_at: {
+          gte: startOfDay,
+          lte: endOfDay,
+        }
       },
       include: {
         challenge: {
@@ -56,13 +64,11 @@ export const userChallengeDAO = {
   async createTodayUserChallenges(
     userId: number,
     challenges: { id: number; xp_worth: number }[],
-    today: Date
   ) {
     return prisma.user_challenge.createMany({
       data: challenges.map((challenge) => ({
         user_id: userId,
         challenge_id: challenge.id,
-        assigned_date: today,
         status: "in_progress",
         xp_worth: challenge.xp_worth,
       })),
