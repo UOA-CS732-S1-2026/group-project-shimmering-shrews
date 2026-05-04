@@ -22,6 +22,9 @@ import { useLocationPermission } from '../hooks/useLocationPermission'
 import { DEV_SHOW_ALL } from '../config/featureFlags'
 import { LOCATION_PERMISSION_CHECKIN_MESSAGE } from '../config/locationPermissionContent'
 
+// IMPORTANT: Must match backend/src/config/constants.ts ALLOWED_COMPLETION_RADIUS_METERS
+const ALLOWED_COMPLETION_RADIUS_METERS = 700
+
 function getDistanceMetres(a: [number, number], b: [number, number]) {
   const R = 6371000
   const lat1 = (a[0] * Math.PI) / 180
@@ -81,7 +84,6 @@ export default function ChallengeDetailView({
   }
 
   const { challenge } = activeUserChallenge
-  const maxDistance = 700
   const isCompleted = activeUserChallenge.status === 'completed'
   const isCancelled = activeUserChallenge.status === 'cancelled'
   const isAccepted = activeUserChallenge.status === 'accepted'
@@ -106,8 +108,8 @@ export default function ChallengeDetailView({
           [Number(challenge.location.latitude), Number(challenge.location.longitude)]
         )
 
-        if (distance > maxDistance) {
-          alert(`You are too far away (${Math.round(distance)}m). You must be within ${maxDistance}m of the challenge.`)
+        if (distance > ALLOWED_COMPLETION_RADIUS_METERS) {
+          alert(`You are too far away (${Math.round(distance)}m). You must be within ${ALLOWED_COMPLETION_RADIUS_METERS}m of the challenge.`)
           return
         }
 
@@ -143,6 +145,7 @@ export default function ChallengeDetailView({
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         try {
+          const { latitude, longitude } = position.coords
           setIsSubmitting(true)
           const accepted = await acceptUserChallenge(
             activeUserChallenge.id,

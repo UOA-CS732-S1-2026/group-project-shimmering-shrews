@@ -9,6 +9,7 @@ import {
   completeUserChallengeByUserChallengeId,
   findAllActiveChallenges,
 } from '../daos/challengeDao'
+import { ALLOWED_COMPLETION_RADIUS_METERS } from '../config/constants'
 
 export const getUserChallenges = async (authId: string) => {
   const user = await userDAO.getUserByAuthId(authId)
@@ -151,10 +152,8 @@ export const userChallengeService = {
 
     const distanceMeters = haversine(lat1, lon1, lat2, lon2)
 
-    const ALLOWED_RADIUS_METERS = 700 // must match frontend maxDistance
-
-    if (distanceMeters > ALLOWED_RADIUS_METERS) {
-      throw new ApiError(409, `User is not within required distance to complete challenge (${Math.round(distanceMeters)}m away)`)
+    if (distanceMeters > ALLOWED_COMPLETION_RADIUS_METERS) {
+      throw new ApiError(409, `User is not within required distance to complete challenge (${Math.round(distanceMeters)}m away, must be within ${ALLOWED_COMPLETION_RADIUS_METERS}m)`)
     }
 
     const checkIn = await completeUserChallengeByUserChallengeId(userChallengeId, user.id)
