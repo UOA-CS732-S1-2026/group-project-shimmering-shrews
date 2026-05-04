@@ -193,3 +193,7 @@ WHERE category_id IS NOT NULL;
 
 CREATE UNIQUE INDEX user_stat_unique
 ON user_stat (user_id, category_id, name);
+
+ALTER TABLE user_stat
+ADD CONSTRAINT user_stat_user_id_name_category_id_key
+UNIQUE (user_id, name, category_id);

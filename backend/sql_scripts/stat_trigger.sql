@@ -16,8 +16,7 @@ BEGIN
         /* Update total challenges completed stat */
         INSERT INTO user_stat (user_id, category_id, name, current_value, updated_at)
         VALUES (NEW.user_id, NULL, 'challenges_completed', 1, NOW())
-        ON CONFLICT (user_id, category_id)
-        WHERE category_id IS NULL AND name = 'challenges_completed'
+        ON CONFLICT (user_id, name, category_id)
         DO UPDATE
         SET current_value = user_stat.current_value + 1,
             updated_at = NOW();
@@ -25,9 +24,7 @@ BEGIN
         /* Update category completion stat */
         INSERT INTO user_stat (user_id, category_id, name, current_value, updated_at)
         VALUES (NEW.user_id, v_category_id, 'category_challenges_completed', 1, NOW())
-        ON CONFLICT (user_id, category_id)
-        WHERE category_id IS NOT NULL
-          AND name = 'category_challenges_completed'
+        ON CONFLICT (user_id, name, category_id)
         DO UPDATE
         SET current_value = user_stat.current_value + 1,
             updated_at = NOW();
