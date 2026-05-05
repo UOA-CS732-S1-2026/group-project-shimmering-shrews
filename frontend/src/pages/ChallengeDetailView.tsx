@@ -200,11 +200,9 @@ export default function ChallengeDetailView({
         ? 'EXPIRED'
         : isCancelled
           ? 'CANCELLED'
-          : !isAccepted
-            ? 'ACCEPT REQUIRED'
-            : isLocationBlocked
-              ? 'Location Required'
-              : 'CHECK IN'
+          : isLocationBlocked
+            ? 'Location Required'
+            : 'CHECK IN'
 
   return (
     <div style={containerStyle}>
