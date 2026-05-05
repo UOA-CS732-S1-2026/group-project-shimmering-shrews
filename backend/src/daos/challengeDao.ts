@@ -84,6 +84,7 @@ const userChallengeResponseSelect = {
       location: {
         select: {
           id: true,
+          name: true,
           latitude: true,
           longitude: true,
         },
