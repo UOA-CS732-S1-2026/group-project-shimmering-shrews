@@ -39,15 +39,10 @@ export default function ChallengeList({
   const DEFAULT_LOCATION: [number, number] = [-36.8485, 174.7633]
   const RADIUS_KM = 5
 
-  const closeButtonStyle = {
-    position: 'absolute',
-    top: '10px',
-    right: '10px',
-    border: 'none',
-    background: 'transparent',
-    cursor: 'pointer',
-    fontSize: '18px',
-  } as const
+  const sortedUserChallenges = [...userChallenges].sort((a, b) => {
+    if (a.status === b.status) return 0
+    return a.status === 'accepted' ? -1 : 1
+  })
 
   const descriptionStyle = {
     margin: '6px 0',
@@ -57,9 +52,10 @@ export default function ChallengeList({
   } as const
 
   const rowStyle = {
+    width: "100%",
     display: 'flex',
-    gap: '10px',
     alignItems: 'center',
+    justifyContent: 'space-between',
   } as const
 
   const isListDisabled = !DEV_SHOW_ALL && permissionStatus !== 'granted'
@@ -130,7 +126,6 @@ export default function ChallengeList({
 
   function ChallengeCard({
     userChallenge,
-    onClose,
     loading,
   }: {
     userChallenge?: UserChallenge
@@ -171,15 +166,6 @@ export default function ChallengeList({
           ;(e.currentTarget as HTMLDivElement).style.transform = 'scale(1)'
         }}
       >
-        <button
-          style={closeButtonStyle}
-          onClick={(e) => {
-            e.stopPropagation()
-            onClose(userChallenge.id)
-          }}
-        >
-          x
-        </button>
         <h2 style={challengeTitleStyle}>{challenge.name}</h2>
         <p style={descriptionStyle}>{challenge.description ?? 'No description available.'}</p>
         <div style={rowStyle}>
@@ -187,7 +173,7 @@ export default function ChallengeList({
             {challenge.challenge_category.name}
           </span>
           <span style={xpStyle}>{challenge.xp_worth} XP</span>
-          <span style={{ ...badgeStyle, background: challengeStatusColors[userChallenge.status] || '#ddd' }}>
+          <span className={`challenge-status challenge-status--${userChallenge.status}`} style={{ ...badgeStyle, background: challengeStatusColors[userChallenge.status] || '#ddd' }}>
             {challengeStatusText[userChallenge.status]}
           </span>
         </div>
@@ -220,12 +206,12 @@ export default function ChallengeList({
           </button>
         </div>
       )}
-      <div>
+      <div className='challenge-list-container'>
         {loading
-          ? ['1', '2', '3', '4', '5', '6'].map((i) => (
+          ? ['1', '2', '3'].map((i) => (
               <ChallengeCard key={i} onClose={handleClose} loading />
             ))
-          : userChallenges.map((userChallenge) => (
+          : sortedUserChallenges.map((userChallenge) => (
               <ChallengeCard
                 key={userChallenge.id}
                 userChallenge={userChallenge}
@@ -233,21 +219,6 @@ export default function ChallengeList({
                 loading={loading}
               />
             ))}
-      </div>
-
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '12px',
-        }}
-      >
-        <button onClick={() => navigate('/map')} style={buttonStyle}>
-          Map View
-        </button>
-        <button onClick={() => navigate('/profile')} style={buttonStyle}>
-          Return to Profile
-        </button>
       </div>
     </div>
   )
