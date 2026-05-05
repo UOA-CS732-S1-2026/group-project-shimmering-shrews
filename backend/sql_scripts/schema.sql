@@ -116,26 +116,11 @@ CREATE TABLE badge_criteria (
     id SERIAL PRIMARY KEY,
     badge_id INTEGER NOT NULL,
     stat_name VARCHAR(100) NOT NULL,
-    category_id INTEGER,
+    category_id INTEGER NOT NULL DEFAULT 0,
     target_value INTEGER NOT NULL,
 
     FOREIGN KEY (badge_id) REFERENCES badge(id) ON DELETE CASCADE,
     FOREIGN KEY (category_id) REFERENCES challenge_category(id) ON DELETE CASCADE
-);
-
-CREATE TABLE badge_stat_map (
-    id SERIAL,
-    badge_id INTEGER NOT NULL,
-    stat_name VARCHAR(100) NOT NULL,
-    category_id INTEGER,
-
-    FOREIGN KEY (badge_id)
-    REFERENCES badge(id)
-    ON DELETE CASCADE,
-
-    FOREIGN KEY (category_id)
-    REFERENCES challenge_category(id)
-    ON DELETE CASCADE
 );
 
 -- USER CHALLENGE
@@ -164,36 +149,16 @@ CREATE TABLE user_challenge (
 /* Speed up querying users on auth id */
 CREATE INDEX idx_users_auth_id ON users(auth_id);
 
-/* No user can have more than one stat record for a single category,
-   but they can if the category is null
-*/
-CREATE UNIQUE INDEX user_category_unique
-ON user_stat (user_id, category_id)
-WHERE category_id IS NOT NULL;
-
-/* No badge can have multiple criteria referencing the same stat name */
-CREATE UNIQUE INDEX badge_criteria_name_unique
-ON badge_criteria (badge_id, stat_name)
-WHERE category_id IS NULL;
-
-/* No badge can have multiple criteria referencing the same category */
-CREATE UNIQUE INDEX badge_criteria_category_unique
-ON badge_criteria (badge_id, category_id)
-WHERE category_id IS NOT NULL;
-
-/* No badge stat map can have multiple criteria referencing the same stat name */
-CREATE UNIQUE INDEX badge_stat_map_criteria_name_unique
-ON badge_stat_map (badge_id, stat_name)
-WHERE category_id IS NULL;
-
-/* No badge can have multiple criteria referencing the same category */
-CREATE UNIQUE INDEX badge_stat_map_criteria_category_unique
-ON badge_stat_map (badge_id, category_id)
-WHERE category_id IS NOT NULL;
-
-CREATE UNIQUE INDEX user_stat_unique
-ON user_stat (user_id, category_id, name);
+CREATE UNIQUE INDEX badge_criteria_unique
+ON badge_criteria (badge_id, category_id, stat_name);
 
 ALTER TABLE user_stat
-ADD CONSTRAINT user_stat_user_id_name_category_id_key
+ADD CONSTRAINT user_stat_unique
 UNIQUE (user_id, name, category_id);
+
+ALTER TABLE badge_criteria
+ADD CONSTRAINT badge_criteria_category_rule
+CHECK (
+    category_id = 0
+    OR stat_name = 'challenges_completed'
+);

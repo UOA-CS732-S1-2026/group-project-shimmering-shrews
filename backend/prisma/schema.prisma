@@ -20,13 +20,11 @@ model awarded_badge {
 model badge {
   id             Int              @id @default(autoincrement())
   name           String           @db.VarChar(100)
-  target_value   Int
   description    String?          @db.VarChar(100)
   active_url     String?          @db.VarChar(500)
   inactive_url   String?          @db.VarChar(500)
   awarded_badge  awarded_badge[]
   badge_criteria badge_criteria[]
-  badge_stat_map badge_stat_map[]
 }
 
 model challenge {
@@ -48,7 +46,6 @@ model challenge_category {
   name           String           @db.VarChar(100)
   icon           String?          @db.VarChar(500)
   badge_criteria badge_criteria[]
-  badge_stat_map badge_stat_map[]
   challenge      challenge[]
   user_stat      user_stat[]
 }
@@ -70,17 +67,16 @@ model user_challenge {
   assigned_at       DateTime         @default(now()) @db.Timestamp(6)
   completed_at      DateTime?        @db.Timestamp(6)
   skipped_at        DateTime?        @db.Timestamp(6)
-  assigned_date     DateTime         @default(now()) @db.Date
   id                Int              @id @default(autoincrement())
   accepted_at       DateTime?        @db.Timestamp(6)
   accepted_from_lat Decimal?         @db.Decimal(9, 6)
   accepted_from_lng Decimal?         @db.Decimal(9, 6)
   cancelled_at      DateTime?        @db.Timestamp(6)
+  expired_at        DateTime?        @db.Timestamp(6)
   challenge         challenge        @relation(fields: [challenge_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_uc_challenge")
   users             users            @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_uc_user")
 
-  @@unique([user_id, challenge_id, assigned_date])
-  @@index([user_id, status, assigned_at], map: "user_challenge_user_status_assigned_idx")
+  @@unique([user_id, challenge_id, assigned_at])
 }
 
 model users {
@@ -101,34 +97,29 @@ model users {
 }
 
 model badge_criteria {
-  id                 BigInt              @id @default(autoincrement())
-  badge_id           Int
-  category_id        Int?
-  stat_name          String?
-  target_value       Int                 @default(0)
-  badge              badge               @relation(fields: [badge_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  challenge_category challenge_category? @relation(fields: [category_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-}
-
-model badge_stat_map {
-  badge_id           Int                @default(autoincrement())
-  category_id        Int
-  stat_name          String
   id                 Int                @id @default(autoincrement())
-  badge              badge              @relation(fields: [badge_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  challenge_category challenge_category @relation(fields: [category_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  badge_id           Int
+  stat_name          String             @db.VarChar(100)
+  category_id        Int                @default(0)
+  target_value       Int
+  badge              badge              @relation(fields: [badge_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  challenge_category challenge_category @relation(fields: [category_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([badge_id, category_id, stat_name], map: "badge_criteria_unique")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model user_stat {
-  id                 BigInt              @id @default(autoincrement())
+  id                 Int                @id @default(autoincrement())
   user_id            Int
-  category_id        Int?
-  current_value      BigInt              @default(0)
-  name               String?
-  updated_at         DateTime?           @default(now()) @db.Timestamptz(6)
-  challenge_category challenge_category? @relation(fields: [category_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  users              users               @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  category_id        Int
+  current_value      Int                @default(0)
+  name               String             @db.VarChar(100)
+  updated_at         DateTime           @default(now()) @db.Timestamptz(6)
+  challenge_category challenge_category @relation(fields: [category_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_us_category")
+  users              users              @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_us_user")
+
+  @@unique([user_id, name, category_id], map: "user_stat_unique")
 }
 
 enum challenge_status {
@@ -137,6 +128,7 @@ enum challenge_status {
   completed
   accepted
   cancelled
+  expired
 }
 
 enum user_role {

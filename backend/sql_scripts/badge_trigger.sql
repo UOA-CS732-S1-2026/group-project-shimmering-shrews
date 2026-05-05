@@ -7,10 +7,10 @@ BEGIN
 
     FOR rec IN
         SELECT DISTINCT b.id AS badge_id
-        FROM badge_stat_map m
-        JOIN badge b ON b.id = m.badge_id
-        WHERE m.stat_name = NEW.name
-          AND m.category_id = NEW.category_id
+        FROM badge_criteria bc
+        JOIN badge b ON b.id = bc.badge_id
+        WHERE bc.stat_name = NEW.name
+          AND bc.category_id = NEW.category_id
     LOOP
 
         SELECT NOT EXISTS (

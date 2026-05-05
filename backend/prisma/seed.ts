@@ -35,7 +35,6 @@ async function main() {
     await prisma.badge.create({
       data: {
         name: 'Test Badge',
-        target_value: 1,
         description: 'Badge used to validate badge seeding.',
         active_url: 'https://example.com/badges/test-badge-active.png',
         inactive_url: 'https://example.com/badges/test-badge-inactive.png',
