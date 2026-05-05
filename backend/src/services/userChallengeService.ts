@@ -1,15 +1,36 @@
-import { ApiError } from '../utils/ApiError'
-import { userDAO } from '../daos/userDao'
 import {
-  findUserChallenge,
+  completeUserChallengeByUserChallengeId,
+  findAllActiveChallenges,
+} from '../daos/challengeDao'
+import {
+  findUserChallengeForUser,
   findUserChallenges,
   userChallengeDAO,
 } from '../daos/userChallengeDao'
-import { findAllActiveChallenges } from '../daos/challengeDao'
+import { userDAO } from '../daos/userDao'
+import { ALLOWED_COMPLETION_RADIUS_METERS } from '../config/constants'
+import { ApiError } from '../utils/ApiError'
+
+import { DAILY_CHALLENGE_LIMIT, filterChallengesByRadius } from './challengeService'
+
+const toRad = (deg: number) => (deg * Math.PI) / 180
+
+const haversineDistanceMetres = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+  const earthRadiusMetres = 6371000
+  const dLat = toRad(lat2 - lat1)
+  const dLon = toRad(lon2 - lon1)
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+
+  return earthRadiusMetres * c
+}
 
 export const getUserChallenges = async (authId: string) => {
   const user = await userDAO.getUserByAuthId(authId)
   const userId = user?.id
+
   if (!userId) {
     throw new ApiError(404, 'User not found')
   }
@@ -23,8 +44,14 @@ export const getUserChallenges = async (authId: string) => {
   return userChallenges
 }
 
-export const getUserChallenge = async (userChallengeId: number) => {
-  const userChallenge = await findUserChallenge(userChallengeId)
+export const getUserChallenge = async (authId: string, userChallengeId: number) => {
+  const user = await userDAO.getUserByAuthId(authId)
+
+  if (!user) {
+    throw new ApiError(404, 'User not found')
+  }
+
+  const userChallenge = await findUserChallengeForUser(userChallengeId, user.id)
 
   if (!userChallenge) {
     throw new ApiError(404, 'User challenge not found')
@@ -34,7 +61,12 @@ export const getUserChallenge = async (userChallengeId: number) => {
 }
 
 export const userChallengeService = {
-  async getOrCreateTodayChallenges(authId: string) {
+  async getOrCreateTodayChallenges(
+    authId: string,
+    lat: number,
+    lng: number,
+    radiusKm: number
+  ) {
     const user = await userDAO.getUserByAuthId(authId)
 
     if (!user) {
@@ -42,18 +74,121 @@ export const userChallengeService = {
     }
 
     const today = new Date()
-    today.setHours(0, 0, 0, 0)
+    today.setUTCHours(0, 0, 0, 0)
+
+    await userChallengeDAO.expireOpenChallengesBeforeDate(user.id, today)
 
     let userChallenges = await userChallengeDAO.getTodayUserChallengesByUserId(user.id, today)
 
     if (userChallenges.length === 0) {
-      const challenges = await findAllActiveChallenges()
+      const allChallenges = await findAllActiveChallenges()
+      const nearbyChallenges = filterChallengesByRadius(allChallenges, lat, lng, radiusKm)
+      const limitedChallenges = nearbyChallenges.slice(0, DAILY_CHALLENGE_LIMIT)
 
-      await userChallengeDAO.createTodayUserChallenges(user.id, challenges, today)
+      if (limitedChallenges.length > 0) {
+        await userChallengeDAO.createTodayUserChallenges(user.id, limitedChallenges)
+      }
 
       userChallenges = await userChallengeDAO.getTodayUserChallengesByUserId(user.id, today)
     }
 
     return userChallenges
+  },
+
+  async acceptChallenge(
+    authId: string,
+    userChallengeId: number,
+    acceptedFromLat: number,
+    acceptedFromLng: number
+  ) {
+    const user = await userDAO.getUserByAuthId(authId)
+
+    if (!user) {
+      throw new ApiError(404, 'User not found')
+    }
+
+    const acceptedChallenge = await userChallengeDAO.acceptUserChallenge(
+      userChallengeId,
+      user.id,
+      acceptedFromLat,
+      acceptedFromLng
+    )
+
+    if (!acceptedChallenge) {
+      throw new ApiError(404, 'User challenge not found')
+    }
+
+    return acceptedChallenge
+  },
+
+  async cancelChallenge(authId: string, userChallengeId: number) {
+    const user = await userDAO.getUserByAuthId(authId)
+
+    if (!user) {
+      throw new ApiError(404, 'User not found')
+    }
+
+    const cancelledChallenge = await userChallengeDAO.cancelUserChallenge(userChallengeId, user.id)
+
+    if (!cancelledChallenge) {
+      throw new ApiError(404, 'User challenge not found')
+    }
+
+    return cancelledChallenge
+  },
+
+  async checkInChallenge(
+    authId: string,
+    userChallengeId: number,
+    completedFromLat: number,
+    completedFromLng: number
+  ) {
+    const user = await userDAO.getUserByAuthId(authId)
+
+    if (!user) {
+      throw new ApiError(404, 'User not found')
+    }
+
+    const userChallenge = await findUserChallengeForUser(userChallengeId, user.id)
+
+    if (!userChallenge) {
+      throw new ApiError(404, 'User challenge not found')
+    }
+
+    if (userChallenge.status === 'completed') {
+      return userChallenge
+    }
+
+    if (userChallenge.status !== 'accepted') {
+      throw new ApiError(409, 'Challenge must be accepted before check in')
+    }
+
+    const challengeLocation = userChallenge.challenge?.location
+
+    if (!challengeLocation || challengeLocation.latitude == null || challengeLocation.longitude == null) {
+      throw new ApiError(400, 'Challenge location is not set')
+    }
+
+    const distanceMeters = haversineDistanceMetres(
+      Number(challengeLocation.latitude),
+      Number(challengeLocation.longitude),
+      Number(completedFromLat),
+      Number(completedFromLng)
+    )
+
+    if (distanceMeters > ALLOWED_COMPLETION_RADIUS_METERS) {
+      throw new ApiError(
+        409,
+        `User is not within required distance to complete challenge (${Math.round(distanceMeters)}m away, must be within ${ALLOWED_COMPLETION_RADIUS_METERS}m)`
+      )
+    }
+
+    const checkIn = await completeUserChallengeByUserChallengeId(userChallengeId, user.id)
+
+    if (!checkIn) {
+      throw new ApiError(409, 'Challenge cannot be checked in from its current status')
+    }
+
+    return checkIn
   },
 }

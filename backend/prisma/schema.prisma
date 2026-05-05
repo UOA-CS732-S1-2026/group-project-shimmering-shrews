@@ -73,16 +73,20 @@ model user_challenge {
   id            Int              @id @default(autoincrement())
   user_id       Int
   challenge_id  Int
-  assigned_date DateTime         @default(now()) @db.Date
   status        challenge_status
   xp_worth      Int
   assigned_at   DateTime         @default(now()) @db.Timestamp(6)
+  accepted_at   DateTime?        @db.Timestamp(6)
+  accepted_from_lat Decimal?     @db.Decimal(9, 6)
+  accepted_from_lng Decimal?     @db.Decimal(9, 6)
   completed_at  DateTime?        @db.Timestamp(6)
+  cancelled_at  DateTime?        @db.Timestamp(6)
+  expired_at    DateTime?        @db.Timestamp(6)
   skipped_at    DateTime?        @db.Timestamp(6)
   challenge     challenge        @relation(fields: [challenge_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_uc_challenge")
   users         users            @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_uc_user")
 
-  @@unique([user_id, challenge_id, assigned_date])
+  @@unique([user_id, challenge_id, assigned_at])
 }
 
 model users {
@@ -104,8 +108,11 @@ model users {
 
 enum challenge_status {
   in_progress
+  accepted
+  cancelled
   skipped
   completed
+  expired
 }
 
 enum user_role {
