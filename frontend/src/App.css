@@ -279,12 +279,12 @@
 
 .badge-card__icon {
   display: grid;
-  width: 48px;
-  height: 48px;
+  width: 72px;
+  height: 72px;
   place-items: center;
-  border-radius: 8px;
-  background: #198b6f;
-  color: #ffffff;
+  border-radius: 50%;
+  background: transparent;
+  color: black;
   font-weight: 900;
 }
 
