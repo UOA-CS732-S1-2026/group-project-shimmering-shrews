@@ -264,14 +264,16 @@ export default function MapView() {
   )
 
   useEffect(() => {
-    if (passedChallenge) {
-      setFocusedRouteChallenge(passedChallenge)
-      return
-    }
     if (!focusedUserChallengeId) {
       setFocusedRouteChallenge(null)
       return
     }
+
+    if (passedChallenge?.id === focusedUserChallengeId) {
+      setFocusedRouteChallenge(passedChallenge)
+      return
+    }
+
 
     let isActive = true
 

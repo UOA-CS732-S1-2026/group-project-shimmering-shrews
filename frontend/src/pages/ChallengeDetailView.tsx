@@ -190,11 +190,8 @@ export default function ChallengeDetailView({
   }
 
   const openRoute = () => {
-    navigate(`/map`, {
-      state: {
-        userChallenge: activeUserChallenge,
-        returnTo: `/challenges/${activeUserChallenge.id}`
-      },
+    navigate(`/map?focusUserChallengeId=${activeUserChallenge.id}&returnTo=/challenges/${activeUserChallenge.id}`, {
+      state: { userChallenge: activeUserChallenge }
     })
   }
 
