@@ -13,6 +13,7 @@ async function main() {
       { name: 'Food', icon: '🍔' },
       { name: 'Fitness', icon: '🏃' },
       { name: 'Social', icon: '👥' },
+      { name: 'Nature', icon: '🌲' },
     ],
     skipDuplicates: true,
   })
@@ -26,21 +27,49 @@ async function main() {
     throw new Error('Failed to seed challenge categories')
   }
 
-  // 2. Seed a test badge safely
-  const existingTestBadge = await prisma.badge.findFirst({
-    where: { name: 'Test Badge' },
-  })
-
-  if (!existingTestBadge) {
-    await prisma.badge.create({
-      data: {
-        name: 'Test Badge',
-        description: 'Badge used to validate badge seeding.',
-        active_url: 'https://example.com/badges/test-badge-active.png',
-        inactive_url: 'https://example.com/badges/test-badge-inactive.png',
+  // 2. Seed badges safely
+  // NOTE: Adding badge criteria must be done manually
+  await prisma.badge.createMany({
+    data: [
+      {
+        name: 'Explorer',
+        description: 'Completed 3 challenges.',
+        active_url: '/badges/generic_award.svg',
+        inactive_url: '/badges/generic_award.svg',
       },
-    })
-  }
+      {
+        name: 'Ice Breaker',
+        description: 'Completed a social challenge.',
+        active_url: '/badges/social_badge.svg',
+        inactive_url: '/badges/social_badge.svg',
+      },
+      {
+        name: 'Nature Novice',
+        description: 'Completed a nature challenge.',
+        active_url: '/badges/nature_badge.svg',
+        inactive_url: '/badges/nature_badge.svg',
+      },
+      {
+        name: 'Getting Moving',
+        description: 'Completed a fitness challenge.',
+        active_url: '/badges/fitness_badge.svg',
+        inactive_url: '/badges/fitness_badge.svg',
+      },
+      {
+        name: 'Flavour Seeker',
+        description: 'Completed a food challenge.',
+        active_url: '/badges/food_badge.svg',
+        inactive_url: '/badges/food_badge.svg',
+      },
+      {
+        name: 'Local Legend',
+        description: 'Completed 10 challenges.',
+        active_url: '/badges/legendary_award.svg',
+        inactive_url: '/badges/legendary_award.svg',
+      },
+    ],
+    skipDuplicates: true,
+  })
 
   // 3. Seed locations safely
 

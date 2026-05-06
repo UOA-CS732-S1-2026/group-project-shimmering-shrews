@@ -30,7 +30,7 @@ CREATE TABLE users (
 -- BADGES
 CREATE TABLE badge (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
+    name VARCHAR(100) NOT NULL UNIQUE,
     description VARCHAR(100),
     active_url VARCHAR(500),
     inactive_url VARCHAR(500)
@@ -160,5 +160,5 @@ ALTER TABLE badge_criteria
 ADD CONSTRAINT badge_criteria_category_rule
 CHECK (
     category_id = 0
-    OR stat_name = 'challenges_completed'
+    OR stat_name = 'category_challenges_completed'
 );
