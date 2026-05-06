@@ -411,7 +411,9 @@ export default function MapView() {
                 </span>
               )}
             </div>
-            <button className="map-focus-banner__button" onClick={() => navigate(returnTo)}>
+            <button className="map-focus-banner__button" onClick={() => navigate(returnTo, {
+              state: { userChallenge: passedChallenge }
+            })}>
               Return To Check In
             </button>
           </div>
