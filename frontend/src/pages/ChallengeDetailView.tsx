@@ -71,6 +71,7 @@ export default function ChallengeDetailView({
     border: 'none',
     cursor: 'pointer',
     alignSelf: 'flex-end',
+    width: '100%',
   } as const
 
   if (!activeUserChallenge) {
@@ -189,7 +190,12 @@ export default function ChallengeDetailView({
   }
 
   const openRoute = () => {
-    navigate(`/map?focusUserChallengeId=${activeUserChallenge.id}&returnTo=/challenges/${activeUserChallenge.id}`)
+    navigate(`/map`, {
+      state: {
+        userChallenge: activeUserChallenge,
+        returnTo: `/challenges/${activeUserChallenge.id}`
+      },
+    })
   }
 
   const checkInLabel = isSubmitting
@@ -213,7 +219,6 @@ export default function ChallengeDetailView({
           display: 'flex',
           flexDirection: 'column',
           padding: '20px',
-          minHeight: '500px',
           maxWidth: '500px',
           margin: '0 auto',
           justifyContent: 'space-between',
@@ -227,7 +232,7 @@ export default function ChallengeDetailView({
             style={{
               display: 'flex',
               gap: '10px',
-              alignItems: 'center',
+              alignItems: 'flex-start',
               flexWrap: 'wrap',
             }}
           >
@@ -245,15 +250,15 @@ export default function ChallengeDetailView({
         </div>
 
         <div>
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <div style={{ display: 'flex', marginTop: '60px', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-start' }}>
             {canAccept && (
               <button
                 onClick={acceptChallenge}
                 disabled={isSubmitting}
                 style={{
                   ...checkInButtonStyle,
-                  marginTop: 0,
-                  background: '#1463c7',
+                  margin: 0,
+                  background: isSubmitting ? '#86a3c8' : '#1463c7',
                   cursor: isSubmitting ? 'not-allowed' : 'pointer',
                   opacity: isSubmitting ? 0.6 : 1,
                 }}
@@ -268,7 +273,7 @@ export default function ChallengeDetailView({
                 disabled={isSubmitting}
                 style={{
                   ...checkInButtonStyle,
-                  marginTop: 0,
+                  margin: 0,
                   background: '#7a52cc',
                   cursor: isSubmitting ? 'not-allowed' : 'pointer',
                   opacity: isSubmitting ? 0.6 : 1,
@@ -284,7 +289,7 @@ export default function ChallengeDetailView({
                 disabled={isSubmitting}
                 style={{
                   ...checkInButtonStyle,
-                  marginTop: 0,
+                  margin: 0,
                   background: '#a32638',
                   cursor: isSubmitting ? 'not-allowed' : 'pointer',
                   opacity: isSubmitting ? 0.6 : 1,
@@ -301,7 +306,8 @@ export default function ChallengeDetailView({
             title={isLocationBlocked ? 'Location access required to check in' : ''}
             style={{
               ...checkInButtonStyle,
-              background: isCompleted || isCancelled || isExpired ? 'gray' : isLocationBlocked ? '#ccc' : 'green',
+              marginTop: '10px',
+              background: isCompleted || isCancelled || isExpired || isCheckInDisabled ? 'gray' : isLocationBlocked ? '#ccc' : 'green',
               cursor: isCheckInDisabled ? 'not-allowed' : 'pointer',
               opacity: isCheckInDisabled ? 0.6 : 1,
             }}
@@ -310,22 +316,22 @@ export default function ChallengeDetailView({
           </button>
 
           {isAccepted && (
-            <p style={{ fontSize: '0.9rem', color: '#5c4799', marginTop: '0.5rem' }}>
+            <p style={{ fontSize: '0.9rem', color: '#5c4799', marginTop: '0.5rem', marginBottom: 0 }}>
               You are on the way. Use View Route, then return here to check in.
             </p>
           )}
           {!isAccepted && !isCompleted && !isCancelled && !isExpired && (
-            <p style={{ fontSize: '0.9rem', color: '#555', marginTop: '0.5rem' }}>
+            <p style={{ fontSize: '0.9rem', color: '#555', marginTop: '0.5rem', marginBottom: 0 }}>
               Accept this challenge first to enable check in.
             </p>
           )}
           {isExpired && (
-            <p style={{ fontSize: '0.9rem', color: '#555', marginTop: '0.5rem' }}>
+            <p style={{ fontSize: '0.9rem', color: '#555', marginTop: '0.5rem', marginBottom: 0 }}>
               This challenge expired at the end of its assigned day.
             </p>
           )}
           {isLocationBlocked && (
-            <p style={{ fontSize: '0.9rem', color: '#999', marginTop: '0.5rem' }}>
+            <p style={{ fontSize: '0.9rem', color: '#999', marginTop: '0.5rem', marginBottom: 0 }}>
               {LOCATION_PERMISSION_CHECKIN_MESSAGE}
             </p>
           )}

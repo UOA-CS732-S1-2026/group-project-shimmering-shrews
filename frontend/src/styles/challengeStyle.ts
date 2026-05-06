@@ -23,7 +23,7 @@ export const badgeStyle = {
         padding: "6px 12px",
         borderRadius: "20px",
         fontSize: "12px",
-        marginRight: "10px"
+        margin: "0",
     } as const
 export const xpStyle = {
         background: "#e0c3fc",
