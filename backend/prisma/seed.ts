@@ -43,10 +43,8 @@ async function main() {
   }
 
   // 3. Seed locations safely
-  // Note: skipDuplicates only works if the table has a unique constraint.
-  // Since your current schema does not enforce uniqueness on location name,
-  // we use findFirst + create instead.
 
+  // Existing locations
   const park =
     (await prisma.location.findFirst({
       where: { name: 'Auckland Domain' },
@@ -86,11 +84,54 @@ async function main() {
       },
     }))
 
-  // 4. Seed challenges safely
-  // Schema  does not enforce uniqueness on challenge name,
-  // so we use findFirst + create here too.
+  // --- NEW: Hobsonville area locations (within ~1km of your location) ---
 
+  // Your approximate reference point:
+  // Latitude: -36.7927
+  // Longitude: 174.6560
+
+  const hobsonvillePark =
+    (await prisma.location.findFirst({
+      where: { name: 'Hobsonville Point Park' },
+    })) ??
+    (await prisma.location.create({
+      data: {
+        name: 'Hobsonville Point Park',
+        category: 'park',
+        latitude: -36.7915,
+        longitude: 174.6555,
+      },
+    }))
+
+  const bombPoint =
+    (await prisma.location.findFirst({
+      where: { name: 'Bomb Point Reserve' },
+    })) ??
+    (await prisma.location.create({
+      data: {
+        name: 'Bomb Point Reserve',
+        category: 'park',
+        latitude: -36.7965,
+        longitude: 174.6495,
+      },
+    }))
+
+  const fabricCafe =
+    (await prisma.location.findFirst({
+      where: { name: 'Fabric Cafe Bistro' },
+    })) ??
+    (await prisma.location.create({
+      data: {
+        name: 'Fabric Cafe Bistro',
+        category: 'restaurant',
+        latitude: -36.7938,
+        longitude: 174.6585,
+      },
+    }))
+
+  // 4. Seed challenges safely
   const challengeSeeds = [
+    // Existing challenges
     {
       name: 'Grab a coffee',
       description: 'Visit a local cafe and enjoy a coffee.',
@@ -118,6 +159,29 @@ async function main() {
       location_id: gym.id,
       category_id: fitnessCategory.id,
       xp_worth: 25,
+    },
+
+    // --- NEW: Nearby challenges ---
+    {
+      name: 'Relax at Hobsonville Point Park',
+      description: 'Spend some time outdoors and enjoy the waterfront park.',
+      location_id: hobsonvillePark.id,
+      category_id: fitnessCategory.id,
+      xp_worth: 15,
+    },
+    {
+      name: 'Explore Bomb Point',
+      description: 'Walk through Bomb Point Reserve and explore the historic area.',
+      location_id: bombPoint.id,
+      category_id: socialCategory.id,
+      xp_worth: 20,
+    },
+    {
+      name: 'Coffee at Fabric',
+      description: 'Grab a coffee or brunch at Fabric Cafe Bistro.',
+      location_id: fabricCafe.id,
+      category_id: foodCategory.id,
+      xp_worth: 10,
     },
   ]
 

@@ -199,6 +199,9 @@ export default function ChallengeList({
     <div style={containerStyle}>
       {permissionDialog}
       <h1 style={titleStyle}>Today's Challenges</h1>
+      {error && (
+        <p style={{ margin: '0 0 12px', color: '#8a4b00', fontSize: '0.9rem' }}>{error}</p>
+      )}
       {permissionStatus !== 'granted' && (
         <div
           style={{
