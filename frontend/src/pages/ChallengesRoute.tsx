@@ -6,7 +6,9 @@ export default function ChallengesRoute() {
   const navigate = useNavigate()
 
   const goToDetailView = (userChallenge: UserChallenge) => {
-    navigate(`/challenges/${userChallenge.id}`)
+    navigate(`/challenges/${userChallenge.id}`, {
+      state: { userChallenge: userChallenge }
+    })
   }
 
   return <ChallengeList goToDetailView={goToDetailView} />
