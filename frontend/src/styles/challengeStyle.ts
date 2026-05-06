@@ -37,7 +37,7 @@ export const buttonStyle = {
         marginTop: "12px",
         borderRadius: "12px",
         border: "2px solid white",
-        background: "transparent",
+        background: "#198b6f",
         color: "white",
         fontSize: "16px",
         fontWeight: "bold",
