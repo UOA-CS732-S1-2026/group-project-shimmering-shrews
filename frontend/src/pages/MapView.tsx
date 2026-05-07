@@ -532,7 +532,11 @@ export default function MapView() {
                           <span style={xpStyle}>+{userChallenge.challenge.xp_worth} XP</span>
                         </div>
                         {!activeFocusedChallenge && (
-                          <Link className="challenge-map-popup__link" to={`/challenges/${userChallenge.id}`}>
+                          <Link
+                            className="challenge-map-popup__link"
+                            to={`/challenges/${userChallenge.id}`}
+                            state={{ userChallenge: userChallenge}}
+                          >
                             Open Full Detail
                           </Link>
                         )}
