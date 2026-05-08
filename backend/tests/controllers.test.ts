@@ -245,6 +245,35 @@ describe('userChallengeController', () => {
     expect(json).toHaveBeenCalledWith({ success: true, data: challenges })
   })
 
+  it('rejects invalid radius query params', async () => {
+    const cases = [
+      '0',
+      '-1',
+      'north',
+      ['5'],
+    ]
+
+    for (const radius of cases) {
+      const next = createNext()
+
+      await userChallengeController.getTodayUserChallenges(
+        {
+          auth: { sub: 'auth-1' },
+          query: { lat: '-36.852', lng: '174.765', radius },
+        } as any,
+        response().res,
+        next
+      )
+
+      expect(nextError(next)).toMatchObject({
+        statusCode: 400,
+        message: 'radius must be a positive number',
+      })
+    }
+
+    expect(userChallengeService.getOrCreateTodayChallenges).not.toHaveBeenCalled()
+  })
+
   it('requires lat and lng for today challenge generation', async () => {
     const next = createNext()
 

@@ -54,6 +54,22 @@ const parseCoordinate = (value: unknown, name: string) => {
   return parsedValue
 }
 
+const parseRadius = (value: unknown) => {
+  const rawValue = Array.isArray(value) ? undefined : value
+
+  if (rawValue == null || rawValue === '') {
+    return 5
+  }
+
+  const parsedValue = Number(rawValue)
+
+  if (!Number.isFinite(parsedValue) || parsedValue <= 0) {
+    throw new ApiError(400, 'radius must be a positive number')
+  }
+
+  return parsedValue
+}
+
 export const getChallenges = asyncHandler(async (req: Request, res: Response) => {
   const authUser = (req as AuthRequest).auth
   if (!authUser?.sub) {
@@ -87,7 +103,7 @@ export const getTodayUserChallenges = asyncHandler(async (req: Request, res: Res
 
   const lat = parseCoordinate(req.query.lat, 'lat')
   const lng = parseCoordinate(req.query.lng, 'lng')
-  const radius = parseFloat(req.query.radius as string) || 5 // default 5km
+  const radius = parseRadius(req.query.radius)
 
   const data = await userChallengeService.getOrCreateTodayChallenges(
     authUser.sub, lat, lng, radius
