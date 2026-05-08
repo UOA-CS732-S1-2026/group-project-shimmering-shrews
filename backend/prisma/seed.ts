@@ -8,68 +8,164 @@ async function main() {
   console.log('Seeding database.')
 
   // 1. Seed challenge categories safely
-  await prisma.challenge_category.createMany({
-    data: [
-      { name: 'Food', icon: '🍔' },
-      { name: 'Fitness', icon: '🏃' },
-      { name: 'Social', icon: '👥' },
-      { name: 'Nature', icon: '🌲' },
-    ],
-    skipDuplicates: true,
-  })
+  const categorySeeds = [
+    { id: 0, name: 'Global', icon: null },
+    { id: 1, name: 'Food', icon: '🍔' },
+    { id: 2, name: 'Fitness', icon: '🏃' },
+    { id: 3, name: 'Social', icon: '👥' },
+    { id: 4, name: 'Nature', icon: '🌲' },
+  ]
+
+  for (const category of categorySeeds) {
+    await prisma.challenge_category.upsert({
+      where: { id: category.id },
+      update: {
+        name: category.name,
+        icon: category.icon,
+      },
+      create: category,
+    })
+  }
+
+  await prisma.$executeRaw`
+    SELECT setval(
+      pg_get_serial_sequence('challenge_category', 'id'),
+      GREATEST((SELECT COALESCE(MAX(id), 1) FROM challenge_category), 1),
+      true
+    )
+  `
 
   const categories = await prisma.challenge_category.findMany()
   const foodCategory = categories.find((c: ChallengeCategory) => c.name === 'Food')
   const fitnessCategory = categories.find((c: ChallengeCategory) => c.name === 'Fitness')
   const socialCategory = categories.find((c: ChallengeCategory) => c.name === 'Social')
+  const natureCategory = categories.find((c: ChallengeCategory) => c.name === 'Nature')
 
-  if (!foodCategory || !fitnessCategory || !socialCategory) {
+  if (!foodCategory || !fitnessCategory || !socialCategory || !natureCategory) {
     throw new Error('Failed to seed challenge categories')
   }
 
-  // 2. Seed badges safely
-  // NOTE: Adding badge criteria must be done manually
-  await prisma.badge.createMany({
-    data: [
-      {
-        name: 'Explorer',
-        description: 'Completed 3 challenges.',
-        active_url: '/badges/generic_award.svg',
-        inactive_url: '/badges/generic_award.svg',
+  // 2. Seed badges and criteria safely
+  const badgeSeeds = [
+    {
+      id: 1,
+      name: 'Explorer',
+      description: 'Completed 3 challenges',
+      active_url: '/badges/generic_award.svg',
+      inactive_url: '/badges/generic_award.svg',
+    },
+    {
+      id: 2,
+      name: 'Ice Breaker',
+      description: 'Complete a social challenge',
+      active_url: '/badges/social_badge.svg',
+      inactive_url: '/badges/social_badge.svg',
+    },
+    {
+      id: 3,
+      name: 'Nature Novice',
+      description: 'Completed a nature challenge',
+      active_url: '/badges/nature_badge.svg',
+      inactive_url: '/badges/nature_badge.svg',
+    },
+    {
+      id: 4,
+      name: 'Getting Moving',
+      description: 'Completed a fitness challenge',
+      active_url: '/badges/fitness_badge.svg',
+      inactive_url: '/badges/fitness_badge.svg',
+    },
+    {
+      id: 5,
+      name: 'Flavour Seeker',
+      description: 'Visited a restaurant or cafe.',
+      active_url: '/badges/food_badge.svg',
+      inactive_url: '/badges/food_badge.svg',
+    },
+    {
+      id: 6,
+      name: 'Local Legend',
+      description: 'Completed 10 challenges of any category.',
+      active_url: '/badges/legendary_award.svg',
+      inactive_url: '/badges/legendary_award.svg',
+    },
+  ]
+
+  for (const badge of badgeSeeds) {
+    await prisma.badge.upsert({
+      where: { id: badge.id },
+      update: {
+        name: badge.name,
+        description: badge.description,
+        active_url: badge.active_url,
+        inactive_url: badge.inactive_url,
       },
-      {
-        name: 'Ice Breaker',
-        description: 'Completed a social challenge.',
-        active_url: '/badges/social_badge.svg',
-        inactive_url: '/badges/social_badge.svg',
+      create: badge,
+    })
+  }
+
+  await prisma.$executeRaw`
+    SELECT setval(
+      pg_get_serial_sequence('badge', 'id'),
+      GREATEST((SELECT COALESCE(MAX(id), 1) FROM badge), 1),
+      true
+    )
+  `
+
+  const badgeCriteriaSeeds = [
+    {
+      badge_id: 1,
+      stat_name: 'challenges_completed',
+      category_id: 0,
+      target_value: 3,
+    },
+    {
+      badge_id: 2,
+      stat_name: 'category_challenges_completed',
+      category_id: socialCategory.id,
+      target_value: 1,
+    },
+    {
+      badge_id: 3,
+      stat_name: 'category_challenges_completed',
+      category_id: natureCategory.id,
+      target_value: 1,
+    },
+    {
+      badge_id: 4,
+      stat_name: 'category_challenges_completed',
+      category_id: fitnessCategory.id,
+      target_value: 1,
+    },
+    {
+      badge_id: 5,
+      stat_name: 'category_challenges_completed',
+      category_id: foodCategory.id,
+      target_value: 1,
+    },
+    {
+      badge_id: 6,
+      stat_name: 'challenges_completed',
+      category_id: 0,
+      target_value: 10,
+    },
+  ]
+
+  for (const criteria of badgeCriteriaSeeds) {
+    await prisma.badge_criteria.upsert({
+      where: {
+        badge_id_category_id_stat_name: {
+          badge_id: criteria.badge_id,
+          category_id: criteria.category_id,
+          stat_name: criteria.stat_name,
+        },
       },
-      {
-        name: 'Nature Novice',
-        description: 'Completed a nature challenge.',
-        active_url: '/badges/nature_badge.svg',
-        inactive_url: '/badges/nature_badge.svg',
+      update: {
+        target_value: criteria.target_value,
       },
-      {
-        name: 'Getting Moving',
-        description: 'Completed a fitness challenge.',
-        active_url: '/badges/fitness_badge.svg',
-        inactive_url: '/badges/fitness_badge.svg',
-      },
-      {
-        name: 'Flavour Seeker',
-        description: 'Completed a food challenge.',
-        active_url: '/badges/food_badge.svg',
-        inactive_url: '/badges/food_badge.svg',
-      },
-      {
-        name: 'Local Legend',
-        description: 'Completed 10 challenges.',
-        active_url: '/badges/legendary_award.svg',
-        inactive_url: '/badges/legendary_award.svg',
-      },
-    ],
-    skipDuplicates: true,
-  })
+      create: criteria,
+    })
+  }
 
   // 3. Seed locations safely
 

@@ -7,7 +7,7 @@ GRANT ALL ON SCHEMA public TO public;
 
 -- ENUM TYPES
 CREATE TYPE user_role AS ENUM ('user', 'admin');
-CREATE TYPE challenge_status AS ENUM ('in_progress', 'accepted', 'skipped', 'completed');
+CREATE TYPE challenge_status AS ENUM ('in_progress', 'accepted', 'cancelled', 'skipped', 'completed', 'expired');
 
 -- USERS
 CREATE TABLE users (
@@ -125,15 +125,20 @@ CREATE TABLE badge_criteria (
 
 -- USER CHALLENGE
 CREATE TABLE user_challenge (
+    id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL,
     challenge_id INTEGER NOT NULL,
     status challenge_status NOT NULL,
     xp_worth INTEGER NOT NULL,
     assigned_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    accepted_at TIMESTAMPTZ,
+    accepted_from_lat DECIMAL(9,6),
+    accepted_from_lng DECIMAL(9,6),
     completed_at TIMESTAMPTZ,
+    cancelled_at TIMESTAMPTZ,
+    expired_at TIMESTAMPTZ,
     skipped_at TIMESTAMPTZ,
-
-    PRIMARY KEY(user_id, challenge_id),
+    UNIQUE(user_id, challenge_id, assigned_at),
 
     CONSTRAINT fk_uc_user
         FOREIGN KEY (user_id)
