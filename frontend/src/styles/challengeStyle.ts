@@ -47,11 +47,13 @@ export const categoryColors: { [key: string]: string } = {
         Food: "#c8f7c5",
         Fitness: "#fceabb",
         Social: "#d5f5f9",
+    Nature: "#dff6d8",
     }
 export const categoryColorsStrong: { [key: string]: string } = {
         Food: "hsl(116, 100%, 71%)",
         Fitness: "hsl(43, 100%, 70%)",
         Social: "hsl(187, 100%, 75%)",
+    Nature: "hsl(102, 55%, 58%)",
     }
 export const challengeTitleStyle = {
         margin: 0, 

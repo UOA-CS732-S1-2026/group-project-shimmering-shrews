@@ -288,6 +288,10 @@
   font-weight: 900;
 }
 
+.badge-card--locked .badge-card__icon img {
+  filter: grayscale(50%) brightness(0.8) contrast(0.9);
+}
+
 .badge-card__icon img {
   width: 100%;
   height: 100%;

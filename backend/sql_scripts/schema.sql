@@ -7,7 +7,7 @@ GRANT ALL ON SCHEMA public TO public;
 
 -- ENUM TYPES
 CREATE TYPE user_role AS ENUM ('user', 'admin');
-CREATE TYPE challenge_status AS ENUM ('in_progress', 'accepted', 'skipped', 'completed');
+CREATE TYPE challenge_status AS ENUM ('in_progress', 'accepted', 'cancelled', 'skipped', 'completed', 'expired');
 
 -- USERS
 CREATE TABLE users (
@@ -30,9 +30,7 @@ CREATE TABLE users (
 -- BADGES
 CREATE TABLE badge (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    achievement_criteria JSONB NOT NULL,
-    target_value INTEGER NOT NULL,
+    name VARCHAR(100) NOT NULL UNIQUE,
     description VARCHAR(100),
     active_url VARCHAR(500),
     inactive_url VARCHAR(500)
@@ -95,31 +93,13 @@ CREATE TABLE awarded_badge (
         ON DELETE CASCADE
 );
 
--- USER BADGE PROGRESS
-CREATE TABLE user_badge_progress (
-    user_id INTEGER NOT NULL,
-    badge_id INTEGER NOT NULL,
-    current_value INTEGER NOT NULL,
-
-    PRIMARY KEY(user_id, badge_id),
-
-    CONSTRAINT fk_ubp_user
-        FOREIGN KEY (user_id)
-        REFERENCES users(id)
-        ON DELETE CASCADE,
-
-    CONSTRAINT fk_ubp_badge
-        FOREIGN KEY (badge_id)
-        REFERENCES badge(id)
-        ON DELETE CASCADE
-);
-
 CREATE TABLE user_stat (
+    id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL,
     category_id INTEGER NOT NULL,
     current_value INTEGER NOT NULL DEFAULT 0,
-
-    PRIMARY KEY (user_id, category_id),
+    name VARCHAR(100) NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
     CONSTRAINT fk_us_user
         FOREIGN KEY (user_id)
@@ -129,20 +109,36 @@ CREATE TABLE user_stat (
     CONSTRAINT fk_us_category
         FOREIGN KEY (category_id)
         REFERENCES challenge_category(id)
-        ON DELETE CASCADE,
+        ON DELETE CASCADE
+);
+
+CREATE TABLE badge_criteria (
+    id SERIAL PRIMARY KEY,
+    badge_id INTEGER NOT NULL,
+    stat_name VARCHAR(100) NOT NULL,
+    category_id INTEGER NOT NULL DEFAULT 0,
+    target_value INTEGER NOT NULL,
+
+    FOREIGN KEY (badge_id) REFERENCES badge(id) ON DELETE CASCADE,
+    FOREIGN KEY (category_id) REFERENCES challenge_category(id) ON DELETE CASCADE
 );
 
 -- USER CHALLENGE
 CREATE TABLE user_challenge (
+    id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL,
     challenge_id INTEGER NOT NULL,
     status challenge_status NOT NULL,
     xp_worth INTEGER NOT NULL,
     assigned_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    accepted_at TIMESTAMPTZ,
+    accepted_from_lat DECIMAL(9,6),
+    accepted_from_lng DECIMAL(9,6),
     completed_at TIMESTAMPTZ,
+    cancelled_at TIMESTAMPTZ,
+    expired_at TIMESTAMPTZ,
     skipped_at TIMESTAMPTZ,
-
-    PRIMARY KEY(user_id, challenge_id),
+    UNIQUE(user_id, challenge_id, assigned_at),
 
     CONSTRAINT fk_uc_user
         FOREIGN KEY (user_id)
@@ -158,9 +154,16 @@ CREATE TABLE user_challenge (
 /* Speed up querying users on auth id */
 CREATE INDEX idx_users_auth_id ON users(auth_id);
 
-/* No user can have more than one stat record for a single category,
-   but they can if the category is null
-*/
-CREATE UNIQUE INDEX user_category_unique
-ON user_stat (user_id, category_id)
-WHERE category_id IS NOT NULL;
+CREATE UNIQUE INDEX badge_criteria_unique
+ON badge_criteria (badge_id, category_id, stat_name);
+
+ALTER TABLE user_stat
+ADD CONSTRAINT user_stat_unique
+UNIQUE (user_id, name, category_id);
+
+ALTER TABLE badge_criteria
+ADD CONSTRAINT badge_criteria_category_rule
+CHECK (
+    category_id = 0
+    OR stat_name = 'category_challenges_completed'
+);
