@@ -40,7 +40,7 @@ export const UserService = {
         name: b.badge.name,
         description: b.badge.description,
         active_icon: b.badge.active_url,
-				inactive_icon: b.badge.active_url,
+				inactive_icon: b.badge.inactive_url ?? b.badge.active_url,
         earnedAt: b.earned_at,
         earned: true,
       })),

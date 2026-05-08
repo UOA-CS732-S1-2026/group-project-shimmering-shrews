@@ -62,4 +62,6 @@ export const requireSelf = (
   if (req.params.id !== req.auth?.sub) {
     return res.status(403).json({ error: 'Forbidden' })
   }
+
+  next()
 }
