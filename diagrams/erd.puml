@@ -34,7 +34,6 @@ entity "Badge" as badge {
   * id : INTEGER
   --
   * name : VARCHAR(100)
-  * achievement_criteria : JSON
   * target_value : INTEGER
   description : VARCHAR(100)
   active_url : VARCHAR(500)
