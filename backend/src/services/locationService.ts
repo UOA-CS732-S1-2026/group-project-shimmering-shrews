@@ -22,7 +22,7 @@ export const fetchLocations = async ( category = 'catering.cafe', limit = 5 ) =>
     // The test suite covers malformed Geoapify payloads explicitly. Validating
     // the shape here prevents downstream mappers from failing with unclear
     // property-access errors when the external API returns unexpected JSON.
-    if (!Array.isArray(data.features)) {
+    if (typeof data !== 'object' || data === null || !Array.isArray(data.features)) {
       throw new Error('Geoapify response missing features array')
     }
     
