@@ -1,22 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-vi.mock('../src/daos/profileDao', () => ({
-  countCompletedChallengesByUserId: vi.fn(),
-  findBadgesByUserId: vi.fn(),
-  findRecentCompletedChallengesByUserId: vi.fn(),
-  findUserProfileByAuthId: vi.fn(),
-  upsertUserProfileByAuth: vi.fn(),
-}))
-
-import {
-  countCompletedChallengesByUserId,
-  findBadgesByUserId,
-  findRecentCompletedChallengesByUserId,
-  findUserProfileByAuthId,
-  upsertUserProfileByAuth,
-} from '../src/daos/profileDao'
+import { profileDaoMocks } from './helpers/daoMocks'
 import { getUserProfile } from '../src/services/profileService'
 
+/**
+ * Test category: Unit tests.
+ *
+ * These tests cover profile aggregation logic with profile DAO calls mocked.
+ * They verify profile creation fallback, legacy username refresh, badge/history
+ * mapping, and XP threshold calculations without touching auth or the database.
+ */
 const profile = {
   id: 1,
   username: 'City_Scout-01',
@@ -26,8 +18,8 @@ const profile = {
 }
 
 const setupProfileDependencies = () => {
-  vi.mocked(countCompletedChallengesByUserId).mockResolvedValue(2)
-  vi.mocked(findBadgesByUserId).mockResolvedValue([
+  profileDaoMocks.countCompletedChallengesByUserId.mockResolvedValue(2)
+  profileDaoMocks.findBadgesByUserId.mockResolvedValue([
     {
       id: 1,
       name: 'Explorer',
@@ -45,7 +37,7 @@ const setupProfileDependencies = () => {
       awarded_badge: [],
     },
   ] as any)
-  vi.mocked(findRecentCompletedChallengesByUserId).mockResolvedValue([
+  profileDaoMocks.findRecentCompletedChallengesByUserId.mockResolvedValue([
     {
       challenge_id: 10,
       xp_worth: 15,
@@ -69,12 +61,12 @@ const setupProfileDependencies = () => {
 
 describe('profileService', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    vi.resetAllMocks()
     setupProfileDependencies()
   })
 
   it('builds the profile summary with badges, XP thresholds, and recent history', async () => {
-    vi.mocked(findUserProfileByAuthId).mockResolvedValue(profile as any)
+    profileDaoMocks.findUserProfileByAuthId.mockResolvedValue(profile as any)
 
     await expect(getUserProfile('auth-1')).resolves.toMatchObject({
       name: 'City_Scout-01',
@@ -121,29 +113,29 @@ describe('profileService', () => {
   })
 
   it('creates a profile from auth data when none exists', async () => {
-    vi.mocked(findUserProfileByAuthId).mockResolvedValue(null)
-    vi.mocked(upsertUserProfileByAuth).mockResolvedValue(profile as any)
+    profileDaoMocks.findUserProfileByAuthId.mockResolvedValue(null)
+    profileDaoMocks.upsertUserProfileByAuth.mockResolvedValue(profile as any)
 
     await expect(getUserProfile('auth-1', 'user@example.com')).resolves.toMatchObject({
       name: 'City_Scout-01',
     })
-    expect(upsertUserProfileByAuth).toHaveBeenCalledWith('auth-1', 'user@example.com')
+    expect(profileDaoMocks.upsertUserProfileByAuth).toHaveBeenCalledWith('auth-1', 'user@example.com')
   })
 
   it('refreshes legacy usernames that do not match the generated username format', async () => {
-    vi.mocked(findUserProfileByAuthId).mockResolvedValue({
+    profileDaoMocks.findUserProfileByAuthId.mockResolvedValue({
       ...profile,
       username: 'testuser',
     } as any)
-    vi.mocked(upsertUserProfileByAuth).mockResolvedValue(profile as any)
+    profileDaoMocks.upsertUserProfileByAuth.mockResolvedValue(profile as any)
 
     await getUserProfile('auth-1', 'user@example.com')
 
-    expect(upsertUserProfileByAuth).toHaveBeenCalledWith('auth-1', 'user@example.com')
+    expect(profileDaoMocks.upsertUserProfileByAuth).toHaveBeenCalledWith('auth-1', 'user@example.com')
   })
 
   it('throws 404 when a missing profile cannot be created from auth email', async () => {
-    vi.mocked(findUserProfileByAuthId).mockResolvedValue(null)
+    profileDaoMocks.findUserProfileByAuthId.mockResolvedValue(null)
 
     await expect(getUserProfile('auth-1')).rejects.toMatchObject({
       statusCode: 404,

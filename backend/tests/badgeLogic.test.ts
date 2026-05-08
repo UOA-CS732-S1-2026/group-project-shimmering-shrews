@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { getBadgesToAward, type BadgeCriteria, type UserStat } from '../src/services/badgeLogic'
 
+/**
+ * Test category: Unit tests.
+ *
+ * These tests cover the pure badge eligibility helper in isolation. They do not
+ * use Prisma, Postgres triggers, Express, or mocked DAOs; trigger/database
+ * behavior is covered separately by the opt-in integration tests.
+ */
 const stat = (overrides: Partial<UserStat> = {}): UserStat => ({
   user_id: 1,
   category_id: 2,

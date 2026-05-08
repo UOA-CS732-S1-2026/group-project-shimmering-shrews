@@ -1,6 +1,14 @@
 import request from 'supertest'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+/**
+ * Test category: Contract tests.
+ *
+ * These tests exercise the Express app boundary with Supertest while mocking
+ * external dependencies such as auth and service/database calls. They verify
+ * route mounting, middleware flow, request parsing, and response/error envelope
+ * contracts without requiring a real database, Supabase token, or network call.
+ */
 vi.mock('../src/middleware/auth', () => ({
   requireAuth: [
     (req: any, _res: any, next: any) => {
@@ -35,7 +43,7 @@ import { getUserProfile } from '../src/services/profileService'
 
 describe('app routes', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    vi.resetAllMocks()
   })
 
   it('serves the health/root endpoint', async () => {
@@ -60,18 +68,60 @@ describe('app routes', () => {
   it('runs route validation errors through the error middleware', async () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
 
-    await request(app)
-      .post('/challenges/not-a-number/checkin')
-      .expect(400)
-      .expect(({ body }) => {
-        expect(body).toEqual({
-          success: false,
-          message: 'Challenge id must be a positive integer',
+    try {
+      await request(app)
+        .post('/challenges/not-a-number/checkin')
+        .expect(400)
+        .expect(({ body }) => {
+          expect(body).toEqual({
+            success: false,
+            message: 'Challenge id must be a positive integer',
+          })
         })
-      })
 
-    expect(checkInToChallenge).not.toHaveBeenCalled()
-    errorSpy.mockRestore()
+      expect(checkInToChallenge).not.toHaveBeenCalled()
+    } finally {
+      errorSpy.mockRestore()
+    }
+  })
+
+  it('formats unhandled route errors through the error middleware', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    vi.mocked(getAllChallenges).mockRejectedValueOnce(new Error('Database unavailable'))
+
+    try {
+      await request(app)
+        .get('/challenges')
+        .expect(500)
+        .expect(({ body }) => {
+          expect(body).toEqual({
+            success: false,
+            message: 'Database unavailable',
+          })
+        })
+    } finally {
+      errorSpy.mockRestore()
+    }
+  })
+
+  it('returns a consistent 400 response for malformed JSON request bodies', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+
+    try {
+      await request(app)
+        .patch('/user-challenges/20/accept')
+        .set('Content-Type', 'application/json')
+        .send('{"acceptedFromLat":')
+        .expect(400)
+        .expect(({ body }) => {
+          expect(body).toEqual({
+            success: false,
+            message: 'Invalid JSON request body',
+          })
+        })
+    } finally {
+      errorSpy.mockRestore()
+    }
   })
 
   it('passes mocked auth into protected profile routes', async () => {

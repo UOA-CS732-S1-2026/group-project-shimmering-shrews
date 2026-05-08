@@ -16,7 +16,15 @@ import {
 import { errorHandler } from '../src/middleware/errorMiddleWare'
 import { requireSelf } from '../src/middleware/auth'
 import type { NextFunction } from 'express'
+import { buildSuccessResponse, sendSuccess } from '../src/utils/httpResponse'
 
+/**
+ * Test category: Unit tests.
+ *
+ * These tests cover pure utilities and small middleware helpers in isolation:
+ * leveling, username generation, mappers, async error forwarding, response
+ * envelope helpers, error formatting, and requireSelf authorization behavior.
+ */
 type MockNext = ReturnType<typeof vi.fn> & NextFunction
 const createNext = () => vi.fn() as unknown as MockNext
 
@@ -156,33 +164,89 @@ describe('asyncHandler', () => {
 })
 
 describe('errorHandler', () => {
-  it('returns ApiError status and message', () => {
+  const expectErrorResponse = (
+    error: unknown,
+    expectedStatus: number,
+    expectedMessage: string
+  ) => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
     const json = vi.fn()
     const status = vi.fn(() => ({ json }))
 
-    errorHandler(
-      new ApiError(409, 'Conflict'),
-      {} as any,
-      { status } as any,
-      createNext()
-    )
+    errorHandler(error, {} as any, { status } as any, createNext())
 
-    expect(status).toHaveBeenCalledWith(409)
-    expect(json).toHaveBeenCalledWith({ success: false, message: 'Conflict' })
+    expect(status).toHaveBeenCalledWith(expectedStatus)
+    expect(json).toHaveBeenCalledWith({
+      success: false,
+      message: expectedMessage,
+    })
     errorSpy.mockRestore()
+  }
+
+  it('returns ApiError status and message', () => {
+    expectErrorResponse(new ApiError(409, 'Conflict'), 409, 'Conflict')
+  })
+
+  it('returns HTTP-style error status and message', () => {
+    expectErrorResponse(
+      Object.assign(new Error('Payload too large'), { status: 413 }),
+      413,
+      'Payload too large'
+    )
+  })
+
+  it('normalizes malformed JSON request body errors', () => {
+    expectErrorResponse(
+      Object.assign(new SyntaxError('Unexpected token b in JSON'), {
+        status: 400,
+        type: 'entity.parse.failed',
+      }),
+      400,
+      'Invalid JSON request body'
+    )
   })
 
   it('returns a 500 status for ordinary errors', () => {
-    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    expectErrorResponse(new Error('Unexpected'), 500, 'Unexpected')
+  })
+
+  it('handles thrown strings without crashing', () => {
+    expectErrorResponse('string failure', 500, 'string failure')
+  })
+
+  it('handles thrown non-error objects without leaking internals', () => {
+    expectErrorResponse({ statusCode: 418, message: 'teapot' }, 500, 'Internal Server Error')
+  })
+})
+
+describe('success responses', () => {
+  it('builds the standard success envelope without a message', () => {
+    expect(buildSuccessResponse([{ id: 1 }])).toEqual({
+      success: true,
+      data: [{ id: 1 }],
+    })
+  })
+
+  it('builds the standard success envelope with an optional action message', () => {
+    expect(buildSuccessResponse({ id: 1 }, 'Challenge accepted')).toEqual({
+      success: true,
+      data: { id: 1 },
+      message: 'Challenge accepted',
+    })
+  })
+
+  it('sends the standard success envelope through Express responses', () => {
     const json = vi.fn()
     const status = vi.fn(() => ({ json }))
 
-    errorHandler(new Error('Unexpected'), {} as any, { status } as any, createNext())
+    sendSuccess({ status } as any, { ok: true }, 'Saved', 201)
 
-    expect(status).toHaveBeenCalledWith(500)
-    expect(json).toHaveBeenCalledWith({ success: false, message: 'Unexpected' })
-    errorSpy.mockRestore()
+    expect(status).toHaveBeenCalledWith(201)
+    expect(json).toHaveBeenCalledWith({
+      success: true,
+      data: { ok: true },
+      message: 'Saved',
+    })
   })
 })
 
@@ -202,6 +266,54 @@ describe('requireSelf', () => {
 
     requireSelf(
       { params: { id: 'auth-2' }, auth: { sub: 'auth-1' } } as any,
+      { status } as any,
+      next
+    )
+
+    expect(status).toHaveBeenCalledWith(403)
+    expect(json).toHaveBeenCalledWith({ error: 'Forbidden' })
+    expect(next).not.toHaveBeenCalled()
+  })
+
+  it('rejects requests without an authenticated subject', () => {
+    const json = vi.fn()
+    const status = vi.fn(() => ({ json }))
+    const next = createNext()
+
+    requireSelf(
+      { params: { id: 'auth-1' }, auth: undefined } as any,
+      { status } as any,
+      next
+    )
+
+    expect(status).toHaveBeenCalledWith(403)
+    expect(json).toHaveBeenCalledWith({ error: 'Forbidden' })
+    expect(next).not.toHaveBeenCalled()
+  })
+
+  it('rejects empty route and auth ids instead of treating them as a match', () => {
+    const json = vi.fn()
+    const status = vi.fn(() => ({ json }))
+    const next = createNext()
+
+    requireSelf(
+      { params: { id: '' }, auth: { sub: '' } } as any,
+      { status } as any,
+      next
+    )
+
+    expect(status).toHaveBeenCalledWith(403)
+    expect(json).toHaveBeenCalledWith({ error: 'Forbidden' })
+    expect(next).not.toHaveBeenCalled()
+  })
+
+  it('uses case-sensitive auth id comparisons', () => {
+    const json = vi.fn()
+    const status = vi.fn(() => ({ json }))
+    const next = createNext()
+
+    requireSelf(
+      { params: { id: 'Auth-1' }, auth: { sub: 'auth-1' } } as any,
       { status } as any,
       next
     )

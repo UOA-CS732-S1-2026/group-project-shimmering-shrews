@@ -7,6 +7,7 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "test": "vitest run",
+    "test:integration": "vitest run tests/badges.test.ts",
     "test:watch": "vitest",
     "test:typecheck": "tsc --noEmit -p tsconfig.test.json"
   },

@@ -59,7 +59,13 @@ export const requireSelf = (
   res: Response,
   next: NextFunction
 ) => {
-  if (req.params.id !== req.auth?.sub) {
+  const requestedUserId = req.params.id
+  const authenticatedUserId = req.auth?.sub
+
+  // Authorization compares immutable auth IDs exactly and case-sensitively.
+  // Empty IDs are treated as missing auth data so malformed requests cannot
+  // accidentally pass the ownership check.
+  if (!requestedUserId || !authenticatedUserId || requestedUserId !== authenticatedUserId) {
     return res.status(403).json({ error: 'Forbidden' })
   }
 

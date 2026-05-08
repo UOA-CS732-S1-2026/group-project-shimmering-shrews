@@ -1,43 +1,24 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-vi.mock('../src/daos/challengeDao', () => ({
-  completeUserChallengeByUserChallengeId: vi.fn(),
-  findAllActiveChallenges: vi.fn(),
-}))
-
-vi.mock('../src/daos/userChallengeDao', () => ({
-  findUserChallengeForUser: vi.fn(),
-  findUserChallenges: vi.fn(),
-  userChallengeDAO: {
-    expireOpenChallengesBeforeDate: vi.fn(),
-    getTodayUserChallengesByUserId: vi.fn(),
-    createTodayUserChallenges: vi.fn(),
-    acceptUserChallenge: vi.fn(),
-    cancelUserChallenge: vi.fn(),
-  },
-}))
-
-vi.mock('../src/daos/userDao', () => ({
-  userDAO: {
-    getUserByAuthId: vi.fn(),
-  },
-}))
-
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
-  completeUserChallengeByUserChallengeId,
-  findAllActiveChallenges,
-} from '../src/daos/challengeDao'
-import {
-  findUserChallengeForUser,
-  findUserChallenges,
-  userChallengeDAO,
-} from '../src/daos/userChallengeDao'
-import { userDAO } from '../src/daos/userDao'
+  challengeDaoMocks,
+  userChallengeDaoMocks,
+  userDaoMocks,
+} from './helpers/daoMocks'
 import {
   getUserChallenge,
   getUserChallenges,
   userChallengeService,
 } from '../src/services/userChallengeService'
+
+/**
+ * Test category: Unit tests.
+ *
+ * These tests cover user challenge service behavior with DAOs mocked. They
+ * verify daily assignment boundaries, acceptance/cancel/check-in orchestration,
+ * distance/status guards, and service-level concurrency behavior. Real database
+ * concurrency, constraints, and triggers are covered by opt-in integration tests.
+ */
+const { userChallengeDAO } = userChallengeDaoMocks
 
 const authId = 'auth-1'
 const user = { id: 1 }
@@ -71,20 +52,24 @@ const userChallenge = (overrides: Record<string, unknown> = {}) => ({
 
 describe('userChallengeService', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    vi.mocked(userDAO.getUserByAuthId).mockResolvedValue(user as any)
+    vi.resetAllMocks()
+    userDaoMocks.userDAO.getUserByAuthId.mockResolvedValue(user as any)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('returns user challenges for an authenticated user', async () => {
     const challenges = [userChallenge()]
-    vi.mocked(findUserChallenges).mockResolvedValue(challenges as any)
+    userChallengeDaoMocks.findUserChallenges.mockResolvedValue(challenges as any)
 
     await expect(getUserChallenges(authId)).resolves.toBe(challenges)
-    expect(findUserChallenges).toHaveBeenCalledWith(1)
+    expect(userChallengeDaoMocks.findUserChallenges).toHaveBeenCalledWith(1)
   })
 
   it('throws 404 when listing challenges for an unknown user', async () => {
-    vi.mocked(userDAO.getUserByAuthId).mockResolvedValue(null)
+    userDaoMocks.userDAO.getUserByAuthId.mockResolvedValue(null)
 
     await expect(getUserChallenges(authId)).rejects.toMatchObject({
       statusCode: 404,
@@ -94,14 +79,14 @@ describe('userChallengeService', () => {
 
   it('returns one user challenge that belongs to the authenticated user', async () => {
     const challenge = userChallenge({ id: 44 })
-    vi.mocked(findUserChallengeForUser).mockResolvedValue(challenge as any)
+    userChallengeDaoMocks.findUserChallengeForUser.mockResolvedValue(challenge as any)
 
     await expect(getUserChallenge(authId, 44)).resolves.toBe(challenge)
-    expect(findUserChallengeForUser).toHaveBeenCalledWith(44, 1)
+    expect(userChallengeDaoMocks.findUserChallengeForUser).toHaveBeenCalledWith(44, 1)
   })
 
   it('throws 404 when the requested user challenge does not belong to the user', async () => {
-    vi.mocked(findUserChallengeForUser).mockResolvedValue(null)
+    userChallengeDaoMocks.findUserChallengeForUser.mockResolvedValue(null)
 
     await expect(getUserChallenge(authId, 44)).rejects.toMatchObject({
       statusCode: 404,
@@ -111,7 +96,7 @@ describe('userChallengeService', () => {
 
   it('returns existing daily challenges without creating duplicates', async () => {
     const todayChallenges = [userChallenge({ id: 1 })]
-    vi.mocked(userChallengeDAO.getTodayUserChallengesByUserId).mockResolvedValue(
+    userChallengeDAO.getTodayUserChallengesByUserId.mockResolvedValue(
       todayChallenges as any
     )
 
@@ -123,16 +108,58 @@ describe('userChallengeService', () => {
       1,
       expect.any(Date)
     )
-    expect(findAllActiveChallenges).not.toHaveBeenCalled()
+    expect(challengeDaoMocks.findAllActiveChallenges).not.toHaveBeenCalled()
     expect(userChallengeDAO.createTodayUserChallenges).not.toHaveBeenCalled()
+  })
+
+  it('uses the UTC day boundary for today challenge lookup and expiry', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-08T23:30:00.000Z'))
+    const todayChallenges = [userChallenge({ id: 1 })]
+    userChallengeDAO.getTodayUserChallengesByUserId.mockResolvedValue(
+      todayChallenges as any
+    )
+
+    await expect(
+      userChallengeService.getOrCreateTodayChallenges(authId, -36.852, 174.765, 5)
+    ).resolves.toBe(todayChallenges)
+
+    const expiryCutoff = vi.mocked(userChallengeDAO.expireOpenChallengesBeforeDate)
+      .mock.calls[0][1]
+    const todayLookup = vi.mocked(userChallengeDAO.getTodayUserChallengesByUserId)
+      .mock.calls[0][1]
+
+    expect(expiryCutoff.toISOString()).toBe('2026-05-08T00:00:00.000Z')
+    expect(todayLookup.toISOString()).toBe('2026-05-08T00:00:00.000Z')
+  })
+
+  it('uses the next UTC day boundary for today challenges after midnight', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-09T00:01:00.000Z'))
+    const todayChallenges = [userChallenge({ id: 1 })]
+    userChallengeDAO.getTodayUserChallengesByUserId.mockResolvedValue(
+      todayChallenges as any
+    )
+
+    await expect(
+      userChallengeService.getOrCreateTodayChallenges(authId, -36.852, 174.765, 5)
+    ).resolves.toBe(todayChallenges)
+
+    const expiryCutoff = vi.mocked(userChallengeDAO.expireOpenChallengesBeforeDate)
+      .mock.calls[0][1]
+    const todayLookup = vi.mocked(userChallengeDAO.getTodayUserChallengesByUserId)
+      .mock.calls[0][1]
+
+    expect(expiryCutoff.toISOString()).toBe('2026-05-09T00:00:00.000Z')
+    expect(todayLookup.toISOString()).toBe('2026-05-09T00:00:00.000Z')
   })
 
   it('creates at most three nearby daily challenges when none exist today', async () => {
     const createdChallenges = [userChallenge({ id: 1 }), userChallenge({ id: 2 })]
-    vi.mocked(userChallengeDAO.getTodayUserChallengesByUserId)
+    userChallengeDAO.getTodayUserChallengesByUserId
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce(createdChallenges as any)
-    vi.mocked(findAllActiveChallenges).mockResolvedValue([
+    challengeDaoMocks.findAllActiveChallenges.mockResolvedValue([
       activeChallenge(1, -36.852, 174.765),
       activeChallenge(2, -36.853, 174.765),
       activeChallenge(3, -36.854, 174.765),
@@ -153,7 +180,7 @@ describe('userChallengeService', () => {
 
   it('accepts a user challenge with the supplied coordinates', async () => {
     const accepted = userChallenge({ status: 'accepted' })
-    vi.mocked(userChallengeDAO.acceptUserChallenge).mockResolvedValue(accepted as any)
+    userChallengeDAO.acceptUserChallenge.mockResolvedValue(accepted as any)
 
     await expect(
       userChallengeService.acceptChallenge(authId, 20, -36.852, 174.765)
@@ -167,7 +194,7 @@ describe('userChallengeService', () => {
   })
 
   it('throws 404 when accepting a missing user challenge', async () => {
-    vi.mocked(userChallengeDAO.acceptUserChallenge).mockResolvedValue(null)
+    userChallengeDAO.acceptUserChallenge.mockResolvedValue(null)
 
     await expect(
       userChallengeService.acceptChallenge(authId, 20, -36.852, 174.765)
@@ -179,7 +206,7 @@ describe('userChallengeService', () => {
 
   it('cancels a user challenge', async () => {
     const cancelled = userChallenge({ status: 'cancelled' })
-    vi.mocked(userChallengeDAO.cancelUserChallenge).mockResolvedValue(cancelled as any)
+    userChallengeDAO.cancelUserChallenge.mockResolvedValue(cancelled as any)
 
     await expect(userChallengeService.cancelChallenge(authId, 20)).resolves.toBe(
       cancelled
@@ -188,16 +215,16 @@ describe('userChallengeService', () => {
 
   it('returns an already completed challenge without completing it again', async () => {
     const completed = userChallenge({ status: 'completed' })
-    vi.mocked(findUserChallengeForUser).mockResolvedValue(completed as any)
+    userChallengeDaoMocks.findUserChallengeForUser.mockResolvedValue(completed as any)
 
     await expect(
       userChallengeService.checkInChallenge(authId, 20, -36.852, 174.765)
     ).resolves.toBe(completed)
-    expect(completeUserChallengeByUserChallengeId).not.toHaveBeenCalled()
+    expect(challengeDaoMocks.completeUserChallengeByUserChallengeId).not.toHaveBeenCalled()
   })
 
   it('requires a challenge to be accepted before check-in', async () => {
-    vi.mocked(findUserChallengeForUser).mockResolvedValue(
+    userChallengeDaoMocks.findUserChallengeForUser.mockResolvedValue(
       userChallenge({ status: 'in_progress' }) as any
     )
 
@@ -210,18 +237,18 @@ describe('userChallengeService', () => {
   })
 
   it('requires the user to be within the configured completion radius', async () => {
-    vi.mocked(findUserChallengeForUser).mockResolvedValue(userChallenge() as any)
+    userChallengeDaoMocks.findUserChallengeForUser.mockResolvedValue(userChallenge() as any)
 
     await expect(
       userChallengeService.checkInChallenge(authId, 20, -37.7826, 175.2528)
     ).rejects.toMatchObject({
       statusCode: 409,
     })
-    expect(completeUserChallengeByUserChallengeId).not.toHaveBeenCalled()
+    expect(challengeDaoMocks.completeUserChallengeByUserChallengeId).not.toHaveBeenCalled()
   })
 
   it('rejects check-in when the challenge location is missing', async () => {
-    vi.mocked(findUserChallengeForUser).mockResolvedValue(
+    userChallengeDaoMocks.findUserChallengeForUser.mockResolvedValue(
       userChallenge({ challenge: { location: null } }) as any
     )
 
@@ -235,18 +262,37 @@ describe('userChallengeService', () => {
 
   it('completes an accepted user challenge from a nearby location', async () => {
     const completed = userChallenge({ status: 'completed' })
-    vi.mocked(findUserChallengeForUser).mockResolvedValue(userChallenge() as any)
-    vi.mocked(completeUserChallengeByUserChallengeId).mockResolvedValue(completed as any)
+    userChallengeDaoMocks.findUserChallengeForUser.mockResolvedValue(userChallenge() as any)
+    challengeDaoMocks.completeUserChallengeByUserChallengeId.mockResolvedValue(completed as any)
 
     await expect(
       userChallengeService.checkInChallenge(authId, 20, -36.852, 174.765)
     ).resolves.toBe(completed)
-    expect(completeUserChallengeByUserChallengeId).toHaveBeenCalledWith(20, 1)
+    expect(challengeDaoMocks.completeUserChallengeByUserChallengeId).toHaveBeenCalledWith(20, 1)
+  })
+
+  it('handles concurrent challenge completions', async () => {
+    const accepted = userChallenge()
+    const completed = userChallenge({ status: 'completed' })
+    userChallengeDaoMocks.findUserChallengeForUser.mockResolvedValue(accepted as any)
+    challengeDaoMocks.completeUserChallengeByUserChallengeId.mockResolvedValue(completed as any)
+
+    await expect(
+      Promise.all([
+        userChallengeService.checkInChallenge(authId, 20, -36.852, 174.765),
+        userChallengeService.checkInChallenge(authId, 20, -36.852, 174.765),
+      ])
+    ).resolves.toEqual([completed, completed])
+
+    expect(userChallengeDaoMocks.findUserChallengeForUser).toHaveBeenCalledTimes(2)
+    expect(challengeDaoMocks.completeUserChallengeByUserChallengeId).toHaveBeenCalledTimes(2)
+    expect(challengeDaoMocks.completeUserChallengeByUserChallengeId).toHaveBeenNthCalledWith(1, 20, 1)
+    expect(challengeDaoMocks.completeUserChallengeByUserChallengeId).toHaveBeenNthCalledWith(2, 20, 1)
   })
 
   it('throws 409 when the DAO cannot complete the challenge from its current status', async () => {
-    vi.mocked(findUserChallengeForUser).mockResolvedValue(userChallenge() as any)
-    vi.mocked(completeUserChallengeByUserChallengeId).mockResolvedValue(null)
+    userChallengeDaoMocks.findUserChallengeForUser.mockResolvedValue(userChallenge() as any)
+    challengeDaoMocks.completeUserChallengeByUserChallengeId.mockResolvedValue(null)
 
     await expect(
       userChallengeService.checkInChallenge(authId, 20, -36.852, 174.765)

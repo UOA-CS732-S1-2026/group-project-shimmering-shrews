@@ -1,5 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+/**
+ * Test category: Contract tests.
+ *
+ * These tests call controller handlers directly with mocked services and mocked
+ * Express request/response objects. They document controller-level contracts:
+ * request parsing, auth preconditions, success response shape, and forwarding
+ * errors to Express error middleware. They do not touch the database or network.
+ */
 vi.mock('../src/services/challengeService', () => ({
   getAllChallenges: vi.fn(),
   getChallengeDetails: vi.fn(),
@@ -79,7 +87,7 @@ const nextError = (next: MockNext) => next.mock.calls[0]?.[0]
 
 describe('challengeController', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    vi.resetAllMocks()
   })
 
   it('wraps the active challenge list in a success envelope', async () => {
@@ -165,7 +173,7 @@ describe('challengeController', () => {
 
 describe('userChallengeController', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    vi.resetAllMocks()
   })
 
   it('requires an authenticated user for listing assigned challenges', async () => {
@@ -255,6 +263,44 @@ describe('userChallengeController', () => {
     })
   })
 
+  it('rejects non-numeric lat and lng query params', async () => {
+    const next = createNext()
+
+    await userChallengeController.getTodayUserChallenges(
+      {
+        auth: { sub: 'auth-1' },
+        query: { lat: 'north', lng: '174.765' },
+      } as any,
+      response().res,
+      next
+    )
+
+    expect(nextError(next)).toMatchObject({
+      statusCode: 400,
+      message: 'lat must be a valid number',
+    })
+    expect(userChallengeService.getOrCreateTodayChallenges).not.toHaveBeenCalled()
+  })
+
+  it('rejects out-of-range negative latitude query params', async () => {
+    const next = createNext()
+
+    await userChallengeController.getTodayUserChallenges(
+      {
+        auth: { sub: 'auth-1' },
+        query: { lat: '-91', lng: '174.765' },
+      } as any,
+      response().res,
+      next
+    )
+
+    expect(nextError(next)).toMatchObject({
+      statusCode: 400,
+      message: 'lat must be between -90 and 90',
+    })
+    expect(userChallengeService.getOrCreateTodayChallenges).not.toHaveBeenCalled()
+  })
+
   it('accepts a user challenge with parsed body coordinates', async () => {
     const { res, status, json } = response()
     const accepted = { id: 20, status: 'accepted' }
@@ -301,6 +347,26 @@ describe('userChallengeController', () => {
       statusCode: 400,
       message: 'acceptedFromLat must be a valid number',
     })
+  })
+
+  it('rejects out-of-range check-in coordinates', async () => {
+    const next = createNext()
+
+    await userChallengeController.checkInUserChallenge(
+      {
+        auth: { sub: 'auth-1' },
+        params: { id: '20' },
+        body: { completedFromLat: '-36.852', completedFromLng: '-181' },
+      } as any,
+      response().res,
+      next
+    )
+
+    expect(nextError(next)).toMatchObject({
+      statusCode: 400,
+      message: 'completedFromLng must be between -180 and 180',
+    })
+    expect(userChallengeService.checkInChallenge).not.toHaveBeenCalled()
   })
 
   it('cancels a user challenge', async () => {
@@ -355,7 +421,7 @@ describe('userChallengeController', () => {
 
 describe('profile, auth, user, and location controllers', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    vi.resetAllMocks()
   })
 
   it('returns the authenticated profile summary', async () => {
@@ -415,6 +481,22 @@ describe('profile, auth, user, and location controllers', () => {
     })
   })
 
+  it('requires an authenticated user id when syncing a user', async () => {
+    const next = createNext()
+
+    await authController.syncUser(
+      { auth: { sub: '', email: 'user@example.com' } } as any,
+      response().res,
+      next
+    )
+
+    expect(nextError(next)).toMatchObject({
+      statusCode: 401,
+      message: 'Authenticated user is missing',
+    })
+    expect(syncUserProfileByAuth).not.toHaveBeenCalled()
+  })
+
   it('returns current user profile info', async () => {
     const { res, status, json } = response()
     const profile = { id: 1, badges: [] }
@@ -429,6 +511,18 @@ describe('profile, auth, user, and location controllers', () => {
     expect(UserService.getProfile).toHaveBeenCalledWith('auth-1')
     expect(status).toHaveBeenCalledWith(200)
     expect(json).toHaveBeenCalledWith({ success: true, data: profile })
+  })
+
+  it('requires an authenticated user id for current profile info', async () => {
+    const next = createNext()
+
+    await userController.getProfileInfo({ auth: { sub: '' } } as any, response().res, next)
+
+    expect(nextError(next)).toMatchObject({
+      statusCode: 401,
+      message: 'Authenticated user is missing',
+    })
+    expect(UserService.getProfile).not.toHaveBeenCalled()
   })
 
   it('fetches locations', async () => {
@@ -459,5 +553,161 @@ describe('profile, auth, user, and location controllers', () => {
       message: 'Locations added to database',
       data: result,
     })
+  })
+})
+
+describe('profileController', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+  })
+
+  it('requires authenticated user to fetch profile', async () => {
+    const next = createNext()
+
+    await profileController.getMyProfile({ auth: undefined } as any, response().res, next)
+
+    expect(nextError(next)).toMatchObject({
+      statusCode: 401,
+      message: 'Authenticated user is missing',
+    })
+    expect(getUserProfile).not.toHaveBeenCalled()
+  })
+
+  it('rejects an empty authenticated user id', async () => {
+    const next = createNext()
+
+    await profileController.getMyProfile(
+      { auth: { sub: '', email: 'user@example.com' } } as any,
+      response().res,
+      next
+    )
+
+    expect(nextError(next)).toMatchObject({
+      statusCode: 401,
+      message: 'Authenticated user is missing',
+    })
+    expect(getUserProfile).not.toHaveBeenCalled()
+  })
+
+  it('returns user profile with correct status code', async () => {
+    const { res, status, json } = response()
+    const profile = { name: 'City_Scout-01', level: 3 }
+    vi.mocked(getUserProfile).mockResolvedValue(profile as any)
+
+    await profileController.getMyProfile(
+      { auth: { sub: 'auth-1', email: 'user@example.com' } } as any,
+      res,
+      createNext()
+    )
+
+    expect(getUserProfile).toHaveBeenCalledWith('auth-1', 'user@example.com')
+    expect(status).toHaveBeenCalledWith(200)
+    expect(json).toHaveBeenCalledWith({ success: true, data: profile })
+  })
+
+  it('returns 404 for non-existent profile', async () => {
+    const next = createNext()
+    const error = Object.assign(new Error('User profile not found'), { statusCode: 404 })
+    vi.mocked(getUserProfile).mockRejectedValue(error)
+
+    await profileController.getMyProfile(
+      { auth: { sub: 'auth-1', email: 'user@example.com' } } as any,
+      response().res,
+      next
+    )
+
+    expect(nextError(next)).toBe(error)
+  })
+})
+
+describe('locationController', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+  })
+
+  it('fetches locations by category', async () => {
+    const { res, status, json } = response()
+    const locations = [{ id: 1, category: 'catering.cafe' }]
+    vi.mocked(fetchLocations).mockResolvedValue(locations as any)
+
+    await locationController.fetchPlaces(
+      { query: { category: 'catering.cafe', limit: '2' } } as any,
+      res,
+      createNext()
+    )
+
+    expect(fetchLocations).toHaveBeenCalledWith('catering.cafe', 2)
+    expect(status).toHaveBeenCalledWith(200)
+    expect(json).toHaveBeenCalledWith({
+      success: true,
+      message: 'Locations fetched',
+      data: locations,
+    })
+  })
+
+  it('adds new locations from Geoapify', async () => {
+    const { res, status, json } = response()
+    const result = { count: 2 }
+    vi.mocked(addLocations).mockResolvedValue(result as any)
+
+    await locationController.fetchAndCreateLocations(
+      { query: { category: 'leisure.park', limit: '3' } } as any,
+      res,
+      createNext()
+    )
+
+    expect(addLocations).toHaveBeenCalledWith('leisure.park', 3)
+    expect(status).toHaveBeenCalledWith(200)
+    expect(json).toHaveBeenCalledWith({
+      success: true,
+      message: 'Locations added to database',
+      data: result,
+    })
+  })
+
+  it('handles Geoapify API errors gracefully', async () => {
+    const next = createNext()
+    const error = new Error('Geoapify error: 429')
+    vi.mocked(fetchLocations).mockRejectedValue(error)
+
+    await locationController.fetchPlaces(
+      { query: { category: 'catering.cafe' } } as any,
+      response().res,
+      next
+    )
+
+    expect(nextError(next)).toBe(error)
+  })
+
+  it('rejects invalid location fetch limits', async () => {
+    const next = createNext()
+
+    await locationController.fetchPlaces(
+      { query: { category: 'catering.cafe', limit: '0' } } as any,
+      response().res,
+      next
+    )
+
+    expect(nextError(next)).toMatchObject({
+      statusCode: 400,
+      message: 'limit must be a positive integer',
+    })
+    expect(fetchLocations).not.toHaveBeenCalled()
+  })
+
+  it('rejects malformed location categories', async () => {
+    const next = createNext()
+
+    await locationController.fetchPlaces(
+      { query: { category: '../bad category', limit: '2' } } as any,
+      response().res,
+      next
+    )
+
+    expect(nextError(next)).toMatchObject({
+      statusCode: 400,
+      message: 'category must be a valid Geoapify category',
+    })
+    expect(fetchLocations).not.toHaveBeenCalled()
   })
 })

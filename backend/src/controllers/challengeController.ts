@@ -2,8 +2,11 @@ import { Request, Response } from 'express'
 import { getAllChallenges, getChallengeDetails, checkInToChallenge, createNewChallenges } from '../services/challengeService'
 import { ApiError } from '../utils/ApiError'
 import { asyncHandler } from '../utils/asyncHandler'
+import { sendSuccess } from '../utils/httpResponse'
 import type { AuthRequest } from '../middleware/auth'
 
+// Keep controller responses on one shared success envelope so contract tests can
+// assert the API shape consistently across read and mutation endpoints.
 const parseId = (value: unknown, name: string) => {
   const rawValue = Array.isArray(value) ? undefined : value
   const id = Number(rawValue)
@@ -18,20 +21,14 @@ const parseId = (value: unknown, name: string) => {
 export const getChallenges = asyncHandler(async (_req: Request, res: Response) => {
   const challenges = await getAllChallenges()
 
-  res.status(200).json({
-    success: true,
-    data: challenges,
-  })
+  sendSuccess(res, challenges)
 })
 
 export const getChallenge = asyncHandler(async (req: Request, res: Response) => {
   const challengeId = parseId(req.params.id, 'Challenge id')
   const challenge = await getChallengeDetails(challengeId)
 
-  res.status(200).json({
-    success: true,
-    data: challenge,
-  })
+  sendSuccess(res, challenge)
 })
 
 export const checkInChallenge = asyncHandler(async (req: Request, res: Response) => {
@@ -48,19 +45,11 @@ export const checkInChallenge = asyncHandler(async (req: Request, res: Response)
 
   const checkIn = await checkInToChallenge(challengeId, authUser.sub, authUser.email)
 
-  res.status(200).json({
-    success: true,
-    message: 'Challenge checked in',
-    data: checkIn,
-  })
+  sendSuccess(res, checkIn, 'Challenge checked in')
 })
 
 export const createChallengesFromLocations = asyncHandler(async (_req: Request, res: Response) => {
   const challenges = await createNewChallenges()
 
-  res.status(200).json({
-    success: true,
-    message: 'Challenges created from new locations',
-    data: challenges,
-  })
+  sendSuccess(res, challenges, 'Challenges created from new locations')
 })

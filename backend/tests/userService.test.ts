@@ -1,28 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-vi.mock('../src/daos/badgeDAO', () => ({
-  badgeDAO: {
-    getBadgesForUser: vi.fn(),
-  },
-}))
-
-vi.mock('../src/daos/userDao', () => ({
-  userDAO: {
-    getProfileByAuthId: vi.fn(),
-  },
-}))
-
-import { userDAO } from '../src/daos/userDao'
+import { userDaoMocks } from './helpers/daoMocks'
 import { UserService } from '../src/services/userService'
 
+/**
+ * Test category: Unit tests.
+ *
+ * These tests cover user profile service mapping and authorization decisions
+ * with the user DAO mocked. They document badge response mapping and forbidden/
+ * not-found behavior without requiring database rows.
+ */
 describe('UserService', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    vi.resetAllMocks()
   })
 
   it('returns profile info with awarded badges mapped for the frontend', async () => {
     const earnedAt = new Date('2026-05-01T00:00:00.000Z')
-    vi.mocked(userDAO.getProfileByAuthId).mockResolvedValue({
+    userDaoMocks.userDAO.getProfileByAuthId.mockResolvedValue({
       id: 1,
       username: 'City_Scout-01',
       email: 'user@example.com',
@@ -60,7 +54,7 @@ describe('UserService', () => {
   })
 
   it('uses the active icon as a fallback when inactive icon is absent', async () => {
-    vi.mocked(userDAO.getProfileByAuthId).mockResolvedValue({
+    userDaoMocks.userDAO.getProfileByAuthId.mockResolvedValue({
       id: 1,
       username: 'City_Scout-01',
       email: 'user@example.com',
@@ -91,11 +85,11 @@ describe('UserService', () => {
       statusCode: 403,
       message: 'Forbidden',
     })
-    expect(userDAO.getProfileByAuthId).not.toHaveBeenCalled()
+    expect(userDaoMocks.userDAO.getProfileByAuthId).not.toHaveBeenCalled()
   })
 
   it('throws 404 when the profile does not exist', async () => {
-    vi.mocked(userDAO.getProfileByAuthId).mockResolvedValue(null)
+    userDaoMocks.userDAO.getProfileByAuthId.mockResolvedValue(null)
 
     await expect(UserService.getProfile('auth-1')).rejects.toMatchObject({
       statusCode: 404,
