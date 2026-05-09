@@ -7,28 +7,30 @@ import { getUserChallenge } from '../services/userChallenges'
 export default function ChallengeRoute() {
   const navigate = useNavigate()
   const { userChallengeId } = useParams()
-  const normalisedId = userChallengeId ? Number(userChallengeId) : null
+
+  if (!userChallengeId) {
+    throw new Error("Missing userChallengeId")
+  }
+  
+  const [userChallenge, setUserChallenge] = useState<UserChallenge | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const location = useLocation()
   // fetch passed challenge if we came here from View Route via Challenge Detail View
   const passedUserChallenge = location.state?.userChallenge
 
-  const [userChallenge, setUserChallenge] = useState<UserChallenge | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const displayedChallenge = Number(passedUserChallenge?.id) === Number(userChallengeId) ? passedUserChallenge : userChallenge;
 
-  const isLoading = userChallenge === null && error === null
+  const isLoading = displayedChallenge === null && error === null
 
   useEffect(() => {
-    if (!normalisedId) return
+    if (!userChallengeId) return
 
-    if (passedUserChallenge?.id === normalisedId) {
-      setUserChallenge(passedUserChallenge)
-      return
-    }
+    if (Number(passedUserChallenge?.id) === Number(userChallengeId)) return;
 
     let isActive = true
 
-    getUserChallenge(normalisedId)
+    getUserChallenge(userChallengeId)
       .then((data) => {
         if (!isActive) return
         setUserChallenge(data)
@@ -41,7 +43,7 @@ export default function ChallengeRoute() {
     return () => {
       isActive = false
     }
-  }, [passedUserChallenge, normalisedId])
+  }, [passedUserChallenge, userChallengeId])
 
   if (!userChallengeId) {
     return (
@@ -73,7 +75,7 @@ export default function ChallengeRoute() {
     )
   }
 
-  if (!userChallenge) {
+  if (!displayedChallenge) {
     return (
       <main className="container page page-profile">
         <div className="shell shell-profile">
@@ -85,7 +87,7 @@ export default function ChallengeRoute() {
 
   return (
     <ChallengeDetailView
-      userChallenge={userChallenge}
+      userChallenge={displayedChallenge}
       goToChallengeList={() => navigate('/challenges')}
     />
   )
