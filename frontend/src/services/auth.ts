@@ -1,13 +1,11 @@
 import { getSupabaseClient } from "../lib/supabase"
 
 export const loginWithGoogle = async () => {
-  const FRONTEND_URL = import.meta.env.VITE_FRONTEND_URL
-
   const supabase = getSupabaseClient()
   const { error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${FRONTEND_URL}/auth/callback`,
+      redirectTo: `${window.location.origin}/auth/callback`,
       queryParams: {
         prompt: "select_account"
       }
