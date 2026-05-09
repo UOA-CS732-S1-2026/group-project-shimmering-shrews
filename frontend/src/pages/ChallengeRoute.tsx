@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import ChallengeDetailView from './ChallengeDetailView'
 import type { UserChallenge } from '../types/userChallenge'
 import { getUserChallenge } from '../services/userChallenges'
@@ -7,6 +7,11 @@ import { getUserChallenge } from '../services/userChallenges'
 export default function ChallengeRoute() {
   const navigate = useNavigate()
   const { userChallengeId } = useParams()
+  const normalisedId = userChallengeId ? Number(userChallengeId) : null
+
+  const location = useLocation()
+  // fetch passed challenge if we came here from View Route via Challenge Detail View
+  const passedUserChallenge = location.state?.userChallenge
 
   const [userChallenge, setUserChallenge] = useState<UserChallenge | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -14,11 +19,16 @@ export default function ChallengeRoute() {
   const isLoading = userChallenge === null && error === null
 
   useEffect(() => {
-    if (!userChallengeId) return
+    if (!normalisedId) return
+
+    if (passedUserChallenge?.id === normalisedId) {
+      setUserChallenge(passedUserChallenge)
+      return
+    }
 
     let isActive = true
 
-    getUserChallenge(userChallengeId)
+    getUserChallenge(normalisedId)
       .then((data) => {
         if (!isActive) return
         setUserChallenge(data)
@@ -31,7 +41,7 @@ export default function ChallengeRoute() {
     return () => {
       isActive = false
     }
-  }, [userChallengeId])
+  }, [passedUserChallenge, normalisedId])
 
   if (!userChallengeId) {
     return (

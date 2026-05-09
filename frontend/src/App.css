@@ -9,7 +9,7 @@
   min-height: 100svh;
   width: min(1120px, calc(100% - 32px));
   margin: 0 auto;
-  padding: 24px 0 96px;
+  padding: 12px 0 96px;
 }
 
 .shell {
@@ -23,7 +23,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 8px 0 28px;
+  padding: 8px 0 12px;
 }
 
 .topbar a {
@@ -279,13 +279,17 @@
 
 .badge-card__icon {
   display: grid;
-  width: 48px;
-  height: 48px;
+  width: 72px;
+  height: 72px;
   place-items: center;
-  border-radius: 8px;
-  background: #198b6f;
-  color: #ffffff;
+  border-radius: 50%;
+  background: transparent;
+  color: black;
   font-weight: 900;
+}
+
+.badge-card--locked .badge-card__icon img {
+  filter: grayscale(50%) brightness(0.8) contrast(0.9);
 }
 
 .badge-card__icon img {
@@ -603,7 +607,7 @@
   }
 
   .topbar {
-    padding-bottom: 20px;
+    padding-bottom: 10px;
   }
 
   .profile-header {

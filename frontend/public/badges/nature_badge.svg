@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="128" height="128">
+
+<defs>
+
+<!-- natural glow -->
+<radialGradient id="glow" cx="70%" cy="25%" r="60%">
+  <stop offset="0%" stop-color="rgba(200,255,220,0.7)"/>
+  <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
+</radialGradient>
+
+<!-- nature rotating gradient (leaf light / forest canopy) -->
+<linearGradient id="badgeGrad"
+                x1="0" y1="0" x2="1" y2="1">
+
+  <animateTransform attributeName="gradientTransform"
+                    type="rotate"
+                    values="0 0.5 0.5; 360 0.5 0.5"
+                    dur="12s"
+                    repeatCount="indefinite"/>
+
+  <stop offset="0%" stop-color="#1b5e3a"/>
+  <stop offset="50%" stop-color="#7CFFB2"/>
+  <stop offset="100%" stop-color="#0b3d26"/>
+
+</linearGradient>
+
+<!-- earthy stroke (replaces gold) -->
+<linearGradient id="natureStroke" x1="0" y1="0" x2="1" y2="1">
+  <stop offset="0%" stop-color="#bfffe0"/>
+  <stop offset="25%" stop-color="#3cff9a"/>
+  <stop offset="50%" stop-color="#1f7a4a"/>
+  <stop offset="75%" stop-color="#0b3d26"/>
+  <stop offset="100%" stop-color="#062014"/>
+</linearGradient>
+
+<!-- soft sunbeam shine (less “luxury stripe”, more sunlight) -->
+<linearGradient id="shineGrad" x1="0" y1="0" x2="1" y2="0">
+  <stop offset="0%" stop-color="rgba(255,255,255,0)"/>
+  <stop offset="48%" stop-color="rgba(255,255,255,0)"/>
+  <stop offset="50%" stop-color="rgba(200,255,220,0.35)"/>
+  <stop offset="52%" stop-color="rgba(255,255,255,0)"/>
+  <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+</linearGradient>
+
+<!-- clip -->
+<clipPath id="badgeClip">
+  <circle cx="320" cy="320" r="320"/>
+</clipPath>
+
+<!-- softer inner shadow (organic depth) -->
+<filter id="innerShadow" x="-50%" y="-50%" width="200%" height="200%">
+  <feOffset dx="1" dy="3" />
+  <feGaussianBlur stdDeviation="3" result="blur"/>
+  <feFlood flood-color="black" flood-opacity="0.45"/>
+  <feComposite operator="in" in2="blur"/>
+  <feComposite operator="over" in="SourceGraphic"/>
+</filter>
+
+<!-- subtle highlight -->
+<filter id="innerHighlight" x="-50%" y="-50%" width="200%" height="200%">
+  <feOffset dx="0" dy="-1" />
+  <feGaussianBlur stdDeviation="1.5" result="blur"/>
+  <feFlood flood-color="#d9ffe9" flood-opacity="0.22"/>
+  <feComposite operator="in" in2="blur"/>
+  <feComposite operator="over" in="SourceGraphic"/>
+</filter>
+
+</defs>
+
+<!-- BORDER -->
+<circle cx="320" cy="320" r="280"
+        fill="none"
+        stroke="url(#natureStroke)"
+        stroke-width="80"
+        stroke-linecap="round"/>
+
+<!-- BADGE FILL -->
+<circle cx="320" cy="320" r="280"
+        fill="url(#badgeGrad)"/>
+
+<!-- glow -->
+<circle cx="320" cy="320" r="280" fill="url(#glow)"/>
+
+<!-- ICON (nature tint + engraved feel preserved) -->
+<g transform="translate(320 320) scale(0.65) translate(-270 -260)"
+  fill="#2e7d4f"
+  stroke="#2e7d4f"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  filter="url(#innerShadow) url(#innerHighlight)">
+
+  <path d="M471.3 6.7C477.7 .6 487-1.6 495.6 1.2 505.4 4.5 512 13.7 512 24l0 186.9c0 131.2-108.1 237.1-238.8 237.1-77 0-143.4-49.5-167.5-118.7-35.4 30.8-57.7 76.1-57.7 126.7 0 13.3-10.7 24-24 24S0 469.3 0 456C0 381.1 38.2 315.1 96.1 276.3 131.4 252.7 173.5 240 216 240l80 0c13.3 0 24-10.7 24-24s-10.7-24-24-24l-80 0c-39.7 0-77.3 8.8-111 24.5 23.3-70 89.2-120.5 167-120.5 66.4 0 115.8-22.1 148.7-44 19.2-12.8 35.5-28.1 50.7-45.3z"/>
+
+</g>
+
+<!-- SHINE -->
+<g clip-path="url(#badgeClip)" pointer-events="none">
+  <rect x="-800" y="0" width="1800" height="800"
+        fill="url(#shineGrad)"
+        opacity="0.55"
+        transform="rotate(205 320 320)">
+    <animateTransform
+      attributeName="transform"
+      type="translate"
+      from="1400 0"
+      to="-1400 0"
+      dur="5s"
+      repeatCount="indefinite"
+      additive="sum"/>
+  </rect>
+</g>
+
+</svg>

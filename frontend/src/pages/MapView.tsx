@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker, Popup, Circle, CircleMarker, Polyline, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import MarkerClusterGroup from 'react-leaflet-cluster'
@@ -126,6 +126,10 @@ export default function MapView() {
   const [focusedRouteChallenge, setFocusedRouteChallenge] = useState<UserChallenge | null>(null)
   const [route, setRoute] = useState<[number, number][] | null>(null)
   const [routeError, setRouteError] = useState<string | null>(null)
+
+  const location = useLocation()
+  // fetch passed challenge if we came here from View Route via Challenge Detail View
+  const passedChallenge = location.state?.userChallenge
 
   const focusedUserChallengeId = Number(searchParams.get('focusUserChallengeId') || 0)
   const returnTo = searchParams.get('returnTo') || '/challenges'
@@ -265,6 +269,12 @@ export default function MapView() {
       return
     }
 
+    if (passedChallenge?.id === focusedUserChallengeId) {
+      setFocusedRouteChallenge(passedChallenge)
+      return
+    }
+
+
     let isActive = true
 
     getUserChallenge(String(focusedUserChallengeId))
@@ -279,7 +289,7 @@ export default function MapView() {
     return () => {
       isActive = false
     }
-  }, [focusedUserChallengeId])
+  }, [focusedUserChallengeId, passedChallenge])
 
   const activeFocusedChallenge = focusedRouteChallenge ?? focusedUserChallenge
   const currUserLocation: [number, number] | null = DEV_SHOW_ALL ? DEFAULT_MAP_CENTER : userLocation
@@ -401,7 +411,9 @@ export default function MapView() {
                 </span>
               )}
             </div>
-            <button className="map-focus-banner__button" onClick={() => navigate(returnTo)}>
+            <button className="map-focus-banner__button" onClick={() => navigate(returnTo, {
+              state: { userChallenge: passedChallenge }
+            })}>
               Return To Check In
             </button>
           </div>
@@ -455,7 +467,6 @@ export default function MapView() {
                 <CircleMarker center={currUserLocation} radius={8} pathOptions={{ color: 'white', weight: 2, fillColor: 'blue', fillOpacity: 0.8 }}>
                   <Popup>You are here</Popup>
                 </CircleMarker>
-                <Circle center={currUserLocation} radius={RADIUS_METRES} pathOptions={{ color: '#4a90e2', weight: 2, fillColor: '#4a90e2', fillOpacity: 0.04 }} />
                 {accuracy && (
                   <Circle center={currUserLocation} radius={accuracy} pathOptions={{ weight: 0, fillColor: '#73a1d5', fillOpacity: 0.15, dashArray: '4 6' }} />
                 )}
@@ -521,7 +532,11 @@ export default function MapView() {
                           <span style={xpStyle}>+{userChallenge.challenge.xp_worth} XP</span>
                         </div>
                         {!activeFocusedChallenge && (
-                          <Link className="challenge-map-popup__link" to={`/challenges/${userChallenge.id}`}>
+                          <Link
+                            className="challenge-map-popup__link"
+                            to={`/challenges/${userChallenge.id}`}
+                            state={{ userChallenge: userChallenge}}
+                          >
                             Open Full Detail
                           </Link>
                         )}

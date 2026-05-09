@@ -13,8 +13,8 @@ function XPProgress({ currentXP, levelStartXP, nextLevelXP }: XPProgressProps) {
   return (
     <div className="xp-progress" aria-label={`${Math.round(progress)} percent to next level`}>
       <div className="xp-progress__meta">
-        <span>{currentXP.toLocaleString()} XP</span>
-        <span>{nextLevelXP.toLocaleString()} XP</span>
+        <span>{earnedThisLevel.toLocaleString()} XP</span>
+        <span>{requiredThisLevel.toLocaleString()} XP</span>
       </div>
       <div className="xp-progress__track">
         <div className="xp-progress__bar" style={{ width: `${progress}%` }} />
