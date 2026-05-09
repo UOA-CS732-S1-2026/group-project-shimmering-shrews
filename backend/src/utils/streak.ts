@@ -1,9 +1,6 @@
 const APP_TIME_ZONE = 'Pacific/Auckland'
 const MS_PER_DAY = 1000 * 60 * 60 * 24
 
-export const startOfUtcDay = (date: Date) =>
-  Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())
-
 const getCalendarDayMs = (date: Date, timeZone = APP_TIME_ZONE) => {
   const parts = new Intl.DateTimeFormat('en-NZ', {
     timeZone,

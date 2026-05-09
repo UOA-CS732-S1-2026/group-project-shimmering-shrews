@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { profileDaoMocks } from './helpers/daoMocks'
 import { getUserProfile } from '../src/services/profileService'
 
@@ -15,6 +15,7 @@ const profile = {
   level: 2,
   xp_earned: 40,
   streak_count: 3,
+  last_completed_challenge: new Date('2026-05-09T10:00:00.000Z'),
 }
 
 const setupProfileDependencies = () => {
@@ -62,7 +63,13 @@ const setupProfileDependencies = () => {
 describe('profileService', () => {
   beforeEach(() => {
     vi.resetAllMocks()
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-10T10:00:00.000Z'))
     setupProfileDependencies()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('builds the profile summary with badges, XP thresholds, and recent history', async () => {
