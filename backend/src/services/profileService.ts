@@ -7,6 +7,7 @@ import {
 } from '../daos/profileDao'
 import { ApiError } from '../utils/ApiError'
 import { getXpForLevelStart, getXpForNextLevel } from '../utils/leveling'
+import { getActiveStreakCount } from '../utils/streak'
 import { isExploratoryUsername } from '../utils/username'
 
 const formatCompletedDate = (date: Date | null) => {
@@ -57,7 +58,11 @@ export const getUserProfile = async (
     name: profile.username,
     level: profile.level,
     xp: profile.xp_earned,
-    streak: profile.streak_count,
+    streak: getActiveStreakCount(
+      profile.streak_count,
+      profile.last_completed_challenge,
+      new Date()
+    ),
     badges: badgeItems.filter((badge) => badge.earned).length,
     challengesCompleted: completedChallenges,
     xpForCurrentLevel,
