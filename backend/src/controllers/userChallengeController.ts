@@ -55,12 +55,14 @@ const parseCoordinate = (value: unknown, name: string) => {
 }
 
 const parseRadius = (value: unknown) => {
-  const rawValue = Array.isArray(value) ? undefined : value
-
-  if (rawValue == null || rawValue === '') {
+  // Radius is optional for today's challenges, but if the client sends it we
+  // validate it strictly. This prevents malformed query arrays/strings from
+  // silently falling back to the default search radius.
+  if (value == null) {
     return 5
   }
 
+  const rawValue = Array.isArray(value) ? undefined : value
   const parsedValue = Number(rawValue)
 
   if (!Number.isFinite(parsedValue) || parsedValue <= 0) {
