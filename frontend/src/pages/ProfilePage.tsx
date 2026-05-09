@@ -223,7 +223,7 @@ function BadgeTab({ loading, badgeItems }: BadgeTabProps) {
       if (a.earned !== b.earned) {
         return Number(b.earned) - Number(a.earned);
       }
-      return Number(b.id) - Number(a.id);
+      return Number(a.id) - Number(b.id);
     });
 
   }, [badgeItems]);
