@@ -24,14 +24,6 @@ const router = createBrowserRouter([
     element: <HomePage />,
   },
   {
-    element: <TabsLayout />,
-    children: [
-      { path: "map", element: <MapView /> },
-      { path: "challenges", element: <ChallengesRoute /> },
-      { path: "challenges/:userChallengeId", element: <ChallengeRoute /> },
-    ],
-  },
-  {
     element: <Layout />,
     children: [
       { path: "login", element: <LoginPage /> },
@@ -39,12 +31,18 @@ const router = createBrowserRouter([
     ],
   },
   {
-    path: "/profile",
-    element: (
-      <ProtectedRoute>
-        <ProfilePage />
-      </ProtectedRoute>
-    ),
+    element: <ProtectedRoute />,
+    children: [
+      { path: "/profile", element: <ProfilePage /> },
+      {
+        element: <TabsLayout />,
+        children: [
+          { path: "map", element: <MapView /> },
+          { path: "challenges", element: <ChallengesRoute /> },
+          { path: "challenges/:userChallengeId", element: <ChallengeRoute /> },
+        ],
+      },
+    ]
   },
   {
     path: "*",
