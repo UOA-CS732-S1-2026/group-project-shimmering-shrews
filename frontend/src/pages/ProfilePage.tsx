@@ -206,6 +206,28 @@ function renderTabContent(
     )
   }
 
+  return <BadgeTab loading={loading} badgeItems={badgeItems} />
+}
+
+type BadgeTabProps = {
+  loading: boolean;
+  badgeItems: Badge[];
+};
+
+function BadgeTab({ loading, badgeItems }: BadgeTabProps) {
+
+  const sortedBadgeItems = useMemo(() => {
+    const safe = Array.isArray(badgeItems) ? badgeItems : [];
+    
+    return [...safe].sort((a, b) => {
+      if (a.earned !== b.earned) {
+        return Number(b.earned) - Number(a.earned);
+      }
+      return Number(b.id) - Number(a.id);
+    });
+
+  }, [badgeItems]);
+
   return (
     <div className="tab-panel" role="tabpanel">
       <div className="section-heading">
@@ -221,7 +243,7 @@ function renderTabContent(
         </div>
       ) : badgeItems.length ? (
         <div className="badge-grid">
-          {badgeItems.map((badge) => (
+          {sortedBadgeItems.map((badge) => (
             <BadgeCard key={badge.id} badge={badge} />
           ))}
         </div>
@@ -229,7 +251,7 @@ function renderTabContent(
         <p className="status-message">No badges available yet.</p>
       )}
     </div>
-  )
+  )  
 }
 
 function mapLiveProfileToUserProfile(profile: LiveProfile, avatarUrl: string): UserProfile {
