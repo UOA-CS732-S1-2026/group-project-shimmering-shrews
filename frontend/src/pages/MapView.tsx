@@ -381,7 +381,7 @@ export default function MapView() {
   const challengesForMap = activeFocusedChallenge ? [activeFocusedChallenge] : visibleChallenges
 
   return (
-    <div style={{ height: '100vh', width: '100%', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ height: '80vh', width: '100%', display: 'flex', flexDirection: 'column', borderRadius: '15px' }}>
       <LocationPermissionDialog
         open={showPermissionDialog}
         title={LOCATION_PERMISSION_DIALOG_TITLE}
@@ -456,10 +456,10 @@ export default function MapView() {
         )}
 
         {!locationRequired && !isInitializingLocation && (
-          <MapContainer center={mapCenter} zoom={14} style={{ height: '100%', width: '100%' }}>
+          <MapContainer center={mapCenter} zoom={14} style={{ height: '100%', width: 'auto', borderRadius: '15px 15px' }}>
             <RecenterMap center={mapCenter} zoom={14} focusPoints={mapFocusPoints} />
             <TileLayer
-              url={`https://maps.geoapify.com/v1/tile/osm-bright/{z}/{x}/{y}.png?apiKey=${import.meta.env.VITE_GEOAPIFY_KEY}`}
+              url={`https://maps.geoapify.com/v1/tile/klokantech-basic/{z}/{x}/{y}.png?apiKey=${import.meta.env.VITE_GEOAPIFY_KEY}`}
               attribution="Geoapify"
             />
             {currUserLocation && (
