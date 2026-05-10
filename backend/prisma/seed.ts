@@ -4,16 +4,16 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 type ChallengeCategory = Awaited<ReturnType<typeof prisma.challenge_category.findMany>>[number]
 
-async function main() {
+export async function seedDatabase() {
   console.log('Seeding database.')
 
   // 1. Seed challenge categories safely
   const categorySeeds = [
     { id: 0, name: 'Global', icon: null },
-    { id: 1, name: 'Food', icon: '🍔' },
-    { id: 2, name: 'Fitness', icon: '🏃' },
-    { id: 3, name: 'Social', icon: '👥' },
-    { id: 4, name: 'Nature', icon: '🌲' },
+    { id: 1, name: 'Food', icon: '\u{1F354}' },
+    { id: 2, name: 'Fitness', icon: '\u{1F3C3}' },
+    { id: 3, name: 'Social', icon: '\u{1F465}' },
+    { id: 4, name: 'Nature', icon: '\u{1F332}' },
   ]
 
   for (const category of categorySeeds) {
@@ -323,11 +323,17 @@ async function main() {
   console.log('Seeding successful!')
 }
 
-main()
-  .catch((e) => {
-    console.error('Seeding failed:', e)
-    process.exit(1)
-  })
-  .finally(async () => {
-    await prisma.$disconnect()
-  })
+export async function disconnectSeedDatabase() {
+  await prisma.$disconnect()
+}
+
+if (require.main === module) {
+  seedDatabase()
+    .catch((e) => {
+      console.error('Seeding failed:', e)
+      process.exit(1)
+    })
+    .finally(async () => {
+      await prisma.$disconnect()
+    })
+}

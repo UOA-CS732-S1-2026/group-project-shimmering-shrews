@@ -40,7 +40,10 @@ export const UserService = {
         name: b.badge.name,
         description: b.badge.description,
         active_icon: b.badge.active_url,
-				inactive_icon: b.badge.active_url,
+        // Keep inactive_icon faithful to the badge row. Tests cover this because
+        // the frontend badge UI depends on active/inactive assets being distinct
+        // when the database provides both.
+				inactive_icon: b.badge.inactive_url ?? b.badge.active_url,
         earnedAt: b.earned_at,
         earned: true,
       })),

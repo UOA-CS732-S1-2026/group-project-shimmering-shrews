@@ -1,36 +1,11 @@
 import prisma from '../config/prisma'
 import type { Prisma } from '@prisma/client'
 import { calculateLevel } from '../utils/leveling'
+import { calculateNextStreakCount } from '../utils/streak'
 
-const MS_PER_DAY = 1000 * 60 * 60 * 24
-
-const startOfUtcDay = (date: Date) =>
-  Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())
-
-const calculateNextStreakCount = (
-  lastCompletedChallenge: Date | null,
-  currentStreakCount: number,
-  completedAt: Date
-) => {
-  if (!lastCompletedChallenge) {
-    return 1
-  }
-
-  const dayDifference = Math.floor(
-    (startOfUtcDay(completedAt) - startOfUtcDay(lastCompletedChallenge)) / MS_PER_DAY
-  )
-
-  if (dayDifference <= 0) {
-    return Math.max(currentStreakCount, 1)
-  }
-
-  if (dayDifference === 1) {
-    return currentStreakCount + 1
-  }
-
-  return 1
-}
-
+// Streak calculation is kept as a pure utility and imported here so timezone
+// edge cases can be unit-tested without running a database transaction, while
+// the DAO still applies the tested result atomically with completion updates.
 const challengeSelect = {
   id: true,
   name: true,

@@ -7,30 +7,28 @@ import { getUserChallenge } from '../services/userChallenges'
 export default function ChallengeRoute() {
   const navigate = useNavigate()
   const { userChallengeId } = useParams()
-
-  if (!userChallengeId) {
-    throw new Error("Missing userChallengeId")
-  }
-  
-  const [userChallenge, setUserChallenge] = useState<UserChallenge | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const normalisedId = userChallengeId ? Number(userChallengeId) : null
 
   const location = useLocation()
   // fetch passed challenge if we came here from View Route via Challenge Detail View
   const passedUserChallenge = location.state?.userChallenge
 
-  const displayedChallenge = Number(passedUserChallenge?.id) === Number(userChallengeId) ? passedUserChallenge : userChallenge;
+  const [userChallenge, setUserChallenge] = useState<UserChallenge | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
-  const isLoading = displayedChallenge === null && error === null
+  const isLoading = userChallenge === null && error === null
 
   useEffect(() => {
-    if (!userChallengeId) return
+    if (!normalisedId || Number.isNaN(normalisedId)) return
 
-    if (Number(passedUserChallenge?.id) === Number(userChallengeId)) return;
+    if (passedUserChallenge?.id === normalisedId) {
+      setUserChallenge(passedUserChallenge)
+      return
+    }
 
     let isActive = true
 
-    getUserChallenge(userChallengeId)
+    getUserChallenge(String(normalisedId))
       .then((data) => {
         if (!isActive) return
         setUserChallenge(data)
@@ -43,13 +41,23 @@ export default function ChallengeRoute() {
     return () => {
       isActive = false
     }
-  }, [passedUserChallenge, userChallengeId])
+  }, [passedUserChallenge, normalisedId])
 
   if (!userChallengeId) {
     return (
       <main className="container page page-profile">
         <div className="shell shell-profile">
           <p className="status-message">User challenge id not found.</p>
+        </div>
+      </main>
+    )
+  }
+
+  if (normalisedId !== null && Number.isNaN(normalisedId)) {
+    return (
+      <main className="container page page-profile">
+        <div className="shell shell-profile">
+          <p className="status-message">Invalid challenge id.</p>
         </div>
       </main>
     )
@@ -75,7 +83,7 @@ export default function ChallengeRoute() {
     )
   }
 
-  if (!displayedChallenge) {
+  if (!userChallenge) {
     return (
       <main className="container page page-profile">
         <div className="shell shell-profile">
@@ -87,7 +95,7 @@ export default function ChallengeRoute() {
 
   return (
     <ChallengeDetailView
-      userChallenge={displayedChallenge}
+      userChallenge={userChallenge}
       goToChallengeList={() => navigate('/challenges')}
     />
   )

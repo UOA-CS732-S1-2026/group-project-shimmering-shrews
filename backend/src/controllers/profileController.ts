@@ -2,6 +2,7 @@ import { ApiError } from '../utils/ApiError'
 import { asyncHandler } from '../utils/asyncHandler'
 import type { AuthRequest } from '../middleware/auth'
 import { getUserProfile } from '../services/profileService'
+import { sendSuccess } from '../utils/httpResponse'
 
 export const getMyProfile = asyncHandler(async (req, res) => {
   const authUser = (req as AuthRequest).auth
@@ -12,8 +13,7 @@ export const getMyProfile = asyncHandler(async (req, res) => {
 
   const profile = await getUserProfile(authUser.sub, authUser.email)
 
-  res.status(200).json({
-    success: true,
-    data: profile,
-  })
+  // Keep profile responses aligned with the shared success envelope covered by
+  // controller/app contract tests.
+  sendSuccess(res, profile)
 })
