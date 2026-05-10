@@ -22,6 +22,7 @@ import {
   xpStyle,
 } from '../styles/challengeStyle'
 import type { UserChallenge } from '../types/userChallenge'
+import { ArrowLeft, Check, MapPinned, X } from 'lucide-react'
 
 const ALLOWED_COMPLETION_RADIUS_METERS = 700
 
@@ -196,16 +197,16 @@ export default function ChallengeDetailView({
   }
 
   const checkInLabel = isSubmitting
-    ? 'WORKING...'
+    ? 'Working...'
     : isCompleted
-      ? 'COMPLETED'
+      ? 'Completed'
       : isExpired
-        ? 'EXPIRED'
+        ? 'Expired'
         : isCancelled
-          ? 'CANCELLED'
+          ? 'Cancelled'
           : isLocationBlocked
             ? 'Location Required'
-            : 'CHECK IN'
+            : 'Check In'
 
   return (
     <div style={containerStyle}>
@@ -260,7 +261,7 @@ export default function ChallengeDetailView({
                   opacity: isSubmitting ? 0.6 : 1,
                 }}
               >
-                {isSubmitting ? 'Working...' : 'ACCEPT'}
+                {isSubmitting ? 'Working...' : 'Accept'}
               </button>
             )}
 
@@ -274,9 +275,23 @@ export default function ChallengeDetailView({
                   background: '#7a52cc',
                   cursor: isSubmitting ? 'not-allowed' : 'pointer',
                   opacity: isSubmitting ? 0.6 : 1,
+                  position: 'relative',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 }}
               >
-                VIEW ROUTE
+                View Route
+                <span
+                  style={{
+                    position: 'absolute',
+                    right: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                >
+                  <MapPinned />
+                </span>
               </button>
             )}
 
@@ -290,9 +305,24 @@ export default function ChallengeDetailView({
                   background: '#a32638',
                   cursor: isSubmitting ? 'not-allowed' : 'pointer',
                   opacity: isSubmitting ? 0.6 : 1,
+                  position: 'relative',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 }}
               >
-                CANCEL CHALLENGE
+                Cancel Challenge
+                <span
+                  style={{
+                    position: 'absolute',
+                    right: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                >
+
+                  <X />
+                </span>
               </button>
             )}
           </div>
@@ -307,9 +337,23 @@ export default function ChallengeDetailView({
               background: isCompleted || isCancelled || isExpired || isCheckInDisabled ? 'gray' : isLocationBlocked ? '#ccc' : 'green',
               cursor: isCheckInDisabled ? 'not-allowed' : 'pointer',
               opacity: isCheckInDisabled ? 0.6 : 1,
+              position: 'relative',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
             {checkInLabel}
+            <span
+              style={{
+                position: 'absolute',
+                right: '16px',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              <Check />
+            </span>
           </button>
 
           {isAccepted && (
@@ -337,7 +381,17 @@ export default function ChallengeDetailView({
       </div>
 
       <button onClick={goToChallengeList} style={buttonStyle}>
-        Return to list
+        <span
+          style={{
+            position: 'absolute',
+            left: '16px',
+            display: 'flex',
+            alignItems: 'center',
+          }}
+        >
+          <ArrowLeft />
+        </span>
+        Return to list 
       </button>
     </div>
   )

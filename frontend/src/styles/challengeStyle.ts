@@ -41,7 +41,11 @@ export const buttonStyle = {
         color: "white",
         fontSize: "16px",
         fontWeight: "bold",
-        cursor: "pointer"
+        cursor: "pointer",
+        position: 'relative',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
     } as const
 export const categoryColors: { [key: string]: string } = {
         Food: "#c8f7c5",
