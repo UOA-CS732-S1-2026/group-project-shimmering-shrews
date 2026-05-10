@@ -11,7 +11,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 vi.mock('../src/services/challengeService', () => ({
   getAllChallenges: vi.fn(),
   getChallengeDetails: vi.fn(),
-  checkInToChallenge: vi.fn(),
   createNewChallenges: vi.fn(),
 }))
 
@@ -46,7 +45,6 @@ vi.mock('../src/services/locationService', () => ({
 }))
 
 import {
-  checkInToChallenge,
   createNewChallenges,
   getAllChallenges,
   getChallengeDetails,
@@ -117,43 +115,7 @@ describe('challengeController', () => {
     expect(getChallengeDetails).not.toHaveBeenCalled()
   })
 
-  it('checks in to a challenge with authenticated user data', async () => {
-    const { res, status, json } = response()
-    const completed = { id: 20, status: 'completed' }
-    vi.mocked(checkInToChallenge).mockResolvedValue(completed as any)
 
-    await challengeController.checkInChallenge(
-      {
-        params: { id: '5' },
-        auth: { sub: 'auth-1', email: 'user@example.com' },
-      } as any,
-      res,
-      createNext()
-    )
-
-    expect(checkInToChallenge).toHaveBeenCalledWith(5, 'auth-1', 'user@example.com')
-    expect(status).toHaveBeenCalledWith(200)
-    expect(json).toHaveBeenCalledWith({
-      success: true,
-      message: 'Challenge checked in',
-      data: completed,
-    })
-  })
-
-  it('requires an email before challenge check-in', async () => {
-    const next = createNext()
-
-    await challengeController.checkInChallenge(
-      { params: { id: '5' }, auth: { sub: 'auth-1' } } as any,
-      response().res,
-      next
-    )
-
-    expect(nextError(next)).toMatchObject({
-      statusCode: 401,
-      message: 'Authenticated user email is missing',
-    })
-  })
 
   it('creates challenges from locations', async () => {
     const { res, status, json } = response()

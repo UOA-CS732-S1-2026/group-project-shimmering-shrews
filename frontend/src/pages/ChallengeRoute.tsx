@@ -8,6 +8,9 @@ export default function ChallengeRoute() {
   const navigate = useNavigate()
   const { userChallengeId } = useParams()
   const normalisedId = userChallengeId ? Number(userChallengeId) : null
+  const hasInvalidChallengeId =
+    normalisedId !== null &&
+    (!Number.isInteger(normalisedId) || normalisedId <= 0)
 
   const location = useLocation()
   // fetch passed challenge if we came here from View Route via Challenge Detail View
@@ -19,7 +22,7 @@ export default function ChallengeRoute() {
   const isLoading = userChallenge === null && error === null
 
   useEffect(() => {
-    if (!normalisedId) return
+    if (normalisedId === null || hasInvalidChallengeId) return
 
     if (passedUserChallenge?.id === normalisedId) {
       setUserChallenge(passedUserChallenge)
@@ -41,13 +44,23 @@ export default function ChallengeRoute() {
     return () => {
       isActive = false
     }
-  }, [passedUserChallenge, normalisedId])
+  }, [passedUserChallenge, normalisedId, hasInvalidChallengeId])
 
   if (!userChallengeId) {
     return (
       <main className="container page page-profile">
         <div className="shell shell-profile">
           <p className="status-message">User challenge id not found.</p>
+        </div>
+      </main>
+    )
+  }
+
+  if (hasInvalidChallengeId) {
+    return (
+      <main className="container page page-profile">
+        <div className="shell shell-profile">
+          <p className="status-message">Invalid challenge id.</p>
         </div>
       </main>
     )
