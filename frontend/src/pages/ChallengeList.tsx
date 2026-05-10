@@ -36,8 +36,11 @@ export default function ChallengeList({
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
   const [userChallenges, setUserChallenges] = React.useState<UserChallenge[]>([])
-  const DEFAULT_LOCATION: [number, number] = [-36.8485, 174.7633]
   const RADIUS_KM = 5
+
+  const DEFAULT_LOCATION = React.useMemo(
+    () => [-36.8485, 174.7633] as [number, number], []
+  )
 
   const sortedUserChallenges = [...userChallenges].sort((a, b) => {
     if (a.status === b.status) return 0
@@ -77,7 +80,9 @@ export default function ChallengeList({
 
   React.useEffect(() => {
     if (isListDisabled) {
+      setUserChallenges([])
       setLoading(false)
+      setError(null)
       return
     }
   
@@ -95,7 +100,7 @@ export default function ChallengeList({
       })
       .catch(() => setError('Could not load challenges.'))
       .finally(() => setLoading(false))
-  }, [isListDisabled, userLocation])
+  }, [isListDisabled, userLocation, DEFAULT_LOCATION])
 
   if (isListDisabled) {
     return (
