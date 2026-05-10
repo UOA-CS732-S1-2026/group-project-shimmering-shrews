@@ -505,6 +505,11 @@
   animation: acceptedPulse 1.5s ease-in-out infinite;
 }
 
+.challenge-card--completed {
+  opacity: 0.6;
+  filter: grayscale(0.3);
+}
+
 .map-focus-banner {
   display: flex;
   justify-content: space-between;

@@ -42,9 +42,17 @@ export default function ChallengeList({
     () => [-36.8485, 174.7633] as [number, number], []
   )
 
+  const statusOrder = {
+    accepted: 0,
+    in_progress: 1,
+    cancelled: 2,
+    skipped: 3,
+    completed: 4,
+    expired: 5,
+  }
+
   const sortedUserChallenges = [...userChallenges].sort((a, b) => {
-    if (a.status === b.status) return 0
-    return a.status === 'accepted' ? -1 : 1
+    return statusOrder[a.status] - statusOrder[b.status]
   })
 
   const descriptionStyle = {
@@ -132,10 +140,12 @@ export default function ChallengeList({
   function ChallengeCard({
     userChallenge,
     loading,
+    className,
   }: {
     userChallenge?: UserChallenge
     onClose: (id: number) => void
     loading: boolean
+    className?: string
   }) {
     if (loading || !userChallenge) {
       return (
@@ -162,7 +172,8 @@ export default function ChallengeList({
 
     return (
       <div
-        style={{ ...cardStyle, cursor: 'pointer', transition: 'transform 0.2s' }}
+        className={className}
+        style={{ ...cardStyle, cursor: 'pointer', transition: 'transform 0.2s'}}
         onClick={() => goToDetailView(userChallenge)}
         onMouseEnter={(e) => {
           ;(e.currentTarget as HTMLDivElement).style.transform = 'scale(1.02)'
@@ -222,6 +233,11 @@ export default function ChallengeList({
                 userChallenge={userChallenge}
                 onClose={handleClose}
                 loading={loading}
+                className={
+                  userChallenge.status === "completed"
+                  ? "challenge-card--completed"
+                  : ""
+                }
               />
             ))}
       </div>
