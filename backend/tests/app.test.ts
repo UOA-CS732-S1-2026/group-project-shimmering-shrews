@@ -116,6 +116,10 @@ describe('app routes', () => {
         expect(body).toEqual({ success: true, data: profile })
       })
 
-    expect(getUserProfile).toHaveBeenCalledWith('auth-1', 'user@example.com')
+    expect(getUserProfile).toHaveBeenCalledWith(
+      'auth-1',
+      'user@example.com',
+      'Pacific/Auckland'
+    )
   })
 })

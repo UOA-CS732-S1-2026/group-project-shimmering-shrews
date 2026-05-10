@@ -201,10 +201,57 @@ describe('userChallengeController', () => {
       'auth-1',
       -36.852,
       174.765,
-      5
+      5,
+      'Pacific/Auckland'
     )
     expect(status).toHaveBeenCalledWith(200)
     expect(json).toHaveBeenCalledWith({ success: true, data: challenges })
+  })
+
+  it("passes the user's timezone into today's challenge generation", async () => {
+    const { res } = response()
+    const challenges = [{ id: 1 }]
+    vi.mocked(userChallengeService.getOrCreateTodayChallenges).mockResolvedValue(
+      challenges as any
+    )
+
+    await userChallengeController.getTodayUserChallenges(
+      {
+        auth: { sub: 'auth-1' },
+        query: { lat: '-36.852', lng: '174.765' },
+        get: vi.fn(() => 'America/Los_Angeles'),
+      } as any,
+      res,
+      createNext()
+    )
+
+    expect(userChallengeService.getOrCreateTodayChallenges).toHaveBeenCalledWith(
+      'auth-1',
+      -36.852,
+      174.765,
+      5,
+      'America/Los_Angeles'
+    )
+  })
+
+  it("rejects invalid timezone headers for today's challenges", async () => {
+    const next = createNext()
+
+    await userChallengeController.getTodayUserChallenges(
+      {
+        auth: { sub: 'auth-1' },
+        query: { lat: '-36.852', lng: '174.765' },
+        get: vi.fn(() => 'Not/AZone'),
+      } as any,
+      response().res,
+      next
+    )
+
+    expect(nextError(next)).toMatchObject({
+      statusCode: 400,
+      message: 'X-Time-Zone must be a valid IANA timezone',
+    })
+    expect(userChallengeService.getOrCreateTodayChallenges).not.toHaveBeenCalled()
   })
 
   it('rejects invalid radius query params', async () => {
@@ -399,7 +446,8 @@ describe('userChallengeController', () => {
       'auth-1',
       20,
       -36.852,
-      174.765
+      174.765,
+      'Pacific/Auckland'
     )
     expect(status).toHaveBeenCalledWith(200)
     expect(json).toHaveBeenCalledWith({
@@ -426,7 +474,11 @@ describe('profile, auth, user, and location controllers', () => {
       createNext()
     )
 
-    expect(getUserProfile).toHaveBeenCalledWith('auth-1', 'user@example.com')
+    expect(getUserProfile).toHaveBeenCalledWith(
+      'auth-1',
+      'user@example.com',
+      'Pacific/Auckland'
+    )
     expect(status).toHaveBeenCalledWith(200)
     expect(json).toHaveBeenCalledWith({ success: true, data: profile })
   })
@@ -591,7 +643,11 @@ describe('profileController', () => {
       createNext()
     )
 
-    expect(getUserProfile).toHaveBeenCalledWith('auth-1', 'user@example.com')
+    expect(getUserProfile).toHaveBeenCalledWith(
+      'auth-1',
+      'user@example.com',
+      'Pacific/Auckland'
+    )
     expect(status).toHaveBeenCalledWith(200)
     expect(json).toHaveBeenCalledWith({ success: true, data: profile })
   })

@@ -112,7 +112,7 @@ describe('userChallengeService', () => {
     expect(userChallengeDAO.createTodayUserChallenges).not.toHaveBeenCalled()
   })
 
-  it('uses the UTC day boundary for today challenge lookup and expiry', async () => {
+  it('uses the Pacific/Auckland day boundary for today challenge lookup and expiry', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-05-08T23:30:00.000Z'))
     const todayChallenges = [userChallenge({ id: 1 })]
@@ -126,14 +126,16 @@ describe('userChallengeService', () => {
 
     const expiryCutoff = vi.mocked(userChallengeDAO.expireOpenChallengesBeforeDate)
       .mock.calls[0][1]
-    const todayLookup = vi.mocked(userChallengeDAO.getTodayUserChallengesByUserId)
-      .mock.calls[0][1]
+    const [, todayStart, tomorrowStart] = vi.mocked(
+      userChallengeDAO.getTodayUserChallengesByUserId
+    ).mock.calls[0]
 
-    expect(expiryCutoff.toISOString()).toBe('2026-05-08T00:00:00.000Z')
-    expect(todayLookup.toISOString()).toBe('2026-05-08T00:00:00.000Z')
+    expect(expiryCutoff.toISOString()).toBe('2026-05-08T12:00:00.000Z')
+    expect(todayStart.toISOString()).toBe('2026-05-08T12:00:00.000Z')
+    expect(tomorrowStart.toISOString()).toBe('2026-05-09T12:00:00.000Z')
   })
 
-  it('uses the next UTC day boundary for today challenges after midnight', async () => {
+  it('keeps the same challenge day across UTC midnight when the Auckland day has not changed', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-05-09T00:01:00.000Z'))
     const todayChallenges = [userChallenge({ id: 1 })]
@@ -147,11 +149,65 @@ describe('userChallengeService', () => {
 
     const expiryCutoff = vi.mocked(userChallengeDAO.expireOpenChallengesBeforeDate)
       .mock.calls[0][1]
-    const todayLookup = vi.mocked(userChallengeDAO.getTodayUserChallengesByUserId)
-      .mock.calls[0][1]
+    const [, todayStart, tomorrowStart] = vi.mocked(
+      userChallengeDAO.getTodayUserChallengesByUserId
+    ).mock.calls[0]
 
-    expect(expiryCutoff.toISOString()).toBe('2026-05-09T00:00:00.000Z')
-    expect(todayLookup.toISOString()).toBe('2026-05-09T00:00:00.000Z')
+    expect(expiryCutoff.toISOString()).toBe('2026-05-08T12:00:00.000Z')
+    expect(todayStart.toISOString()).toBe('2026-05-08T12:00:00.000Z')
+    expect(tomorrowStart.toISOString()).toBe('2026-05-09T12:00:00.000Z')
+  })
+
+  it('keeps the previous challenge day until Auckland midnight', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-08T11:59:00.000Z'))
+    const todayChallenges = [userChallenge({ id: 1 })]
+    userChallengeDAO.getTodayUserChallengesByUserId.mockResolvedValue(
+      todayChallenges as any
+    )
+
+    await expect(
+      userChallengeService.getOrCreateTodayChallenges(authId, -36.852, 174.765, 5)
+    ).resolves.toBe(todayChallenges)
+
+    const expiryCutoff = vi.mocked(userChallengeDAO.expireOpenChallengesBeforeDate)
+      .mock.calls[0][1]
+    const [, todayStart, tomorrowStart] = vi.mocked(
+      userChallengeDAO.getTodayUserChallengesByUserId
+    ).mock.calls[0]
+
+    expect(expiryCutoff.toISOString()).toBe('2026-05-07T12:00:00.000Z')
+    expect(todayStart.toISOString()).toBe('2026-05-07T12:00:00.000Z')
+    expect(tomorrowStart.toISOString()).toBe('2026-05-08T12:00:00.000Z')
+  })
+
+  it("uses the supplied user's timezone for today challenge lookup and expiry", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-08T06:30:00.000Z'))
+    const todayChallenges = [userChallenge({ id: 1 })]
+    userChallengeDAO.getTodayUserChallengesByUserId.mockResolvedValue(
+      todayChallenges as any
+    )
+
+    await expect(
+      userChallengeService.getOrCreateTodayChallenges(
+        authId,
+        -36.852,
+        174.765,
+        5,
+        'America/Los_Angeles'
+      )
+    ).resolves.toBe(todayChallenges)
+
+    const expiryCutoff = vi.mocked(userChallengeDAO.expireOpenChallengesBeforeDate)
+      .mock.calls[0][1]
+    const [, todayStart, tomorrowStart] = vi.mocked(
+      userChallengeDAO.getTodayUserChallengesByUserId
+    ).mock.calls[0]
+
+    expect(expiryCutoff.toISOString()).toBe('2026-05-07T07:00:00.000Z')
+    expect(todayStart.toISOString()).toBe('2026-05-07T07:00:00.000Z')
+    expect(tomorrowStart.toISOString()).toBe('2026-05-08T07:00:00.000Z')
   })
 
   it('creates at most three nearby daily challenges when none exist today', async () => {
@@ -266,9 +322,19 @@ describe('userChallengeService', () => {
     challengeDaoMocks.completeUserChallengeByUserChallengeId.mockResolvedValue(completed as any)
 
     await expect(
-      userChallengeService.checkInChallenge(authId, 20, -36.852, 174.765)
+      userChallengeService.checkInChallenge(
+        authId,
+        20,
+        -36.852,
+        174.765,
+        'America/Los_Angeles'
+      )
     ).resolves.toBe(completed)
-    expect(challengeDaoMocks.completeUserChallengeByUserChallengeId).toHaveBeenCalledWith(20, 1)
+    expect(challengeDaoMocks.completeUserChallengeByUserChallengeId).toHaveBeenCalledWith(
+      20,
+      1,
+      'America/Los_Angeles'
+    )
   })
 
   it('handles concurrent challenge completions', async () => {
@@ -286,8 +352,18 @@ describe('userChallengeService', () => {
 
     expect(userChallengeDaoMocks.findUserChallengeForUser).toHaveBeenCalledTimes(2)
     expect(challengeDaoMocks.completeUserChallengeByUserChallengeId).toHaveBeenCalledTimes(2)
-    expect(challengeDaoMocks.completeUserChallengeByUserChallengeId).toHaveBeenNthCalledWith(1, 20, 1)
-    expect(challengeDaoMocks.completeUserChallengeByUserChallengeId).toHaveBeenNthCalledWith(2, 20, 1)
+    expect(challengeDaoMocks.completeUserChallengeByUserChallengeId).toHaveBeenNthCalledWith(
+      1,
+      20,
+      1,
+      undefined
+    )
+    expect(challengeDaoMocks.completeUserChallengeByUserChallengeId).toHaveBeenNthCalledWith(
+      2,
+      20,
+      1,
+      undefined
+    )
   })
 
   it('throws 409 when the DAO cannot complete the challenge from its current status', async () => {

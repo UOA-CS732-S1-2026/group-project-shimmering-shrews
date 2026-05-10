@@ -1,5 +1,6 @@
 import { getSupabaseClient } from "../lib/supabase"
 import type { Badge, HistoryItem } from "../types/profile"
+import { getTimeZoneHeaders } from "./timeZone"
 
 type ApiResponse<T> = {
   success: boolean
@@ -44,6 +45,7 @@ export const getMyProfile = async (): Promise<LiveProfile> => {
   const res = await fetch(`${getBackendUrl()}/api/profile/me`, {
     headers: {
       Authorization: `Bearer ${token}`,
+      ...getTimeZoneHeaders(),
     },
   })
 

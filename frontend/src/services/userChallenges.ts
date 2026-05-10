@@ -1,5 +1,6 @@
 import { getSupabaseClient } from '../lib/supabase'
 import type { UserChallenge } from '../types/userChallenge'
+import { getTimeZoneHeaders } from './timeZone'
 
 type ApiResponse<T> = {
   success: boolean
@@ -59,7 +60,10 @@ export const getUserChallenges = async (
   const queryString = params.toString()
   const url = `${getBackendUrl()}/user-challenges/today${queryString ? `?${queryString}` : ''}`
   const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...getTimeZoneHeaders(),
+    },
   })
 
   if (!res.ok) {
@@ -135,6 +139,7 @@ export const checkInUserChallenge = async (
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
+      ...getTimeZoneHeaders(),
     },
     body: JSON.stringify({ completedFromLat, completedFromLng }),
   })
