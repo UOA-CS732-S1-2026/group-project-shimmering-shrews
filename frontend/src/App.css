@@ -505,6 +505,8 @@
   animation: acceptedPulse 1.5s ease-in-out infinite;
 }
 
+.challenge-card--skipped,
+.challenge-card--cancelled,
 .challenge-card--completed {
   opacity: 0.6;
   filter: grayscale(0.3);

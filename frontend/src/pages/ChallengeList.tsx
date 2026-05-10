@@ -236,6 +236,10 @@ export default function ChallengeList({
                 className={
                   userChallenge.status === "completed"
                   ? "challenge-card--completed"
+                  : userChallenge.status === "skipped"
+                  ? "challenge-card--skipped"
+                  : userChallenge.status === "cancelled"
+                  ? "challenge-card--cancelled"
                   : ""
                 }
               />
