@@ -3,6 +3,9 @@ import type { Prisma } from '@prisma/client'
 import { calculateLevel } from '../utils/leveling'
 import { calculateNextStreakCount } from '../utils/streak'
 
+// Streak calculation is kept as a pure utility and imported here so timezone
+// edge cases can be unit-tested without running a database transaction, while
+// the DAO still applies the tested result atomically with completion updates.
 const challengeSelect = {
   id: true,
   name: true,

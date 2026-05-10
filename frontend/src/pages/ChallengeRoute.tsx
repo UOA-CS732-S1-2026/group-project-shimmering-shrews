@@ -28,7 +28,7 @@ export default function ChallengeRoute() {
 
     let isActive = true
 
-    getUserChallenge(normalisedId)
+    getUserChallenge(String(normalisedId))
       .then((data) => {
         if (!isActive) return
         setUserChallenge(data)

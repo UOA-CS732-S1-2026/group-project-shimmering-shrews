@@ -6,8 +6,12 @@ import {
 } from '../services/userChallengeService'
 import { ApiError } from '../utils/ApiError'
 import { asyncHandler } from '../utils/asyncHandler'
+import { sendSuccess } from '../utils/httpResponse'
 import type { AuthRequest } from '../middleware/auth'
 
+// Keep route ids defensive at the controller boundary. The service tests mock
+// DAOs, so controller contract tests are responsible for proving malformed
+// params are rejected before service/database code runs.
 const parseId = (value: unknown, name: string) => {
   const rawValue = Array.isArray(value) ? undefined : value
   const id = Number(rawValue)
@@ -19,11 +23,50 @@ const parseId = (value: unknown, name: string) => {
   return id
 }
 
+// Coordinates are parsed and range-checked here because check-in/today flows
+// are location-sensitive. The test suite covers non-numeric values, arrays, and
+// out-of-range lat/lng values so bad input cannot leak into distance logic.
 const parseCoordinate = (value: unknown, name: string) => {
-  const parsedValue = Number(value)
+  const rawValue = Array.isArray(value) ? undefined : value
+  const parsedValue = Number(rawValue)
 
   if (!Number.isFinite(parsedValue)) {
     throw new ApiError(400, `${name} must be a valid number`)
+  }
+
+  const normalizedName = name.toLowerCase()
+  const coordinateBounds = normalizedName.includes('lat')
+    ? { min: -90, max: 90 }
+    : normalizedName.includes('lng') || normalizedName.includes('lon')
+      ? { min: -180, max: 180 }
+      : undefined
+
+  if (
+    coordinateBounds &&
+    (parsedValue < coordinateBounds.min || parsedValue > coordinateBounds.max)
+  ) {
+    throw new ApiError(
+      400,
+      `${name} must be between ${coordinateBounds.min} and ${coordinateBounds.max}`
+    )
+  }
+
+  return parsedValue
+}
+
+const parseRadius = (value: unknown) => {
+  // Radius is optional for today's challenges, but if the client sends it we
+  // validate it strictly. This prevents malformed query arrays/strings from
+  // silently falling back to the default search radius.
+  if (value == null) {
+    return 5
+  }
+
+  const rawValue = Array.isArray(value) ? undefined : value
+  const parsedValue = Number(rawValue)
+
+  if (!Number.isFinite(parsedValue) || parsedValue <= 0) {
+    throw new ApiError(400, 'radius must be a positive number')
   }
 
   return parsedValue
@@ -37,10 +80,7 @@ export const getChallenges = asyncHandler(async (req: Request, res: Response) =>
 
   const challenges = await getUserChallenges(authUser.sub)
 
-  res.status(200).json({
-    success: true,
-    data: challenges,
-  })
+  sendSuccess(res, challenges)
 })
 
 export const getChallenge = asyncHandler(async (req: Request, res: Response) => {
@@ -52,29 +92,26 @@ export const getChallenge = asyncHandler(async (req: Request, res: Response) => 
   const userChallengeId = parseId(req.params.id, 'Challenge id')
   const userChallenge = await getUserChallenge(authUser.sub, userChallengeId)
 
-  res.status(200).json({
-    success: true,
-    data: userChallenge,
-  })
+  sendSuccess(res, userChallenge)
 })
 
 export const getTodayUserChallenges = asyncHandler(async (req: Request, res: Response) => {
   const authUser = (req as AuthRequest).auth
   if (!authUser?.sub) throw new ApiError(401, 'Authenticated user is missing')
 
-  const lat = parseFloat(req.query.lat as string)
-  const lng = parseFloat(req.query.lng as string)
-  const radius = parseFloat(req.query.radius as string) || 5 // default 5km
-
-  if (isNaN(lat) || isNaN(lng)) {
+  if (req.query.lat == null || req.query.lng == null) {
     throw new ApiError(400, 'lat and lng query params are required')
   }
+
+  const lat = parseCoordinate(req.query.lat, 'lat')
+  const lng = parseCoordinate(req.query.lng, 'lng')
+  const radius = parseRadius(req.query.radius)
 
   const data = await userChallengeService.getOrCreateTodayChallenges(
     authUser.sub, lat, lng, radius
   )
 
-  res.status(200).json({ success: true, data })
+  sendSuccess(res, data)
 })
 
 export const acceptUserChallenge = asyncHandler(async (req: Request, res: Response) => {
@@ -94,11 +131,7 @@ export const acceptUserChallenge = asyncHandler(async (req: Request, res: Respon
     acceptedFromLng
   )
 
-  res.status(200).json({
-    success: true,
-    message: 'Challenge accepted',
-    data,
-  })
+  sendSuccess(res, data, 'Challenge accepted')
 })
 
 export const cancelUserChallenge = asyncHandler(async (req: Request, res: Response) => {
@@ -110,11 +143,7 @@ export const cancelUserChallenge = asyncHandler(async (req: Request, res: Respon
   const userChallengeId = parseId(req.params.id, 'User challenge id')
   const data = await userChallengeService.cancelChallenge(authUser.sub, userChallengeId)
 
-  res.status(200).json({
-    success: true,
-    message: 'Challenge cancelled',
-    data,
-  })
+  sendSuccess(res, data, 'Challenge cancelled')
 })
 
 export const checkInUserChallenge = asyncHandler(async (req: Request, res: Response) => {
@@ -134,9 +163,5 @@ export const checkInUserChallenge = asyncHandler(async (req: Request, res: Respo
     completedFromLng
   )
 
-  res.status(200).json({
-    success: true,
-    message: 'Challenge checked in',
-    data,
-  })
+  sendSuccess(res, data, 'Challenge checked in')
 })
