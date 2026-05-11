@@ -3,6 +3,7 @@ import type { TabKey } from '../types/profile'
 const tabLabels: Record<TabKey, string> = {
   badges: 'Badges',
   history: 'History',
+  leaderboard: 'Leaderboard',
 }
 
 type TabsProps = {
