@@ -14,6 +14,16 @@ import { resolve } from 'path'
 process.env.SUPABASE_URL ||= 'http://localhost:54321'
 process.env.SUPABASE_PUBLISHABLE_KEY ||= 'test-supabase-key'
 
+const runIntegration = process.env.RUN_INTEGRATION === '1'
+const testDatabaseUrl = process.env.TEST_DATABASE_URL
+
+// Some integration modules create Prisma clients at import time. Put the test
+// database URL into DATABASE_URL before those modules are imported so they
+// cannot accidentally bind to a developer/shared database from DATABASE_URL.
+if (runIntegration && testDatabaseUrl) {
+  process.env.DATABASE_URL = testDatabaseUrl
+}
+
 let setupClient: Client | undefined
 
 const readSql = (relativePath: string) =>
@@ -30,7 +40,7 @@ const closeSetupClient = async () => {
 }
 
 beforeAll(async () => {
-  if (!process.env.RUN_INTEGRATION) {
+  if (!runIntegration) {
     return
   }
 
@@ -38,10 +48,10 @@ beforeAll(async () => {
   // the public schema, then trigger SQL is applied. Keep this gated behind both
   // RUN_INTEGRATION and ALLOW_DB_RESET so the default unit test path cannot
   // accidentally reset a developer or shared database.
-  const databaseUrl = process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL
-
-  if (!databaseUrl) {
-    throw new Error('RUN_INTEGRATION requires TEST_DATABASE_URL or DATABASE_URL')
+  if (!testDatabaseUrl) {
+    throw new Error(
+      'RUN_INTEGRATION=1 requires TEST_DATABASE_URL. DATABASE_URL is not accepted for destructive integration tests.'
+    )
   }
 
   if (process.env.ALLOW_DB_RESET !== '1') {
@@ -50,8 +60,8 @@ beforeAll(async () => {
     )
   }
 
-  process.env.DATABASE_URL = databaseUrl
-  setupClient = new Client({ connectionString: databaseUrl })
+  process.env.DATABASE_URL = testDatabaseUrl
+  setupClient = new Client({ connectionString: testDatabaseUrl })
 
   try {
     await setupClient.connect()

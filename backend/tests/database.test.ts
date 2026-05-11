@@ -13,7 +13,7 @@ import { getStartOfUserCalendarDay } from '../src/utils/streak'
  * are skipped in the default unit test run because tests/setup.ts rebuilds the
  * public schema when RUN_INTEGRATION=1 and ALLOW_DB_RESET=1 are set.
  */
-const describeIntegration = process.env.RUN_INTEGRATION ? describe : describe.skip
+const describeIntegration = process.env.RUN_INTEGRATION === '1' ? describe : describe.skip
 
 const uniqueSuffix = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`
 

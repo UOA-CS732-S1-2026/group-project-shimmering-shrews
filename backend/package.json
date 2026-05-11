@@ -8,7 +8,7 @@
     "start": "node dist/server.js",
     "postinstall": "prisma generate",
     "test": "vitest run",
-    "test:integration": "vitest run tests/badges.test.ts tests/schema.test.ts tests/database.test.ts",
+    "test:integration": "vitest run --fileParallelism=false tests/badges.test.ts tests/schema.test.ts tests/database.test.ts",
     "test:watch": "vitest",
     "test:typecheck": "tsc --noEmit -p tsconfig.test.json"
   },

@@ -263,7 +263,7 @@ describe('Prisma schema contract', () => {
   })
 })
 
-const describeIntegration = process.env.RUN_INTEGRATION ? describe : describe.skip
+const describeIntegration = process.env.RUN_INTEGRATION === '1' ? describe : describe.skip
 
 const uniqueSuffix = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`
 

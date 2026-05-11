@@ -12,9 +12,9 @@ import { disconnectSeedDatabase, seedDatabase } from '../prisma/seed'
  * public schema.
  *
  * Run only against a disposable test database:
- *   RUN_INTEGRATION=1 ALLOW_DB_RESET=1 TEST_DATABASE_URL=postgresql://... npm test
+ *   RUN_INTEGRATION=1 ALLOW_DB_RESET=1 TEST_DATABASE_URL=postgresql://... npm run test:integration
  */
-const describeIf = process.env.RUN_INTEGRATION ? describe : describe.skip
+const describeIf = process.env.RUN_INTEGRATION === '1' ? describe : describe.skip
 
 describeIf('badge database flow', () => {
   let prisma: PrismaClient
