@@ -204,7 +204,7 @@ export default function ChallengeList({
       {error && (
         <p style={{ margin: '0 0 12px', color: '#8a4b00', fontSize: '0.9rem' }}>{error}</p>
       )}
-      {permissionStatus !== 'granted' && (
+      {!DEV_SHOW_ALL && permissionStatus !== 'granted' && (
         <div
           style={{
             marginBottom: '12px',
@@ -227,6 +227,16 @@ export default function ChallengeList({
           ? ['1', '2', '3'].map((i) => (
               <ChallengeCard key={i} onClose={handleClose} loading />
             ))
+          : sortedUserChallenges.length === 0
+          ? (
+              <div style={{ ...cardStyle, textAlign: 'center', padding: '2rem' }}>
+                <p style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>🗺️</p>
+                <p style={{ fontWeight: 'bold', marginBottom: '0.25rem', color: '#333' }}>No challenges nearby</p>
+                <p style={{ fontSize: '0.9rem', color: '#999' }}>
+                  There are no challenges within your area today. Try moving your location withing CBD.
+                </p>
+              </div>
+            )
           : sortedUserChallenges.map((userChallenge) => (
               <ChallengeCard
                 key={userChallenge.id}
