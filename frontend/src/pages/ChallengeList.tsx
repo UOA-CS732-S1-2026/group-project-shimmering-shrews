@@ -24,7 +24,12 @@ import {
   LOCATION_PERMISSION_SETTINGS_GUIDANCE,
 } from '../config/locationPermissionContent'
 
-
+/**
+ * ChallengeList displays the users daily challenges in a scrollable list.
+ * Handles location permission states, fetches challenges from the backend
+ * based on the user's location, and shows appropriate UI for loading, empty,
+ * and error states.
+ */
 export default function ChallengeList({
   goToDetailView,
 }: {
@@ -36,12 +41,16 @@ export default function ChallengeList({
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
   const [userChallenges, setUserChallenges] = React.useState<UserChallenge[]>([])
+
+  // Radius in km to fetch challenges within it
   const RADIUS_KM = 5
 
+  // Default to Auckland CBD coordinates when DEV_SHOW_ALL is enabled
   const DEFAULT_LOCATION = React.useMemo(
     () => [-36.8485, 174.7633] as [number, number], []
   )
 
+  // Defines the display order of challenges by status
   const statusOrder = {
     accepted: 0,
     in_progress: 1,
@@ -51,6 +60,7 @@ export default function ChallengeList({
     expired: 5,
   }
 
+  // Sort challenges so active ones appear first, completed/expired last
   const sortedUserChallenges = [...userChallenges].sort((a, b) => {
     return statusOrder[a.status] - statusOrder[b.status]
   })
@@ -69,6 +79,7 @@ export default function ChallengeList({
     justifyContent: 'space-between',
   } as const
 
+  // List is disabled when location permission hasn't been granted (unless in DEV_SHOW_ALL is true)
   const isListDisabled = !DEV_SHOW_ALL && permissionStatus !== 'granted'
   const openPermissionDialog = () => setShowPermissionDialog(true)
   const closePermissionDialog = () => setShowPermissionDialog(false)
@@ -76,6 +87,7 @@ export default function ChallengeList({
     setShowPermissionDialog(false)
     requestPermission()
   }
+
   const permissionDialog = (
     <LocationPermissionDialog
       open={showPermissionDialog}
@@ -86,6 +98,11 @@ export default function ChallengeList({
     />
   )
 
+  /**
+   * Fetches todays challenges from the backend when location permission changes
+   * or when the user's location becomes available.
+   * When DEV_SHOW_ALL is true, use the default Auckland CBD location with a large radius.
+   */
   React.useEffect(() => {
     if (isListDisabled) {
       setUserChallenges([])
@@ -93,13 +110,15 @@ export default function ChallengeList({
       setError(null)
       return
     }
-  
+
+    // Use default location in dev mode, otherwise use the user's real location
     const lat = DEV_SHOW_ALL ? DEFAULT_LOCATION[0] : userLocation?.[0]
     const lng = DEV_SHOW_ALL ? DEFAULT_LOCATION[1] : userLocation?.[1]
     const radius = DEV_SHOW_ALL ? 99999 : RADIUS_KM
-  
+
+    // Wait for real location to be available before fetching
     if (!DEV_SHOW_ALL && !userLocation) return
-  
+
     setLoading(true)
     getUserChallenges(lat, lng, radius)
       .then((data) => {
@@ -110,6 +129,7 @@ export default function ChallengeList({
       .finally(() => setLoading(false))
   }, [isListDisabled, userLocation, DEFAULT_LOCATION])
 
+  // Show location permission prompt if location access hasn't been granted
   if (isListDisabled) {
     return (
       <div style={containerStyle}>
@@ -133,10 +153,19 @@ export default function ChallengeList({
     )
   }
 
+  /**
+   * Removes a challenge card from the list by filtering it out of state.
+   * Used when the user declines a challenge card.
+   */
   const handleClose = (id: number) => {
     setUserChallenges((prev) => prev.filter((userChallenge) => userChallenge.id !== id))
   }
 
+  /**
+   * Renders an individual challenge card.
+   * Shows a skeleton loading state when data is not yet available.
+   * Applies faded styling for completed, skipped, and cancelled challenges.
+   */
   function ChallengeCard({
     userChallenge,
     loading,
@@ -147,6 +176,7 @@ export default function ChallengeList({
     loading: boolean
     className?: string
   }) {
+    // Show skeleton placeholder while loading
     if (loading || !userChallenge) {
       return (
         <div
@@ -189,6 +219,7 @@ export default function ChallengeList({
             {challenge.challenge_category.name}
           </span>
           <span style={xpStyle}>{challenge.xp_worth} XP</span>
+          {/* Status badge with dynamic colour and class based on challenge status */}
           <span className={`challenge-status challenge-status--${userChallenge.status}`} style={{ ...badgeStyle, background: challengeStatusColors[userChallenge.status] || '#ddd' }}>
             {challengeStatusText[userChallenge.status]}
           </span>
@@ -204,6 +235,7 @@ export default function ChallengeList({
       {error && (
         <p style={{ margin: '0 0 12px', color: '#8a4b00', fontSize: '0.9rem' }}>{error}</p>
       )}
+      {/* Show accuracy banner when location is available but not yet granted — hidden in dev mode */}
       {!DEV_SHOW_ALL && permissionStatus !== 'granted' && (
         <div
           style={{
@@ -224,11 +256,13 @@ export default function ChallengeList({
       )}
       <div className='challenge-list-container'>
         {loading
-          ? ['1', '2', '3'].map((i) => (
+          ? // Show skeleton cards while fetching
+            ['1', '2', '3'].map((i) => (
               <ChallengeCard key={i} onClose={handleClose} loading />
             ))
           : sortedUserChallenges.length === 0
-          ? (
+          ? // Show empty state when no challenges are nearby
+            (
               <div style={{ ...cardStyle, textAlign: 'center', padding: '2rem' }}>
                 <p style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>🗺️</p>
                 <p style={{ fontWeight: 'bold', marginBottom: '0.25rem', color: '#333' }}>No challenges nearby</p>
