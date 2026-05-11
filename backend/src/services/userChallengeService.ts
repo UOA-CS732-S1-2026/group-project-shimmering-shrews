@@ -12,7 +12,7 @@ import { ALLOWED_COMPLETION_RADIUS_METERS } from '../config/constants'
 import { ApiError } from '../utils/ApiError'
 
 import { DAILY_CHALLENGE_LIMIT, filterChallengesByRadius } from './challengeService'
-
+import { calculateLevel } from '../utils/leveling'
 const toRad = (deg: number) => (deg * Math.PI) / 180
 
 const haversineDistanceMetres = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -182,6 +182,8 @@ export const userChallengeService = {
         `User is not within required distance to complete challenge (${Math.round(distanceMeters)}m away, must be within ${ALLOWED_COMPLETION_RADIUS_METERS}m)`
       )
     }
+    const previousXp = user.xp_earned || 0
+    const previousLevel = user.level || 1
 
     const checkIn = await completeUserChallengeByUserChallengeId(userChallengeId, user.id)
 
@@ -189,6 +191,25 @@ export const userChallengeService = {
       throw new ApiError(409, 'Challenge cannot be checked in from its current status')
     }
 
-    return checkIn
+    const xpGained = checkIn.xp_worth || checkIn.challenge?.xp_worth || 0
+
+    const newXp= previousXp + xpGained
+    const newLevel = calculateLevel(newXp)
+    const levelUp = newLevel > previousLevel
+
+    const notificationMessage = {
+      type: 'challenge_completed',
+      xpGained,
+      levelUp,
+      previousLevel,
+      newLevel,
+      message: levelUp
+        ? `Congratulations! You've completed the challenge, earned ${xpGained} XP, and reached Level ${newLevel}!`
+        : `Challenge completed! You've earned ${xpGained} XP.`,
+    }
+    return {
+      userChallenge: checkIn,
+      notification: notificationMessage,
+    }
   },
 }
