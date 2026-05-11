@@ -19,3 +19,14 @@ export const getProfileInfo = asyncHandler(
     sendSuccess(res, profile)
   }
 )
+
+export const getLeaderboard = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const authUserId = req.auth!.sub
+    const leaderboard = await UserService.getLeaderboard(authUserId)
+    res.status(200).json({
+      success: true,
+      data: leaderboard,
+    })
+  }
+)
