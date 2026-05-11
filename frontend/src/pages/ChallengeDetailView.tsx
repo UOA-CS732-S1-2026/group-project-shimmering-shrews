@@ -25,8 +25,8 @@ import type { UserChallenge } from '../types/userChallenge'
 import { ArrowLeft, Check, MapPinned, X } from 'lucide-react'
 import LevelUpNotification from '../components/LevelUpNotification'
 
-//const ALLOWED_COMPLETION_RADIUS_METERS = 700
-const ALLOWED_COMPLETION_RADIUS_METERS = 9999999
+const ALLOWED_COMPLETION_RADIUS_METERS = 700
+
 
 function getDistanceMetres(a: [number, number], b: [number, number]) {
   const earthRadiusMetres = 6371000
