@@ -49,4 +49,27 @@ export const UserService = {
       })),
     }
   },
+  async getLeaderboard(authUserId: string) {
+    const { topUsers, currentUserRank } = await userDAO.getLeaderboard(authUserId)
+
+    const topUsersWithRank = topUsers.map((user, index) => ({
+      rank: index + 1,
+      username: user.username,
+      xp_earned: user.xp_earned,
+      level: user.level,
+      isCurrentUser: user.auth_id === authUserId,
+    }))
+
+    return {
+      topUsers: topUsersWithRank,
+      currentUserRank: currentUserRank
+        ? {
+            rank: currentUserRank.rank,
+            username: currentUserRank.username,
+            xp_earned: currentUserRank.xp_earned,
+            level: currentUserRank.level,
+          }
+        : null,
+    }
+  }
 }
