@@ -42,6 +42,7 @@ export const findUserProfileByAuthId = async (authId: string) => {
       level: true,
       xp_earned: true,
       streak_count: true,
+      last_completed_challenge: true,
     },
   })
 }
@@ -61,6 +62,7 @@ export const syncUserProfileByAuth = async ({
       level: true,
       xp_earned: true,
       streak_count: true,
+      last_completed_challenge: true,
     },
   })
 
@@ -89,6 +91,7 @@ export const syncUserProfileByAuth = async ({
         level: true,
         xp_earned: true,
         streak_count: true,
+        last_completed_challenge: true,
       },
     })
   }
@@ -113,6 +116,7 @@ export const syncUserProfileByAuth = async ({
       level: true,
       xp_earned: true,
       streak_count: true,
+      last_completed_challenge: true,
     },
   })
 }

@@ -1,3 +1,4 @@
+import confetti from 'canvas-confetti'
 import { getSupabaseClient } from '../lib/supabase'
 import type { UserChallenge } from '../types/userChallenge'
 
@@ -144,5 +145,13 @@ export const checkInUserChallenge = async (
   }
 
   const json = (await res.json()) as ApiResponse<UserChallenge>
+
+
+  confetti({
+    particleCount: 180,
+    spread: 100,
+    origin: { y: 0.6 },
+  });
+
   return json.data
 }

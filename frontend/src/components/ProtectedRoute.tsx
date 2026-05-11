@@ -1,14 +1,9 @@
-import type { ReactNode } from "react";
 import { useAuth } from "../context/useAuth"
-import { Navigate, useLocation } from "react-router-dom"
-
-type ProtectedRouteProps = {
-  children: ReactNode;
-};
+import { Navigate, Outlet, useLocation } from "react-router-dom"
 
 /**
  * This function is used to restrict access to pages to only logged in users.
- * To use, just wrap the element in the router which you wish to protect in <ProtectedPage> tags.
+ * To use, just wrap the element in the router which you wish to protect in <ProtectedRoute> tags.
  * 
  * If the user is logged in, serve them the page.
  * If the user is not logged in, navigate them to the login page instead.
@@ -18,10 +13,8 @@ type ProtectedRouteProps = {
  * Therefore, it cannot be used to prevent access to sensitive data,
  * that must be done with API endpoint protection on the backend.
  * 
- * @param children the children pages we want to only be accessible to logged in users.
- * @returns the children pages to visit if logged in, the login page if not logged in
  */
-export function ProtectedRoute({ children }: ProtectedRouteProps)  {
+export function ProtectedRoute()  {
   const { user, loading } = useAuth();
   const location = useLocation();
 
@@ -44,5 +37,5 @@ export function ProtectedRoute({ children }: ProtectedRouteProps)  {
     )
   }
 
-  return children;
+  return <Outlet />;
 }

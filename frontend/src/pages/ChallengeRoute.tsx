@@ -19,7 +19,7 @@ export default function ChallengeRoute() {
   const isLoading = userChallenge === null && error === null
 
   useEffect(() => {
-    if (!normalisedId) return
+    if (!normalisedId || Number.isNaN(normalisedId)) return
 
     if (passedUserChallenge?.id === normalisedId) {
       setUserChallenge(passedUserChallenge)
@@ -28,7 +28,7 @@ export default function ChallengeRoute() {
 
     let isActive = true
 
-    getUserChallenge(normalisedId)
+    getUserChallenge(String(normalisedId))
       .then((data) => {
         if (!isActive) return
         setUserChallenge(data)
@@ -48,6 +48,16 @@ export default function ChallengeRoute() {
       <main className="container page page-profile">
         <div className="shell shell-profile">
           <p className="status-message">User challenge id not found.</p>
+        </div>
+      </main>
+    )
+  }
+
+  if (normalisedId !== null && Number.isNaN(normalisedId)) {
+    return (
+      <main className="container page page-profile">
+        <div className="shell shell-profile">
+          <p className="status-message">Invalid challenge id.</p>
         </div>
       </main>
     )
