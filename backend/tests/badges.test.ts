@@ -8,11 +8,10 @@ import { disconnectSeedDatabase, seedDatabase } from '../prisma/seed'
  * These tests exercise the real Postgres schema, seed data, stat trigger,
  * badge trigger, transaction rollback behavior, and concurrent writes. They are
  * intentionally excluded from the default unit/contract test path because
- * tests/setup.ts applies sql_scripts/schema.sql, which drops and recreates the
- * public schema.
+ * tests/setup.ts resets the public schema through Prisma.
  *
  * Run only against a disposable test database:
- *   RUN_INTEGRATION=1 ALLOW_DB_RESET=1 TEST_DATABASE_URL=postgresql://... npm run test:integration
+ *   RUN_INTEGRATION=1 ALLOW_DB_RESET=1 TEST_DATABASE_URL=postgresql://... TEST_DIRECT_DATABASE_URL=postgresql://... npm run test:integration
  */
 const describeIf = process.env.RUN_INTEGRATION === '1' ? describe : describe.skip
 

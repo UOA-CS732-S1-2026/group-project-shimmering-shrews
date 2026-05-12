@@ -10,8 +10,8 @@ import { getStartOfUserCalendarDay } from '../src/utils/streak'
  * Test category: Database integration tests.
  *
  * These tests exercise the real Postgres schema through DAO/service code. They
- * are skipped in the default unit test run because tests/setup.ts rebuilds the
- * public schema when RUN_INTEGRATION=1 and ALLOW_DB_RESET=1 are set.
+ * are skipped in the default unit test run because tests/setup.ts resets the
+ * public schema through Prisma when RUN_INTEGRATION=1 and ALLOW_DB_RESET=1 are set.
  */
 const describeIntegration = process.env.RUN_INTEGRATION === '1' ? describe : describe.skip
 
