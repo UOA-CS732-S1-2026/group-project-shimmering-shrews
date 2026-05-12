@@ -174,12 +174,25 @@ describe('ChallengeDetailView', () => {
           level: {
             type: 'challenge_completed',
             xpGained: 50,
+            previousXp: 0,
+            newXp: 50,
+            previousLevelXpRequired: 100,
+            nextLevelXpRequired: 200,
             levelUp: false,
             previousLevel: 1,
             newLevel: 1,
+            xpForLevelStart: 0,
+            xpForNextLevelStart: 100,
             message: 'Nice work. You earned 50 XP.',
           },
-          badgesAwarded: [],
+          badgesAwarded: [
+            {
+              id: 1,
+              name: 'Waterfront Wanderer',
+              description: 'Completed a waterfront challenge.',
+              activeUrl: null,
+            },
+          ],
         },
       })
 
@@ -242,9 +255,15 @@ describe('ChallengeDetailView', () => {
           level: {
             type: 'challenge_completed',
             xpGained: 50,
+            previousXp: 0,
+            newXp: 50,
+            previousLevelXpRequired: 100,
+            nextLevelXpRequired: 200,
             levelUp: false,
             previousLevel: 1,
             newLevel: 1,
+            xpForLevelStart: 0,
+            xpForNextLevelStart: 100,
             message: 'Nice work. You earned 50 XP.',
           },
           badgesAwarded: [
@@ -262,11 +281,12 @@ describe('ChallengeDetailView', () => {
       fireEvent.click(screen.getByRole('button', { name: /check in/i }))
 
       expect(await screen.findAllByText('Completed')).toHaveLength(2)
-      expect(screen.getByText('Challenge completed')).toBeInTheDocument()
+      expect(screen.getByText('Level 1')).toBeInTheDocument()
       expect(screen.getByText('+50 XP')).toBeInTheDocument()
-      expect(screen.getByText('Nice work. You earned 50 XP.')).toBeInTheDocument()
+      expect(screen.getByText(/50\s*\/\s*100 XP/)).toBeInTheDocument()
       expect(screen.getByText('New Badge Unlocked')).toBeInTheDocument()
       expect(screen.getByText('Waterfront Wanderer')).toBeInTheDocument()
+      expect(screen.getByText('Completed a waterfront challenge.')).toBeInTheDocument()
     })
   })
 

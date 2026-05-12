@@ -11,9 +11,13 @@ import { userDAO } from '../daos/userDao'
 import { badgeDAO } from '../daos/badgeDAO'
 import { ALLOWED_COMPLETION_RADIUS_METERS } from '../config/constants'
 import { ApiError } from '../utils/ApiError'
+import {
+  getNextStartOfUserCalendarDay,
+  getStartOfUserCalendarDay,
+} from '../utils/streak'
 
 import { DAILY_CHALLENGE_LIMIT, filterChallengesByRadius } from './challengeService'
-import { calculateLevel } from '../utils/leveling'
+import { calculateLevel, getXpForLevelStart, getXpRequiredForNextLevel } from '../utils/leveling'
 const toRad = (deg: number) => (deg * Math.PI) / 180
 
 const haversineDistanceMetres = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -66,7 +70,8 @@ export const userChallengeService = {
     authId: string,
     lat: number,
     lng: number,
-    radiusKm: number
+    radiusKm: number,
+    timeZone?: string
   ) {
     const user = await userDAO.getUserByAuthId(authId)
 
@@ -74,12 +79,17 @@ export const userChallengeService = {
       throw new ApiError(404, 'User not found')
     }
 
-    const today = new Date()
-    today.setUTCHours(0, 0, 0, 0)
+    const now = new Date()
+    const todayStart = getStartOfUserCalendarDay(now, timeZone)
+    const tomorrowStart = getNextStartOfUserCalendarDay(now, timeZone)
 
-    await userChallengeDAO.expireOpenChallengesBeforeDate(user.id, today)
+    await userChallengeDAO.expireOpenChallengesBeforeDate(user.id, todayStart)
 
-    let userChallenges = await userChallengeDAO.getTodayUserChallengesByUserId(user.id, today)
+    let userChallenges = await userChallengeDAO.getTodayUserChallengesByUserId(
+      user.id,
+      todayStart,
+      tomorrowStart
+    )
 
     if (userChallenges.length === 0) {
       const allChallenges = await findAllActiveChallenges()
@@ -90,7 +100,11 @@ export const userChallengeService = {
         await userChallengeDAO.createTodayUserChallenges(user.id, limitedChallenges)
       }
 
-      userChallenges = await userChallengeDAO.getTodayUserChallengesByUserId(user.id, today)
+      userChallenges = await userChallengeDAO.getTodayUserChallengesByUserId(
+        user.id,
+        todayStart,
+        tomorrowStart
+      )
     }
 
     return userChallenges
@@ -142,7 +156,8 @@ export const userChallengeService = {
     authId: string,
     userChallengeId: number,
     completedFromLat: number,
-    completedFromLng: number
+    completedFromLng: number,
+    timeZone?: string
   ) {
     const user = await userDAO.getUserByAuthId(authId)
 
@@ -187,7 +202,11 @@ export const userChallengeService = {
     const previousLevel = user.level || 1
     const badgesBefore = await badgeDAO.getBadgesForUser(user.id)
 
-    const checkIn = await completeUserChallengeByUserChallengeId(userChallengeId, user.id)
+    const checkIn = await completeUserChallengeByUserChallengeId(
+      userChallengeId,
+      user.id,
+      timeZone
+    )
 
     if (!checkIn) {
       throw new ApiError(409, 'Challenge cannot be checked in from its current status')
@@ -195,7 +214,7 @@ export const userChallengeService = {
 
     const xpGained = checkIn.xp_worth || checkIn.challenge?.xp_worth || 0
 
-    const newXp= previousXp + xpGained
+    const newXp = previousXp + xpGained
     const newLevel = calculateLevel(newXp)
     const levelUp = newLevel > previousLevel
     const badgesAfter = await badgeDAO.getBadgesForUser(user.id)
@@ -210,13 +229,25 @@ export const userChallengeService = {
       activeUrl: badge.badge.active_url,
     }))
 
+    const previousLevelXpRequired = getXpRequiredForNextLevel(previousLevel)
+    const nextLevelXpRequired = getXpRequiredForNextLevel(newLevel)
+
+    const xpForLevelStart = getXpForLevelStart(previousLevel)
+    const xpForNextLevelStart = getXpForLevelStart(newLevel)
+
     const notificationMessage = {
       level:{
       type: 'challenge_completed',
       xpGained,
+      previousXp,
+      newXp,
+      previousLevelXpRequired,
+      nextLevelXpRequired,
       levelUp,
       previousLevel,
       newLevel,
+      xpForLevelStart,
+      xpForNextLevelStart,
       message: levelUp
         ? `Congratulations! You've completed the challenge, earned ${xpGained} XP, and reached Level ${newLevel}!`
         : `Challenge completed! You've earned ${xpGained} XP.`,},

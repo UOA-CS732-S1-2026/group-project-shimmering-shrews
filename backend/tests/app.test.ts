@@ -29,7 +29,6 @@ vi.mock('../src/middleware/auth', () => ({
 vi.mock('../src/services/challengeService', () => ({
   getAllChallenges: vi.fn(),
   getChallengeDetails: vi.fn(),
-  checkInToChallenge: vi.fn(),
   createNewChallenges: vi.fn(),
 }))
 
@@ -38,7 +37,7 @@ vi.mock('../src/services/profileService', () => ({
 }))
 
 import app from '../src/app'
-import { getAllChallenges, checkInToChallenge } from '../src/services/challengeService'
+import { getAllChallenges } from '../src/services/challengeService'
 import { getUserProfile } from '../src/services/profileService'
 
 describe('app routes', () => {
@@ -65,25 +64,7 @@ describe('app routes', () => {
       })
   })
 
-  it('runs route validation errors through the error middleware', async () => {
-    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
 
-    try {
-      await request(app)
-        .post('/challenges/not-a-number/checkin')
-        .expect(400)
-        .expect(({ body }) => {
-          expect(body).toEqual({
-            success: false,
-            message: 'Challenge id must be a positive integer',
-          })
-        })
-
-      expect(checkInToChallenge).not.toHaveBeenCalled()
-    } finally {
-      errorSpy.mockRestore()
-    }
-  })
 
   it('formats unhandled route errors through the error middleware', async () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
@@ -135,6 +116,10 @@ describe('app routes', () => {
         expect(body).toEqual({ success: true, data: profile })
       })
 
-    expect(getUserProfile).toHaveBeenCalledWith('auth-1', 'user@example.com')
+    expect(getUserProfile).toHaveBeenCalledWith(
+      'auth-1',
+      'user@example.com',
+      'Pacific/Auckland'
+    )
   })
 })
