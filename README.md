@@ -1,8 +1,5 @@
 # CS732 project - Team Shimmering Shrews
-
-Welcome to the CS732 project. We look forward to seeing the amazing things you create this semester! This is your team's repository.
-
-Your team members are:
+Created by:
 - Weiwei Fan _(wfan735@aucklanduni.ac.nz)_
 - Michael Fu _(mfu466@aucklanduni.ac.nz)_
 - Eric Hong _(ehon623@aucklanduni.ac.nz)_
@@ -10,17 +7,13 @@ Your team members are:
 - Romili Townsend _(rtow454@aucklanduni.ac.nz)_
 - Aditya Aryamaan _(aary998@aucklanduni.ac.nz)_
 
-You have complete control over how you run this repo. All your members will have admin access. The only thing setup by default is branch protections on `main`, requiring a PR with at least one code reviewer to modify `main` rather than direct pushes.
+<img src="./Shimmering Shrews.webp" width="400" height="400">
 
-Please use good version control practices, such as feature branching, both to make it easier for markers to see your group's history and to lower the chances of you tripping over each other during development
-
-![](./Shimmering%20Shrews.webp)
-
-# Introducing CityQuest - By Team Shimmering Shrew
+# Introducing CityQuest - by Team Shimmering Shrews
 
 ## Overview
 
-CityQuest is location-based urban exploration application that transforms everyday city activities into personalized quests. Users are given up to three quests within their area and are given a limited amount of time to complete them. Quests have varying activities, locations and XP. These challenges help motivate users to explore their surroundings, earn rewards and grow their knowledge of the city represented through a level system, badges, and a leaderboard ranking system.
+CityQuest is location-based urban exploration game that transforms everyday city activities into personalized quests. Users are given up to three quests within their area and are given a limited amount of time to complete them. Quests have varying activities, locations and XP. These challenges help motivate users to explore their surroundings, earn rewards and grow their knowledge of the city represented through a level system, badges, and a leaderboard ranking system.
 
 When a user opens the app, they are presented with curated challenges tied  to real places nearby like a local restaurant to try, a park landmark to visit or a museum to explore etc. Challenges can only be marked complete when the user's GPS confirms they are physically present at the location, making real-world exploration the core mechanic. Users earn experience points, unlock badges, and build daily streaks as they discover more of the city. 
 
@@ -30,8 +23,8 @@ The motivation for this app comes from a simple observation: people are surround
 
 - **Frontend**: React, TypeScript, Vite, Leaflet
 - **Backend**: Node.js, Express, TypeScript, Prisma
-- **Database**: PostgreSQL
-- **APIs:** Geoapify (map tiles and location data), Supabase - (authentication and database hosting)
+- **Database**: PostgreSQL hosted by Supabase
+- **APIs:** Geoapify (map tiles and location data), Supabase (authentication and database hosting), Google (OAuth provider)
 
 ## Getting Started
 
@@ -96,17 +89,22 @@ The frontend will be available at `http://localhost:5173` and the backend at `ht
 
 ## Deployment
 
-This project is deployed using [Vercel](https://vercel.com) for the frontend and [Render](https://render.com) for the backend.
+This project is deployed using [Vercel](https://vercel.com) for the frontend web server, [Render](https://render.com) for the backend API, and [Supabase](https://supabase.com) for the backend database.
 
 **Live URL:** https://project-gbq3d.vercel.app  
-**Backend URL:** https://group-project-shimmering-shrews.onrender.com
+**Backend API URL:** https://group-project-shimmering-shrews.onrender.com
 
 ### How it works
 
 - Code is hosted on GitHub
 - Vercel automatically deploys the frontend on push to the `main` branch
-- The frontend is served via Vercel's CDN
-- The backend is hosted on Render as an Express web service
+- The frontend web server is served via Vercel's CDN
+- Render automatically deploys the backend API on push to the `main` branch
+- The backend API is hosted on Render as an Express web service
+  - Note: Due to this being hosted with Render's free tier, the API will automatically spin down after 15 minutes of inactivity. Calling the API for the first time after inactivity will result in a delay and calls timing out as the web service has to spin back up - this usually takes about one minute. When testing for the very first time or after inactivity, please allow a brief amount of time for the API to start responding to calls.
+  - Any calls made after the first response will not have this delay.
+- The backend Database is hosted on Supabase as a PostgreSQL database.
+- Authentication is provided by an OAuth 2.0 Client on the Google Auth Platform
 
 ## Project Structure
 
@@ -114,6 +112,7 @@ This project is deployed using [Vercel](https://vercel.com) for the frontend and
 group-project-shimmering-shrews/
 ├── backend/                    # Express REST API
 │   ├── prisma/                 # Database schema and migrations
+│   ├── sql_scripts/            # PostgreSQL triggers to add to database for badges/stats
 │   ├── src/                    # Application source code
 │   ├── tests/                  # Backend test suite
 │   ├── prisma.config.ts        # Prisma configuration
@@ -128,7 +127,7 @@ group-project-shimmering-shrews/
 
 ## API Routes
 
-All routes require a valid Supabase Bearer token in the `Authorization` Header.
+All API endpoints are protected from unauthenticated and unauthorised users. All routes require a valid Supabase Bearer token in the `Authorization` Header, which is obtained by signing in.
 
 ### User Challenges
 
@@ -178,7 +177,7 @@ All routes require a valid Supabase Bearer token in the `Authorization` Header.
 ### Map View
 
 - Interactive map showing nearby challenges within walking distance
-- Pin for Users current location
+- Marker for User's current location
 - Challenge markers grouped by category with color coded icons
 - Clickable challenge clusters when multiple challenges share a location
 - Route display to guide users to accepted challenges
@@ -224,5 +223,6 @@ All routes require a valid Supabase Bearer token in the `Authorization` Header.
 - All backend routes require a valid Supabase Bearer token in the `Authorization` header
 - Challenge filtering uses the Haversine formula to calculate distance between coordinates
 - `DAILY_CHALLENGE_LIMIT` in `backend/src/services/challengeService.ts` controls how many challenges are assigned per day
-- Supabase handles Google OAuth — no separate Google Cloud setup required for auth
-- The database schema is managed via Prisma — run `npx prisma generate` after pulling schema changes
+- The database schema is managed via Prisma — run `npx prisma generate` after pulling schema changes.
+- If setting this up for yourself, the database triggers stored in `sql_scripts` must be run on the PostgreSQL database.
+- When testing for the very first time or after inactivity, please allow a brief amount of time for the backend API to start responding to calls (about one minute) - a limitation of Render's free tier is that it spins down after 15 minutes of inactivity and start back up after it detects an API call.
