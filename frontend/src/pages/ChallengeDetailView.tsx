@@ -67,12 +67,12 @@ export default function ChallengeDetailView({
     marginTop: '20px',
     padding: '10px 20px',
     borderRadius: '8px',
-    background: 'green',
     color: 'white',
     border: 'none',
     cursor: 'pointer',
     alignSelf: 'flex-end',
     width: '100%',
+    fontWeight: 'bold',
   } as const
 
   if (!activeUserChallenge) {
@@ -273,6 +273,7 @@ export default function ChallengeDetailView({
                   ...checkInButtonStyle,
                   margin: 0,
                   background: '#7a52cc',
+                  fontWeight: 'bold',
                   cursor: isSubmitting ? 'not-allowed' : 'pointer',
                   opacity: isSubmitting ? 0.6 : 1,
                   position: 'relative',
@@ -302,13 +303,14 @@ export default function ChallengeDetailView({
                 style={{
                   ...checkInButtonStyle,
                   margin: 0,
-                  background: '#a32638',
+                  background: '#d21f3a',
                   cursor: isSubmitting ? 'not-allowed' : 'pointer',
                   opacity: isSubmitting ? 0.6 : 1,
                   position: 'relative',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  fontWeight: 'bold',
                 }}
               >
                 Cancel Challenge
@@ -334,7 +336,7 @@ export default function ChallengeDetailView({
             style={{
               ...checkInButtonStyle,
               marginTop: '10px',
-              background: isCompleted || isCancelled || isExpired || isCheckInDisabled ? 'gray' : isLocationBlocked ? '#ccc' : 'green',
+              background: isCompleted || isCancelled || isExpired || isCheckInDisabled ? 'gray' : isLocationBlocked ? '#ccc' : '#3ecf4f',
               cursor: isCheckInDisabled ? 'not-allowed' : 'pointer',
               opacity: isCheckInDisabled ? 0.6 : 1,
               position: 'relative',
@@ -346,6 +348,7 @@ export default function ChallengeDetailView({
             {checkInLabel}
             <span
               style={{
+                
                 position: 'absolute',
                 right: '16px',
                 display: 'flex',

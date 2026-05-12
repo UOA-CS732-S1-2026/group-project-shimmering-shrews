@@ -127,7 +127,7 @@
   background: #9c71ff;
   color: #ffffff;
   font-size: 0.95rem;
-  font-weight: 800;
+  font-weight: bold;
   padding: 8px 12px;
 }
 
@@ -155,7 +155,7 @@
 .xp-progress__bar {
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #9128e7, #6f1cff 56%, #4a52e8);
+  background: linear-gradient(90deg, #2848e7, #641cff 56%, #aa3cff);
 }
 
 .xp-progress p {
@@ -220,7 +220,7 @@
   color: #344b52;
   cursor: pointer;
   font: inherit;
-  font-weight: 800;
+  font-weight: bold;
   padding: 0 14px;
   transition:
     background 180ms ease,
@@ -380,9 +380,9 @@
 .status-message {
   border: 1px solid rgba(25, 139, 111, 0.28);
   border-radius: 8px;
-  background: #e7f7f1;
-  color: #0f6c57;
-  font-weight: 800;
+  background: #af98dc;
+  color: #ffffff;
+  font-weight: bold;
   margin: 20px 0 0;
   padding: 14px 16px;
 }
@@ -438,9 +438,9 @@
 .bottom-nav__item--active svg {
   width: 26px;
   height: 26px;
-  fill: #4931e7;
-  filter: drop-shadow(0 0 1px #4931e7)
-          drop-shadow(0 0 2px #8331e7);
+  fill: #5053e4;
+  filter: drop-shadow(0 0 1px #5340e3)
+          drop-shadow(0 0 2px #473cde);
 
 }
 

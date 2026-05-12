@@ -27,9 +27,11 @@ export const badgeStyle = {
         margin: "0",
     } as const
 export const xpStyle = {
-        background: "#e0c3fc",
+        background: "#c997f7",
+        color: "white",
         padding: "6px 12px",
         borderRadius: "20px",
+        fontWeight: "bold",
         fontSize: "12px",
     } as const
 export const buttonStyle = {
@@ -92,4 +94,24 @@ export const challengeStatusText: { [key: string]: string } = {
         completed: 'Completed',
     }
 
+
+export const detailDescriptionStyle = {
+    margin: '6px 0',
+    color: '#555',
+    textAlign: 'left',
+    fontSize: '14px',
+  }
+
+export const checkInButtonStyle = {
+    marginTop: '20px',
+    padding: '10px 20px',
+    borderRadius: '8px',
+    background: 'green',
+    color: 'white',
+    border: 'none',
+    cursor: 'pointer',
+    alignSelf: 'flex-end',
+    width: '100%',
+    fontWeight: 'bold',
+  } 
 
