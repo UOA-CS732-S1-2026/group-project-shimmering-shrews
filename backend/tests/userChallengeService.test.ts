@@ -21,7 +21,7 @@ import {
 const { userChallengeDAO } = userChallengeDaoMocks
 
 const authId = 'auth-1'
-const user = { id: 1 }
+const user = { id: 1, level: 1, xp_earned: 0 }
 
 const activeChallenge = (id: number, latitude: number, longitude: number) => ({
   id,
@@ -273,9 +273,10 @@ describe('userChallengeService', () => {
     const completed = userChallenge({ status: 'completed' })
     userChallengeDaoMocks.findUserChallengeForUser.mockResolvedValue(completed as any)
 
-    await expect(
-      userChallengeService.checkInChallenge(authId, 20, -36.852, 174.765)
-    ).resolves.toBe(completed)
+    const result = await userChallengeService.checkInChallenge(authId, 20, -36.852, 174.765)
+
+    expect(result.userChallenge).toBe(completed)
+    expect(result.notification).toBeNull()
     expect(challengeDaoMocks.completeUserChallengeByUserChallengeId).not.toHaveBeenCalled()
   })
 
@@ -333,12 +334,17 @@ describe('userChallengeService', () => {
     expect(result.notification).toMatchObject({
       type: 'challenge_completed',
       xpGained: 10,
+      previousXp: 0,
+      newXp: 10,
       levelUp: false,
       previousLevel: 1,
       newLevel: 1,
-      previousXp: 0,
-      newXp: 10,
+      message: expect.any(String),
     })
+    expect(result.notification).toHaveProperty('previousLevelXpRequired')
+    expect(result.notification).toHaveProperty('nextLevelXpRequired')
+    expect(result.notification).toHaveProperty('xpForLevelStart')
+    expect(result.notification).toHaveProperty('xpForNextLevelStart')
     expect(challengeDaoMocks.completeUserChallengeByUserChallengeId).toHaveBeenCalledWith(
       20,
       1,
@@ -363,12 +369,17 @@ describe('userChallengeService', () => {
       expect(result.notification).toMatchObject({
         type: 'challenge_completed',
         xpGained: 10,
+        previousXp: 0,
+        newXp: 10,
         levelUp: false,
         previousLevel: 1,
         newLevel: 1,
-        previousXp: 0,
-        newXp: 10,
+        message: expect.any(String),
       })
+      expect(result.notification).toHaveProperty('previousLevelXpRequired')
+      expect(result.notification).toHaveProperty('nextLevelXpRequired')
+      expect(result.notification).toHaveProperty('xpForLevelStart')
+      expect(result.notification).toHaveProperty('xpForNextLevelStart')
     })
 
     expect(userChallengeDaoMocks.findUserChallengeForUser).toHaveBeenCalledTimes(2)

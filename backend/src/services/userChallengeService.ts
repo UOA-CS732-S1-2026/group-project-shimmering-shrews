@@ -171,7 +171,10 @@ export const userChallengeService = {
     }
 
     if (userChallenge.status === 'completed') {
-      return userChallenge
+      return {
+        userChallenge,
+        notification: null,
+      }
     }
 
     if (userChallenge.status !== 'accepted') {
