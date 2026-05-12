@@ -10,6 +10,10 @@ import {
 import { userDAO } from '../daos/userDao'
 import { ALLOWED_COMPLETION_RADIUS_METERS } from '../config/constants'
 import { ApiError } from '../utils/ApiError'
+import {
+  getNextStartOfUserCalendarDay,
+  getStartOfUserCalendarDay,
+} from '../utils/streak'
 
 import { DAILY_CHALLENGE_LIMIT, filterChallengesByRadius } from './challengeService'
 
@@ -65,7 +69,8 @@ export const userChallengeService = {
     authId: string,
     lat: number,
     lng: number,
-    radiusKm: number
+    radiusKm: number,
+    timeZone?: string
   ) {
     const user = await userDAO.getUserByAuthId(authId)
 
@@ -73,12 +78,17 @@ export const userChallengeService = {
       throw new ApiError(404, 'User not found')
     }
 
-    const today = new Date()
-    today.setUTCHours(0, 0, 0, 0)
+    const now = new Date()
+    const todayStart = getStartOfUserCalendarDay(now, timeZone)
+    const tomorrowStart = getNextStartOfUserCalendarDay(now, timeZone)
 
-    await userChallengeDAO.expireOpenChallengesBeforeDate(user.id, today)
+    await userChallengeDAO.expireOpenChallengesBeforeDate(user.id, todayStart)
 
-    let userChallenges = await userChallengeDAO.getTodayUserChallengesByUserId(user.id, today)
+    let userChallenges = await userChallengeDAO.getTodayUserChallengesByUserId(
+      user.id,
+      todayStart,
+      tomorrowStart
+    )
 
     if (userChallenges.length === 0) {
       const allChallenges = await findAllActiveChallenges()
@@ -89,7 +99,11 @@ export const userChallengeService = {
         await userChallengeDAO.createTodayUserChallenges(user.id, limitedChallenges)
       }
 
-      userChallenges = await userChallengeDAO.getTodayUserChallengesByUserId(user.id, today)
+      userChallenges = await userChallengeDAO.getTodayUserChallengesByUserId(
+        user.id,
+        todayStart,
+        tomorrowStart
+      )
     }
 
     return userChallenges
@@ -141,7 +155,8 @@ export const userChallengeService = {
     authId: string,
     userChallengeId: number,
     completedFromLat: number,
-    completedFromLng: number
+    completedFromLng: number,
+    timeZone?: string
   ) {
     const user = await userDAO.getUserByAuthId(authId)
 
@@ -183,7 +198,11 @@ export const userChallengeService = {
       )
     }
 
-    const checkIn = await completeUserChallengeByUserChallengeId(userChallengeId, user.id)
+    const checkIn = await completeUserChallengeByUserChallengeId(
+      userChallengeId,
+      user.id,
+      timeZone
+    )
 
     if (!checkIn) {
       throw new ApiError(409, 'Challenge cannot be checked in from its current status')

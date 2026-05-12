@@ -51,20 +51,6 @@ export const getChallengeDetails = async (challengeId: number) => {
   return challenge
 }
 
-export const checkInToChallenge = async (challengeId: number, authId: string, email: string) => {
-  const user = await syncUserProfileByAuth({
-    authId,
-    email,
-  })
-  const checkIn = await completeUserChallenge(challengeId, user.id)
-
-  if (!checkIn) {
-    throw new ApiError(404, 'Challenge not found')
-  }
-
-  return checkIn
-}
-
 export const createNewChallenges = async () => {
   const locations = await getLocationsWithoutChallenges()
   const categories = await findChallengeCategoriesByNames(['Food', 'Fitness', 'Social'])

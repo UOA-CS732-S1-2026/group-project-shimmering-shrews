@@ -24,7 +24,8 @@ const formatCompletedDate = (date: Date | null) => {
 
 export const getUserProfile = async (
   authId: string,
-  email?: string
+  email?: string,
+  timeZone?: string
 ) => {
   let profile = await findUserProfileByAuthId(authId)
 
@@ -61,7 +62,8 @@ export const getUserProfile = async (
     streak: getActiveStreakCount(
       profile.streak_count,
       profile.last_completed_challenge,
-      new Date()
+      new Date(),
+      timeZone
     ),
     badges: badgeItems.filter((badge) => badge.earned).length,
     challengesCompleted: completedChallenges,

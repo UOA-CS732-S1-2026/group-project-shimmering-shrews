@@ -6,7 +6,6 @@ import {
   getAllChallenges,
   getChallengeDetails,
   haversineDistance,
-  checkInToChallenge,
 } from '../src/services/challengeService'
 
 /**
@@ -61,30 +60,7 @@ describe('challengeService', () => {
     })
   })
 
-  it('syncs the auth profile before completing a challenge check-in', async () => {
-    const completed = { id: 12, status: 'completed' }
-    profileDaoMocks.syncUserProfileByAuth.mockResolvedValue({ id: 7 } as any)
-    challengeDaoMocks.completeUserChallenge.mockResolvedValue(completed as any)
 
-    await expect(checkInToChallenge(4, 'auth-1', 'user@example.com')).resolves.toBe(
-      completed
-    )
-    expect(profileDaoMocks.syncUserProfileByAuth).toHaveBeenCalledWith({
-      authId: 'auth-1',
-      email: 'user@example.com',
-    })
-    expect(challengeDaoMocks.completeUserChallenge).toHaveBeenCalledWith(4, 7)
-  })
-
-  it('throws 404 when a challenge check-in cannot be completed', async () => {
-    profileDaoMocks.syncUserProfileByAuth.mockResolvedValue({ id: 7 } as any)
-    challengeDaoMocks.completeUserChallenge.mockResolvedValue(null)
-
-    await expect(checkInToChallenge(4, 'auth-1', 'user@example.com')).rejects.toMatchObject({
-      statusCode: 404,
-      message: 'Challenge not found',
-    })
-  })
 
   it('creates challenge records from unmapped locations', async () => {
     locationDaoMocks.getLocationsWithoutChallenges.mockResolvedValue([
