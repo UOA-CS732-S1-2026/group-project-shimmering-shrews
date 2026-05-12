@@ -24,6 +24,8 @@ import {
 import type { UserChallenge } from '../types/userChallenge'
 import { ArrowLeft, Check, MapPinned, X } from 'lucide-react'
 import LevelUpNotification from '../components/LevelUpNotification'
+import BadgeNotification from '../components/BadgeNotification'
+import type { BadgeAwardedNotification, LevelUpNotificationData } from '../services/userChallenges'
 
 const ALLOWED_COMPLETION_RADIUS_METERS = 700
 
@@ -53,14 +55,10 @@ export default function ChallengeDetailView({
   const [activeUserChallenge, setActiveUserChallenge] = useState<UserChallenge | null>(userChallenge)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
-  const [levelUpNotification, setLevelUpNotification] = useState<{
-    type: string
-    xpGained: number
-    levelUp: boolean
-    previousLevel: number
-    newLevel: number
-    message: string
-  } | null>(null)
+  const [levelUpNotification, setLevelUpNotification] = useState<
+  LevelUpNotificationData | null>(null)
+  const [badgeNotification, setBadgeNotification] = useState<
+  BadgeAwardedNotification[] | null>(null)
 
   useEffect(() => {
     setActiveUserChallenge(userChallenge)
@@ -141,7 +139,11 @@ export default function ChallengeDetailView({
         try {
           const updated = await checkInUserChallenge(activeUserChallenge.id, latitude, longitude)
           setActiveUserChallenge(updated.userChallenge)
-          setLevelUpNotification(updated.notification)
+          setLevelUpNotification(updated.notification.level)
+          
+          if (updated.notification.badgesAwarded.length > 0) {
+            setBadgeNotification(updated.notification.badgesAwarded)
+          }
         } catch (error) {
           handleActionError(error, 'Failed to check into challenge. Please try again.')
         } finally {
@@ -231,7 +233,12 @@ export default function ChallengeDetailView({
           onClose={() => setLevelUpNotification(null)}
         />
       )}
-    
+      {badgeNotification && (
+        <BadgeNotification
+          badges={badgeNotification}
+          onClose={()=>setBadgeNotification(null)}
+        />
+      )}
     <div style={containerStyle}>
       <h1 style={titleStyle}>Challenge Details</h1>
       <div

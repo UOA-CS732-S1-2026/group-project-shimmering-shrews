@@ -8,7 +8,7 @@ type ApiResponse<T> = {
   message?: string
 }
 
-export type ChallengeCompletionNotification = {
+export type LevelUpNotificationData = {
   type: string
   xpGained: number
   levelUp: boolean
@@ -17,10 +17,23 @@ export type ChallengeCompletionNotification = {
   message: string
 }
 
+export type BadgeAwardedNotification = {
+  id: number
+  name: string
+  description: string | null
+  activeUrl: string | null
+}
+
+export type ChallengeCompletionNotification = {
+  level: LevelUpNotificationData
+  badgesAwarded: BadgeAwardedNotification[]
+}
+
 export type CheckInUserChallengeResponse = {
   userChallenge: UserChallenge
   notification: ChallengeCompletionNotification
 }
+
 
 const getBackendUrl = () => {
   const url = import.meta.env.VITE_BACKEND_URL

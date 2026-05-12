@@ -8,6 +8,7 @@ import {
   userChallengeDAO,
 } from '../daos/userChallengeDao'
 import { userDAO } from '../daos/userDao'
+import { badgeDAO } from '../daos/badgeDAO'
 import { ALLOWED_COMPLETION_RADIUS_METERS } from '../config/constants'
 import { ApiError } from '../utils/ApiError'
 
@@ -184,6 +185,7 @@ export const userChallengeService = {
     }
     const previousXp = user.xp_earned || 0
     const previousLevel = user.level || 1
+    const badgesBefore = await badgeDAO.getBadgesForUser(user.id)
 
     const checkIn = await completeUserChallengeByUserChallengeId(userChallengeId, user.id)
 
@@ -196,8 +198,20 @@ export const userChallengeService = {
     const newXp= previousXp + xpGained
     const newLevel = calculateLevel(newXp)
     const levelUp = newLevel > previousLevel
+    const badgesAfter = await badgeDAO.getBadgesForUser(user.id)
+    const badgesAwarded = badgesAfter
+    .filter(
+      (badgeAfter) => !badgesBefore.some((badgeBefore) => badgeBefore.badge.id === badgeAfter.badge.id)
+    )
+    .map((badge) => ({
+      id: badge.badge.id,
+      name: badge.badge.name,
+      description: badge.badge.description,
+      activeUrl: badge.badge.active_url,
+    }))
 
     const notificationMessage = {
+      level:{
       type: 'challenge_completed',
       xpGained,
       levelUp,
@@ -205,7 +219,8 @@ export const userChallengeService = {
       newLevel,
       message: levelUp
         ? `Congratulations! You've completed the challenge, earned ${xpGained} XP, and reached Level ${newLevel}!`
-        : `Challenge completed! You've earned ${xpGained} XP.`,
+        : `Challenge completed! You've earned ${xpGained} XP.`,},
+        badgesAwarded,
     }
     return {
       userChallenge: checkIn,
