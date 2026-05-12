@@ -197,8 +197,9 @@ function renderTabContent(
                     padding: '12px 16px',
                     marginBottom: '8px',
                     borderRadius: '12px',
-                    background: entry.isCurrentUser ? '#e8f5e9' : '#f5f7fa',
-                    border: entry.isCurrentUser ? '2px solid #4caf50' : '1px solid #e0e0e0',
+                    background: entry.isCurrentUser ? '#0095ff' : '#f5f7fa',
+                    color: entry.isCurrentUser ? '#e7e7e7' : '#1b1b1b',
+                    border: entry.isCurrentUser ? '2px solid #66d1ff' : '1px solid #e0e0e0',
                   }}
                 >
                   <span style={{ fontSize: '1.2rem', width: '32px', textAlign: 'center' }}>
@@ -206,10 +207,10 @@ function renderTabContent(
                   </span>
                   <div style={{ flex: 1 }}>
                     <strong>{entry.username}{entry.isCurrentUser ? ' (You)' : ''}</strong>
-                    <div style={{ fontSize: '0.85rem', color: '#666' }}>Level {entry.level}</div>
+                    <div style={{ fontSize: '0.85rem', color: '#3e3e3e' }}>Level {entry.level}</div>
                   </div>
                   <span style={{
-                    background: '#4caf50',
+                    background: '#c997f7',
                     color: 'white',
                     borderRadius: '8px',
                     padding: '4px 10px',
