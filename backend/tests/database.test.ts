@@ -1,4 +1,4 @@
-import { afterAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 import prisma from '../src/config/prisma'
 import { syncUserProfileByAuth, findUserProfileByAuthId } from '../src/daos/profileDao'
@@ -16,6 +16,21 @@ import { getStartOfUserCalendarDay } from '../src/utils/streak'
 const describeIntegration = process.env.RUN_INTEGRATION === '1' ? describe : describe.skip
 
 const uniqueSuffix = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`
+
+const resetAppData = () =>
+  prisma.$executeRaw`
+    TRUNCATE TABLE
+      awarded_badge,
+      user_stat,
+      user_challenge,
+      badge_criteria,
+      challenge,
+      location,
+      badge,
+      challenge_category,
+      users
+    RESTART IDENTITY CASCADE
+  `
 
 const ensureGlobalCategory = () =>
   prisma.challenge_category.upsert({
@@ -81,6 +96,10 @@ const createChallenge = async (
 }
 
 describeIntegration('database-backed DAO and service flows', () => {
+  beforeEach(async () => {
+    await resetAppData()
+  })
+
   afterAll(async () => {
     await prisma.$disconnect()
   })
