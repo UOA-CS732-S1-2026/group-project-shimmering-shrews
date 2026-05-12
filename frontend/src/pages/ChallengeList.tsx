@@ -267,7 +267,7 @@ export default function ChallengeList({
                 <p style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>🗺️</p>
                 <p style={{ fontWeight: 'bold', marginBottom: '0.25rem', color: '#333' }}>No challenges nearby</p>
                 <p style={{ fontSize: '0.9rem', color: '#999' }}>
-                  There are no challenges within your area today. Try moving your location withing CBD.
+                  There are no challenges within your area today. Try moving your location within the CBD.
                 </p>
               </div>
             )
