@@ -420,7 +420,12 @@ describe('userChallengeService', () => {
     const result = await userChallengeService.checkInChallenge(authId, 20, -36.852, 174.765)
 
     expect(result.userChallenge).toBe(completed)
-    expect(result.notification).toMatchObject({
+    const notification = result.notification
+    expect(notification).not.toBeNull()
+    if (!notification) {
+      throw new Error('Expected challenge completion notification')
+    }
+    expect(notification).toMatchObject({
       type: 'challenge_completed',
       xpGained: 10,
       previousXp: 25,
@@ -431,10 +436,10 @@ describe('userChallengeService', () => {
       message: expect.stringContaining('Level 2'),
     })
     // Verify XP boundary fields exist
-    expect(result.notification.previousLevelXpRequired).toBe(30)
-    expect(result.notification.nextLevelXpRequired).toBe(45)
-    expect(result.notification.xpForLevelStart).toBe(0)
-    expect(result.notification.xpForNextLevelStart).toBe(30)
+    expect(notification.previousLevelXpRequired).toBe(30)
+    expect(notification.nextLevelXpRequired).toBe(45)
+    expect(notification.xpForLevelStart).toBe(0)
+    expect(notification.xpForNextLevelStart).toBe(30)
   })
 
   it('throws 409 when the DAO cannot complete the challenge from its current status', async () => {
