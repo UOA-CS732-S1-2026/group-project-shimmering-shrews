@@ -6,6 +6,7 @@ import {
   buttonStyle,
   cardStyle,
   categoryColors,
+  categoryColorsStrong,
   challengeStatusColors,
   challengeStatusText,
   challengeTitleStyle,
@@ -157,7 +158,7 @@ export default function ChallengeList({
 
     return (
       <div
-        style={{ ...cardStyle, cursor: 'pointer', transition: 'transform 0.2s' }}
+        style={{ ...cardStyle, boxShadow: `0 0px 8px ${categoryColorsStrong[challenge.challenge_category.name]}`, cursor: 'pointer', transition: 'transform 0.2s' }}
         onClick={() => goToDetailView(userChallenge)}
         onMouseEnter={(e) => {
           ;(e.currentTarget as HTMLDivElement).style.transform = 'scale(1.02)'
@@ -173,7 +174,7 @@ export default function ChallengeList({
             {challenge.challenge_category.name}
           </span>
           <span style={xpStyle}>{challenge.xp_worth} XP</span>
-          <span className={`challenge-status challenge-status--${userChallenge.status}`} style={{ ...badgeStyle, background: challengeStatusColors[userChallenge.status] || '#ddd' }}>
+          <span className={`challenge-status challenge-status--${userChallenge.status}`} style={{ ...badgeStyle, boxShadow: `0 2px 8px ${challengeStatusColors[userChallenge.status]}`, background: challengeStatusColors[userChallenge.status] || '#ddd' }}>
             {challengeStatusText[userChallenge.status]}
           </span>
         </div>

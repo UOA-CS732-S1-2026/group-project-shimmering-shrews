@@ -456,7 +456,7 @@ export default function MapView() {
         )}
 
         {!locationRequired && !isInitializingLocation && (
-          <MapContainer center={mapCenter} zoom={14} style={{ height: '100%', width: 'auto', borderRadius: '15px 15px' }}>
+          <MapContainer center={mapCenter} zoom={14} style={{ height: '100%', width: 'auto', borderRadius: '15px 15px', boxShadow: '0px 8px 24px rgba(149, 157, 165, 0.2)' }}>
             <RecenterMap center={mapCenter} zoom={14} focusPoints={mapFocusPoints} />
             <TileLayer
               url={`https://maps.geoapify.com/v1/tile/klokantech-basic/{z}/{x}/{y}.png?apiKey=${import.meta.env.VITE_GEOAPIFY_KEY}`}
