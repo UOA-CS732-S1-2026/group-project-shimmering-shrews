@@ -75,7 +75,7 @@
   gap: 32px;
   align-items: center;
   padding: 32px;
-  border: 2px solid rgba(58, 11, 228, 0.788);
+  border: 2px solid rgba(58, 11, 228, 0.331);
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.84);
 }
@@ -93,7 +93,7 @@
   flex: 0 0 112px;
   border: 2zpx solid #ffffff;
   border-radius: 8px;
-  box-shadow: 0 0 6px rgba(51, 0, 255, 0.82);
+  box-shadow: 0 0 8px rgba(44, 0, 222, 0.646);
   object-fit: cover;
 }
 
@@ -142,7 +142,8 @@
   gap: 16px;
   color: #41545a;
   font-size: 0.95rem;
-  font-weight: 800;
+  font-weight: bold;
+
 }
 
 .xp-progress__track {
@@ -161,7 +162,7 @@
 .xp-progress p {
   color: #41545a;
   font-size: 0.96rem;
-  font-weight: 700;
+  font-weight: bold;
   margin: 0;
 }
 
@@ -173,7 +174,7 @@
 }
 
 .stat-card {
-  border: 2px solid rgba(58, 11, 228, 0.788);
+  border: 2px solid rgba(58, 11, 228, 0.317);
   border-radius: 8px;
   background: #ffffff;
   padding: 20px;
