@@ -430,7 +430,11 @@ describe('userChallengeController', () => {
   it('checks in a user challenge with parsed body coordinates', async () => {
     const { res, status, json } = response()
     const completed = { id: 20, status: 'completed' }
-    vi.mocked(userChallengeService.checkInChallenge).mockResolvedValue(completed as any)
+    const checkInResponse = {
+      userChallenge: completed,
+      notification: null,
+    }
+    vi.mocked(userChallengeService.checkInChallenge).mockResolvedValue(checkInResponse as any)
 
     await userChallengeController.checkInUserChallenge(
       {
@@ -453,7 +457,7 @@ describe('userChallengeController', () => {
     expect(json).toHaveBeenCalledWith({
       success: true,
       message: 'Challenge checked in',
-      data: completed,
+      data: checkInResponse,
     })
   })
 })
