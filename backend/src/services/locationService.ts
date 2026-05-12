@@ -1,11 +1,12 @@
 import { mapPlace } from '../utils/mapPlaces';
 import { createLocations } from '../daos/locationDao'
+import { DEFAULT_LOCATION_CATEGORY, DEFAULT_LOCATION_FETCH_LIMIT, DEFAULT_LOCATION_CREATE_LIMIT } from '../config/constants'
 
 type GeoapifyResponse = {
   features?: unknown
 }
 
-export const fetchLocations = async ( category = 'catering.cafe', limit = 5 ) => {
+export const fetchLocations = async (category = DEFAULT_LOCATION_CATEGORY, limit = DEFAULT_LOCATION_FETCH_LIMIT) => {
  
   // Searches for locations in a bounding box around the CBD
   const url = `https://api.geoapify.com/v2/places?categories=${category}&filter=rect:174.73402155444433,-36.840352394480576,174.79018430176848,-36.88354209657474&limit=${limit}&apiKey=${process.env.GEOAPIFY_KEY}`
@@ -35,7 +36,7 @@ export const fetchLocations = async ( category = 'catering.cafe', limit = 5 ) =>
 
 };
 
-export const addLocations = async ( category = 'catering.cafe', limit = 3 ) => {
+export const addLocations = async (category = DEFAULT_LOCATION_CATEGORY, limit = DEFAULT_LOCATION_CREATE_LIMIT) => {
     // Based on the seeded location records, the catergories would be 'catering.cafe', 'lesiure.park' and 'sports.fitness_centre'
 
     const places = await fetchLocations( category, limit ) ;
