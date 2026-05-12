@@ -203,20 +203,22 @@ export const userChallengeService = {
     const previousXp = user.xp_earned || 0
     const previousLevel = user.level || 1
 
-    const checkIn = await completeUserChallengeByUserChallengeId(
+    const result = await completeUserChallengeByUserChallengeId(
       userChallengeId,
       user.id,
       timeZone
     )
 
-    if (!checkIn) {
+    if (!result) {
       throw new ApiError(409, 'Challenge cannot be checked in from its current status')
     }
 
+    // Use transactional user data from the DAO to ensure consistency
+    const { userChallenge: checkIn, updatedUser } = result
     const xpGained = checkIn.xp_worth || checkIn.challenge?.xp_worth || 0
 
-    const newXp = previousXp + xpGained
-    const newLevel = calculateLevel(newXp)
+    const newXp = updatedUser.xp_earned
+    const newLevel = updatedUser.level
     const levelUp = newLevel > previousLevel
 
     const previousLevelXpRequired = getXpRequiredForNextLevel(previousLevel)

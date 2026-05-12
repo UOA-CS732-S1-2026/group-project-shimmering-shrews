@@ -320,7 +320,10 @@ describe('userChallengeService', () => {
   it('completes an accepted user challenge from a nearby location', async () => {
     const completed = userChallenge({ status: 'completed' })
     userChallengeDaoMocks.findUserChallengeForUser.mockResolvedValue(userChallenge() as any)
-    challengeDaoMocks.completeUserChallengeByUserChallengeId.mockResolvedValue(completed as any)
+    challengeDaoMocks.completeUserChallengeByUserChallengeId.mockResolvedValue({
+      userChallenge: completed,
+      updatedUser: { id: 1, xp_earned: 10, level: 1 },
+    } as any)
 
     const result = await userChallengeService.checkInChallenge(
       authId,
@@ -356,7 +359,10 @@ describe('userChallengeService', () => {
     const accepted = userChallenge()
     const completed = userChallenge({ status: 'completed' })
     userChallengeDaoMocks.findUserChallengeForUser.mockResolvedValue(accepted as any)
-    challengeDaoMocks.completeUserChallengeByUserChallengeId.mockResolvedValue(completed as any)
+    challengeDaoMocks.completeUserChallengeByUserChallengeId.mockResolvedValue({
+      userChallenge: completed,
+      updatedUser: { id: 1, xp_earned: 10, level: 1 },
+    } as any)
 
     const results = await Promise.all([
       userChallengeService.checkInChallenge(authId, 20, -36.852, 174.765),
@@ -396,6 +402,39 @@ describe('userChallengeService', () => {
       1,
       undefined
     )
+  })
+
+  it('calculates level-up when XP crosses threshold and updates notification', async () => {
+    const completed = userChallenge({ status: 'completed' })
+    userDaoMocks.userDAO.getUserByAuthId.mockResolvedValue({
+      id: 1,
+      level: 1,
+      xp_earned: 25,
+    } as any)
+    userChallengeDaoMocks.findUserChallengeForUser.mockResolvedValue(userChallenge() as any)
+    challengeDaoMocks.completeUserChallengeByUserChallengeId.mockResolvedValue({
+      userChallenge: completed,
+      updatedUser: { id: 1, xp_earned: 35, level: 2 },
+    } as any)
+
+    const result = await userChallengeService.checkInChallenge(authId, 20, -36.852, 174.765)
+
+    expect(result.userChallenge).toBe(completed)
+    expect(result.notification).toMatchObject({
+      type: 'challenge_completed',
+      xpGained: 10,
+      previousXp: 25,
+      newXp: 35,
+      levelUp: true,
+      previousLevel: 1,
+      newLevel: 2,
+      message: expect.stringContaining('Level 2'),
+    })
+    // Verify XP boundary fields exist
+    expect(result.notification.previousLevelXpRequired).toBe(30)
+    expect(result.notification.nextLevelXpRequired).toBe(45)
+    expect(result.notification.xpForLevelStart).toBe(0)
+    expect(result.notification.xpForNextLevelStart).toBe(30)
   })
 
   it('throws 409 when the DAO cannot complete the challenge from its current status', async () => {

@@ -244,7 +244,10 @@ export const completeUserChallengeByUserChallengeId = async (
     }
 
     if (userChallenge.status === 'completed') {
-      return userChallenge
+      return {
+        userChallenge,
+        updatedUser: user,
+      }
     }
 
     if (userChallenge.status !== 'accepted') {
@@ -276,7 +279,7 @@ export const completeUserChallengeByUserChallengeId = async (
       select: userChallengeResponseSelect,
     })
 
-    await tx.users.update({
+    const updatedUser = await tx.users.update({
       where: { id: userId },
       data: {
         xp_earned: nextXpEarned,
@@ -284,8 +287,16 @@ export const completeUserChallengeByUserChallengeId = async (
         streak_count: nextStreakCount,
         last_completed_challenge: completedAt,
       },
+      select: {
+        id: true,
+        xp_earned: true,
+        level: true,
+      },
     })
 
-    return completedUserChallenge
+    return {
+      userChallenge: completedUserChallenge,
+      updatedUser,
+    }
   })
 }
