@@ -56,9 +56,15 @@ export default function ChallengeDetailView({
   const [levelUpNotification, setLevelUpNotification] = useState<{
     type: string
     xpGained: number
+    previousXp: number
+    newXp: number
+    previousLevelXpRequired: number
+    nextLevelXpRequired: number
     levelUp: boolean
     previousLevel: number
     newLevel: number
+    xpForLevelStart: number
+    xpForNextLevelStart: number
     message: string
   } | null>(null)
 
@@ -224,9 +230,15 @@ export default function ChallengeDetailView({
       {levelUpNotification && (
         <LevelUpNotification
           xpGained={levelUpNotification.xpGained}
+          previousXp={levelUpNotification.previousXp}
+          newXp={levelUpNotification.newXp}
+          previousLevelXpRequired={levelUpNotification.previousLevelXpRequired}
+          nextLevelXpRequired={levelUpNotification.nextLevelXpRequired}
           levelUp={levelUpNotification.levelUp}
           previousLevel={levelUpNotification.previousLevel}
           newLevel={levelUpNotification.newLevel}
+          xpForLevelStart={levelUpNotification.xpForLevelStart}
+          xpForNextLevelStart={levelUpNotification.xpForNextLevelStart}
           message={levelUpNotification.message}
           onClose={() => setLevelUpNotification(null)}
         />

@@ -16,7 +16,7 @@ import {
 } from '../utils/streak'
 
 import { DAILY_CHALLENGE_LIMIT, filterChallengesByRadius } from './challengeService'
-import { calculateLevel } from '../utils/leveling'
+import { calculateLevel, getXpForLevelStart, getXpRequiredForNextLevel } from '../utils/leveling'
 const toRad = (deg: number) => (deg * Math.PI) / 180
 
 const haversineDistanceMetres = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -212,16 +212,28 @@ export const userChallengeService = {
 
     const xpGained = checkIn.xp_worth || checkIn.challenge?.xp_worth || 0
 
-    const newXp= previousXp + xpGained
+    const newXp = previousXp + xpGained
     const newLevel = calculateLevel(newXp)
     const levelUp = newLevel > previousLevel
+
+    const previousLevelXpRequired = getXpRequiredForNextLevel(previousLevel)
+    const nextLevelXpRequired = getXpRequiredForNextLevel(newLevel)
+
+    const xpForLevelStart = getXpForLevelStart(previousLevel)
+    const xpForNextLevelStart = getXpForLevelStart(newLevel)
 
     const notificationMessage = {
       type: 'challenge_completed',
       xpGained,
+      previousXp,
+      newXp,
+      previousLevelXpRequired,
+      nextLevelXpRequired,
       levelUp,
       previousLevel,
       newLevel,
+      xpForLevelStart,
+      xpForNextLevelStart,
       message: levelUp
         ? `Congratulations! You've completed the challenge, earned ${xpGained} XP, and reached Level ${newLevel}!`
         : `Challenge completed! You've earned ${xpGained} XP.`,

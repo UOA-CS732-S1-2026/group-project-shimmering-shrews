@@ -11,10 +11,16 @@ type ApiResponse<T> = {
 
 export type ChallengeCompletionNotification = {
   type: string
-  xpGained: number
+  xpGained: number;
+  previousXp: number;
+  newXp: number;
+  previousLevelXpRequired: number;
+  nextLevelXpRequired: number;
   levelUp: boolean
   previousLevel: number
   newLevel: number
+  xpForLevelStart: number
+  xpForNextLevelStart: number
   message: string
 }
 
