@@ -9,6 +9,26 @@ type ApiResponse<T> = {
   message?: string
 }
 
+export type ChallengeCompletionNotification = {
+  type: string
+  xpGained: number;
+  previousXp: number;
+  newXp: number;
+  previousLevelXpRequired: number;
+  nextLevelXpRequired: number;
+  levelUp: boolean
+  previousLevel: number
+  newLevel: number
+  xpForLevelStart: number
+  xpForNextLevelStart: number
+  message: string
+}
+
+export type CheckInUserChallengeResponse = {
+  userChallenge: UserChallenge
+  notification: ChallengeCompletionNotification | null
+}
+
 const getBackendUrl = () => {
   const url = import.meta.env.VITE_BACKEND_URL
 
@@ -133,7 +153,7 @@ export const checkInUserChallenge = async (
   userChallengeId: number,
   completedFromLat: number,
   completedFromLng: number
-): Promise<UserChallenge> => {
+): Promise<CheckInUserChallengeResponse> => {
   const token = await getToken()
   const res = await fetch(`${getBackendUrl()}/user-challenges/${userChallengeId}/checkin`, {
     method: 'POST',
@@ -149,7 +169,7 @@ export const checkInUserChallenge = async (
     throw new Error(await getErrorMessage(res, 'Failed to check in'))
   }
 
-  const json = (await res.json()) as ApiResponse<UserChallenge>
+  const json = (await res.json()) as ApiResponse<CheckInUserChallengeResponse>
 
 
   confetti({

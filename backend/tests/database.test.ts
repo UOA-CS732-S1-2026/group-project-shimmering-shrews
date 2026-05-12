@@ -114,7 +114,7 @@ describeIntegration('database-backed DAO and service flows', () => {
     const profile = await findUserProfileByAuthId(authId)
     const syncedAgain = await syncUserProfileByAuth({ authId, email })
 
-    expect(user).toEqual({ id: createdProfile.id })
+    expect(user).toEqual({ id: createdProfile.id, level: 1, xp_earned: 0 })
     expect(profile).toMatchObject({
       id: createdProfile.id,
       username: createdProfile.username,
@@ -256,8 +256,8 @@ describeIntegration('database-backed DAO and service flows', () => {
       'Pacific/Auckland'
     )
 
-    expect(completed.status).toBe('completed')
-    expect(completed.completed_at).toBeInstanceOf(Date)
+    expect(completed.userChallenge.status).toBe('completed')
+    expect(completed.userChallenge.completed_at).toBeInstanceOf(Date)
 
     const updatedUser = await prisma.users.findUniqueOrThrow({
       where: { id: user.id },
