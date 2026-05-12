@@ -10,19 +10,41 @@ import userChallengeRoute from './routes/userChallengeRoute';
 
 const allowedOriginPattern = /^http:\/\/(localhost|127\.0\.0\.1):\d+$/
 
+const productionOrigins =
+  process.env.WEBSERVER_URLS?.split(',').map(origin => origin.trim()) || [];
+
 const app = express();
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOriginPattern.test(origin)) {
-      return callback(null, true)
+    // Allow requests with no origin (Postman, mobile apps, etc.)
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    // Allow localhost in development
+    if (
+      process.env.NODE_ENV !== 'production' &&
+      allowedOriginPattern.test(origin)
+    ) {
+      return callback(null, true);
+    }
+
+    // Allow production frontend URL
+    if (
+      process.env.NODE_ENV === 'production' &&
+      productionOrigins.includes(origin)
+    ) {
+      return callback(null, true);
     }
 
     return callback(new Error('Origin not allowed by CORS'))
   },
   credentials: true
 }));
+
 app.use(express.json());
+
 app.use('/challenges', challengeRoute);
 app.use('/user-challenges', userChallengeRoute);
 

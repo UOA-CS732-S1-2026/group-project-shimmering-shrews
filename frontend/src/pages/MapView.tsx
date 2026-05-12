@@ -17,6 +17,7 @@ import { getUserChallenge, getUserChallenges } from '../services/userChallenges'
 import { badgeStyle, categoryColors, categoryColorsStrong, xpStyle } from '../styles/challengeStyle'
 import type { Challenge } from '../types/challenge'
 import type { UserChallenge } from '../types/userChallenge'
+import { ArrowLeft } from 'lucide-react'
 
 type PermissionStatus = 'not-asked' | 'granted' | 'denied'
 
@@ -411,9 +412,17 @@ export default function MapView() {
                 </span>
               )}
             </div>
-            <button className="map-focus-banner__button" onClick={() => navigate(returnTo, {
+            <button className="map-focus-banner__button"
+              style={{position: 'relative',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '10px',
+              }}
+              onClick={() => navigate(returnTo, {
               state: { userChallenge: passedChallenge }
             })}>
+              <ArrowLeft />
               Return To Check In
             </button>
           </div>

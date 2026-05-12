@@ -35,6 +35,7 @@
 }
 
 .topbar a.button,
+.login-button,
 .logout-button {
   border: 0;
   border-radius: 8px;
@@ -45,6 +46,8 @@
   font-weight: 600;
   min-height: 44px;
   padding: 0 18px;
+  display: flex;
+  align-items: center;
   box-shadow: 0 0px 4px rgba(0, 0, 0, 0.361);
   transition:
     background 180ms ease,
@@ -52,12 +55,14 @@
 }
 
 .topbar a.button:hover,
+.login-button:hover,
 .logout-button:hover {
   background: #c93d51;
   transform: translateY(-1px);
 }
 
 .topbar a.button:focus-visible,
+.login-button:focus-visible
 .logout-button:focus-visible,
 .tabs__button:focus-visible {
   outline: 3px solid rgba(25, 139, 111, 0.32);
@@ -221,6 +226,11 @@
     background 180ms ease,
     border-color 180ms ease,
     color 180ms ease;
+    position: relative;
+  display: flex;
+  align-Items: center;
+  justify-Content: center;
+  gap: 6px;
 }
 
 .tabs__button:hover {
@@ -511,6 +521,13 @@
 
 .challenge-status--accepted {
   animation: acceptedPulse 1.5s ease-in-out infinite;
+}
+
+.challenge-card--skipped,
+.challenge-card--cancelled,
+.challenge-card--completed {
+  opacity: 0.6;
+  filter: grayscale(0.3);
 }
 
 .map-focus-banner {

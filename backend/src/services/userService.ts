@@ -40,10 +40,36 @@ export const UserService = {
         name: b.badge.name,
         description: b.badge.description,
         active_icon: b.badge.active_url,
-				inactive_icon: b.badge.active_url,
+        // Keep inactive_icon faithful to the badge row. Tests cover this because
+        // the frontend badge UI depends on active/inactive assets being distinct
+        // when the database provides both.
+				inactive_icon: b.badge.inactive_url ?? b.badge.active_url,
         earnedAt: b.earned_at,
         earned: true,
       })),
     }
   },
+  async getLeaderboard(authUserId: string) {
+    const { topUsers, currentUserRank } = await userDAO.getLeaderboard(authUserId)
+
+    const topUsersWithRank = topUsers.map((user, index) => ({
+      rank: index + 1,
+      username: user.username,
+      xp_earned: user.xp_earned,
+      level: user.level,
+      isCurrentUser: user.auth_id === authUserId,
+    }))
+
+    return {
+      topUsers: topUsersWithRank,
+      currentUserRank: currentUserRank
+        ? {
+            rank: currentUserRank.rank,
+            username: currentUserRank.username,
+            xp_earned: currentUserRank.xp_earned,
+            level: currentUserRank.level,
+          }
+        : null,
+    }
+  }
 }
