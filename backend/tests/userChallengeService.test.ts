@@ -321,15 +321,24 @@ describe('userChallengeService', () => {
     userChallengeDaoMocks.findUserChallengeForUser.mockResolvedValue(userChallenge() as any)
     challengeDaoMocks.completeUserChallengeByUserChallengeId.mockResolvedValue(completed as any)
 
-    await expect(
-      userChallengeService.checkInChallenge(
-        authId,
-        20,
-        -36.852,
-        174.765,
-        'America/Los_Angeles'
-      )
-    ).resolves.toBe(completed)
+    const result = await userChallengeService.checkInChallenge(
+      authId,
+      20,
+      -36.852,
+      174.765,
+      'America/Los_Angeles'
+    )
+
+    expect(result.userChallenge).toBe(completed)
+    expect(result.notification).toMatchObject({
+      type: 'challenge_completed',
+      xpGained: 10,
+      levelUp: false,
+      previousLevel: 1,
+      newLevel: 1,
+      previousXp: 0,
+      newXp: 10,
+    })
     expect(challengeDaoMocks.completeUserChallengeByUserChallengeId).toHaveBeenCalledWith(
       20,
       1,
@@ -343,12 +352,24 @@ describe('userChallengeService', () => {
     userChallengeDaoMocks.findUserChallengeForUser.mockResolvedValue(accepted as any)
     challengeDaoMocks.completeUserChallengeByUserChallengeId.mockResolvedValue(completed as any)
 
-    await expect(
-      Promise.all([
-        userChallengeService.checkInChallenge(authId, 20, -36.852, 174.765),
-        userChallengeService.checkInChallenge(authId, 20, -36.852, 174.765),
-      ])
-    ).resolves.toEqual([completed, completed])
+    const results = await Promise.all([
+      userChallengeService.checkInChallenge(authId, 20, -36.852, 174.765),
+      userChallengeService.checkInChallenge(authId, 20, -36.852, 174.765),
+    ])
+
+    expect(results).toHaveLength(2)
+    results.forEach((result) => {
+      expect(result.userChallenge).toBe(completed)
+      expect(result.notification).toMatchObject({
+        type: 'challenge_completed',
+        xpGained: 10,
+        levelUp: false,
+        previousLevel: 1,
+        newLevel: 1,
+        previousXp: 0,
+        newXp: 10,
+      })
+    })
 
     expect(userChallengeDaoMocks.findUserChallengeForUser).toHaveBeenCalledTimes(2)
     expect(challengeDaoMocks.completeUserChallengeByUserChallengeId).toHaveBeenCalledTimes(2)
