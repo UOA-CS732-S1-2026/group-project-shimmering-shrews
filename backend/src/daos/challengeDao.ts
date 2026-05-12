@@ -243,10 +243,18 @@ export const completeUserChallengeByUserChallengeId = async (
       return null
     }
 
+    const previousUser = {
+      id: user.id,
+      xp_earned: user.xp_earned,
+      level: user.level,
+    }
+
     if (userChallenge.status === 'completed') {
       return {
         userChallenge,
-        updatedUser: user,
+        previousUser,
+        updatedUser: previousUser,
+        xpAwarded: 0,
       }
     }
 
@@ -296,7 +304,9 @@ export const completeUserChallengeByUserChallengeId = async (
 
     return {
       userChallenge: completedUserChallenge,
+      previousUser,
       updatedUser,
+      xpAwarded: xpWorth,
     }
   })
 }

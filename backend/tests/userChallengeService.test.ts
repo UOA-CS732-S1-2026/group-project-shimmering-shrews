@@ -322,7 +322,9 @@ describe('userChallengeService', () => {
     userChallengeDaoMocks.findUserChallengeForUser.mockResolvedValue(userChallenge() as any)
     challengeDaoMocks.completeUserChallengeByUserChallengeId.mockResolvedValue({
       userChallenge: completed,
+      previousUser: user,
       updatedUser: { id: 1, xp_earned: 10, level: 1 },
+      xpAwarded: 10,
     } as any)
 
     const result = await userChallengeService.checkInChallenge(
@@ -361,7 +363,9 @@ describe('userChallengeService', () => {
     userChallengeDaoMocks.findUserChallengeForUser.mockResolvedValue(accepted as any)
     challengeDaoMocks.completeUserChallengeByUserChallengeId.mockResolvedValue({
       userChallenge: completed,
+      previousUser: user,
       updatedUser: { id: 1, xp_earned: 10, level: 1 },
+      xpAwarded: 10,
     } as any)
 
     const results = await Promise.all([
@@ -409,12 +413,14 @@ describe('userChallengeService', () => {
     userDaoMocks.userDAO.getUserByAuthId.mockResolvedValue({
       id: 1,
       level: 1,
-      xp_earned: 25,
+      xp_earned: 0,
     } as any)
     userChallengeDaoMocks.findUserChallengeForUser.mockResolvedValue(userChallenge() as any)
     challengeDaoMocks.completeUserChallengeByUserChallengeId.mockResolvedValue({
       userChallenge: completed,
+      previousUser: { id: 1, xp_earned: 25, level: 1 },
       updatedUser: { id: 1, xp_earned: 35, level: 2 },
+      xpAwarded: 10,
     } as any)
 
     const result = await userChallengeService.checkInChallenge(authId, 20, -36.852, 174.765)

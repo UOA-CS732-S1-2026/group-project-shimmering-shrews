@@ -200,9 +200,6 @@ export const userChallengeService = {
         `User is not within required distance to complete challenge (${Math.round(distanceMeters)}m away, must be within ${ALLOWED_COMPLETION_RADIUS_METERS}m)`
       )
     }
-    const previousXp = user.xp_earned || 0
-    const previousLevel = user.level || 1
-
     const result = await completeUserChallengeByUserChallengeId(
       userChallengeId,
       user.id,
@@ -214,9 +211,18 @@ export const userChallengeService = {
     }
 
     // Use transactional user data from the DAO to ensure consistency
-    const { userChallenge: checkIn, updatedUser } = result
-    const xpGained = checkIn.xp_worth || checkIn.challenge?.xp_worth || 0
+    const { userChallenge: checkIn, previousUser, updatedUser, xpAwarded } = result
+    const xpGained = xpAwarded ?? checkIn.xp_worth ?? checkIn.challenge?.xp_worth ?? 0
 
+    if (xpGained <= 0) {
+      return {
+        userChallenge: checkIn,
+        notification: null,
+      }
+    }
+
+    const previousXp = previousUser.xp_earned
+    const previousLevel = previousUser.level
     const newXp = updatedUser.xp_earned
     const newLevel = updatedUser.level
     const levelUp = newLevel > previousLevel
