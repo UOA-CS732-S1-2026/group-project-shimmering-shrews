@@ -131,7 +131,11 @@ export const createChallenges = async (data: Prisma.challengeCreateManyInput[]) 
   })
 }
 
-export const completeUserChallenge = async (challengeId: number, userId: number) => {
+export const completeUserChallenge = async (
+  challengeId: number,
+  userId: number,
+  timeZone?: string
+) => {
   return prisma.$transaction(async (tx) => {
     const [challenge, user] = await Promise.all([
       tx.challenge.findFirst({
@@ -179,7 +183,8 @@ export const completeUserChallenge = async (challengeId: number, userId: number)
     const nextStreakCount = calculateNextStreakCount(
       user.last_completed_challenge,
       user.streak_count,
-      completedAt
+      completedAt,
+      timeZone
     )
 
     const completedUserChallenge = await tx.user_challenge.update({
@@ -211,7 +216,8 @@ export const completeUserChallenge = async (challengeId: number, userId: number)
 
 export const completeUserChallengeByUserChallengeId = async (
   userChallengeId: number,
-  userId: number
+  userId: number,
+  timeZone?: string
 ) => {
   return prisma.$transaction(async (tx) => {
     const userChallenge = await tx.user_challenge.findFirst({
@@ -251,7 +257,8 @@ export const completeUserChallengeByUserChallengeId = async (
     const nextStreakCount = calculateNextStreakCount(
       user.last_completed_challenge,
       user.streak_count,
-      completedAt
+      completedAt,
+      timeZone
     )
 
     const completedUserChallenge = await tx.user_challenge.update({
