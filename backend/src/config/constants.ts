@@ -8,3 +8,12 @@
 // Distance in meters. User must be within this radius of challenge location to complete it.
 // Must match frontend/src/pages/ChallengeDetailView.tsx maxDistance
 export const ALLOWED_COMPLETION_RADIUS_METERS = 700
+
+// Default Geoapify category used when fetching locations
+export const DEFAULT_LOCATION_CATEGORY = 'catering.cafe'
+
+// Default number of locations to fetch from Geoapify
+export const DEFAULT_LOCATION_FETCH_LIMIT = 5
+
+// Default number of locations to create in the database per request
+export const DEFAULT_LOCATION_CREATE_LIMIT = 3
