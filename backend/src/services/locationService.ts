@@ -1,5 +1,7 @@
 import { mapPlace } from '../utils/mapPlaces';
 import { createLocations } from '../daos/locationDao'
+import { DEFAULT_LOCATION_CATEGORY, DEFAULT_LOCATION_FETCH_LIMIT, DEFAULT_LOCATION_CREATE_LIMIT } from '../config/constants'
+
 
 type GeoapifyResponse = {
   features?: unknown
@@ -30,8 +32,9 @@ const getRandomisedBoundingBox = () => {
 // Fetches locations from Geoapify's Places API within a randomised
 // bounding box around Auckland CBD. Randomising the bounding box
 // ensure varied results are returned on each request.
-export const fetchLocations = async (category = 'catering.cafe', limit = 5) => {
+export const fetchLocations = async (category = DEFAULT_LOCATION_CATEGORY, limit = DEFAULT_LOCATION_FETCH_LIMIT) => {
   const { lngMin, latMin, lngMax, latMax } = getRandomisedBoundingBox()
+
 
   // Searches for locations in a randomised bounding box around the CBD
   const url = `https://api.geoapify.com/v2/places?categories=${category}&filter=rect:${lngMin},${latMin},${lngMax},${latMax}&limit=${limit}&apiKey=${process.env.VITE_GEOAPIFY_KEY}`
@@ -60,7 +63,7 @@ export const fetchLocations = async (category = 'catering.cafe', limit = 5) => {
 // Fetches locations from Geoapify and saves them to the database.
 // Skips duplicates automatically via the DAO layer.
 // Returns a count object indicating how many locations were created.
-export const addLocations = async (category = 'catering.cafe', limit = 3) => {
+export const addLocations = async (category = DEFAULT_LOCATION_CATEGORY, limit = DEFAULT_LOCATION_CREATE_LIMIT) => {
   // Based on the seeded location records, the categories would be 'catering.cafe', 'leisure.park' and 'sports.fitness_centre'
   const places = await fetchLocations(category, limit)
   const data = []
