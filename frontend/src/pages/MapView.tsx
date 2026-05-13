@@ -42,7 +42,7 @@ function createTeardropIcon(challengeCategory: Challenge['challenge_category']) 
           stroke="white"
           stroke-width="1.6"
         />
-        <image
+        <image 
           href="${challengeCategory.icon}"
           x="7.5"
           y="4.5"
@@ -431,7 +431,7 @@ export default function MapView() {
               state: { userChallenge: passedChallenge }
             })}>
               <ArrowLeft />
-              Return To Check In
+              Return to challenge details
             </button>
           </div>
         )}
