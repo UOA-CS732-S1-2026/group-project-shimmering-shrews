@@ -8,4 +8,6 @@ export type AuthContextType = {
   logout: () => Promise<void>
 }
 
+// React context that provides authentication state to the entire app.
+// Consumed via the useAuth hook, do not use directly.
 export const AuthContext = createContext<AuthContextType | undefined>(undefined)

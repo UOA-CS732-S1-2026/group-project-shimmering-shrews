@@ -20,6 +20,7 @@ import {MapPin} from 'lucide-react'
 import type { UserChallenge } from '../types/userChallenge'
 import { useLocationPermission } from '../hooks/useLocationPermission'
 import { DEV_SHOW_ALL } from '../config/featureFlags'
+import { CHALLENGE_RADIUS_KM } from '../config/constants'
 import LocationPermissionDialog from '../components/LocationPermissionDialog.tsx'
 import {
   LOCATION_PERMISSION_CHALLENGES_ACCURACY_MESSAGE,
@@ -45,9 +46,6 @@ export default function ChallengeList({
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
   const [userChallenges, setUserChallenges] = React.useState<UserChallenge[]>([])
-
-  // Radius in km to fetch challenges within it
-  const RADIUS_KM = 5
 
   // Default to Auckland CBD coordinates when DEV_SHOW_ALL is enabled
   const DEFAULT_LOCATION = React.useMemo(
@@ -118,7 +116,7 @@ export default function ChallengeList({
     // Use default location in dev mode, otherwise use the user's real location
     const lat = DEV_SHOW_ALL ? DEFAULT_LOCATION[0] : userLocation?.[0]
     const lng = DEV_SHOW_ALL ? DEFAULT_LOCATION[1] : userLocation?.[1]
-    const radius = DEV_SHOW_ALL ? 99999 : RADIUS_KM
+    const radius = DEV_SHOW_ALL ? 99999 : CHALLENGE_RADIUS_KM
 
     // Wait for real location to be available before fetching
     if (!DEV_SHOW_ALL && !userLocation) return

@@ -13,6 +13,8 @@ import { Link } from "react-router-dom"
 const tabs: TabKey[] = ['badges', 'history', 'leaderboard']
 const fallbackAvatarUrl = '/profile-placeholder.svg'
 
+// Extracts the user's Google avatar URL from Supabase user metadata.
+// Falls back to a placeholder if no avatar URL is found.
 const getGoogleAvatarUrl = (metadata: Record<string, unknown> | undefined) => {
   const avatarUrl = metadata?.avatar_url
   const picture = metadata?.picture
@@ -28,6 +30,8 @@ const getGoogleAvatarUrl = (metadata: Record<string, unknown> | undefined) => {
   return fallbackAvatarUrl
 }
 
+// Displays the user's profile including stats, badges, challenge history, and leaderboard.
+// Fetches profile data on mount and leaderboard data lazily when the leaderboard tab is selected.
 function ProfilePage() {
   const [activeTab, setActiveTab] = useState<TabKey>('badges')
   const { user, session, loading } = useAuth()
@@ -43,6 +47,7 @@ function ProfilePage() {
   const [leaderboardLoading, setLeaderboardLoading] = useState(false)
   const [leaderboardError, setLeaderboardError] = useState<string | null>(null)
 
+  // Fetch profile data when the user session is available
   useEffect(() => {
     if (loading) return
     if (!user || !session) {
@@ -82,6 +87,7 @@ function ProfilePage() {
     return () => { isActive = false }
   }, [loading, session, user])
 
+  // Fetch leaderboard data lazily when the leaderboard tab is first opened
   useEffect(() => {
     if (activeTab !== 'leaderboard') return
     if (leaderboard) return
@@ -98,6 +104,7 @@ function ProfilePage() {
     return () => { isActive = false }
   }, [activeTab, leaderboard])
 
+  // Build stat cards from the profile data
   const profileStats = useMemo<Stat[]>(
     () =>
       profile
@@ -164,6 +171,7 @@ function ProfilePage() {
   )
 }
 
+// Renders the content for the active tab — leaderboard, history, or badges.
 function renderTabContent(
   activeTab: TabKey,
   loading: boolean,

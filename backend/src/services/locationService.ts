@@ -6,6 +6,8 @@ type GeoapifyResponse = {
   features?: unknown
 }
 
+// Fetches locations from Geoapify API based on category and limit.
+// Searches within a bounding box around the CBD.
 export const fetchLocations = async (category = DEFAULT_LOCATION_CATEGORY, limit = DEFAULT_LOCATION_FETCH_LIMIT) => {
  
   // Searches for locations in a bounding box around the CBD
@@ -36,6 +38,8 @@ export const fetchLocations = async (category = DEFAULT_LOCATION_CATEGORY, limit
 
 };
 
+// Fetches locations from Geoapify and saves new ones to the database.
+// Maps Geoapify places to location data and creates them in bulk.
 export const addLocations = async (category = DEFAULT_LOCATION_CATEGORY, limit = DEFAULT_LOCATION_CREATE_LIMIT) => {
     // Based on the seeded location records, the catergories would be 'catering.cafe', 'lesiure.park' and 'sports.fitness_centre'
 

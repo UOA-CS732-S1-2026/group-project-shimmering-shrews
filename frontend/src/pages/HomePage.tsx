@@ -4,6 +4,8 @@ import { ArrowRight, Compass, MapPin, MapPinCheckInside, Star } from 'lucide-rea
 import { useAuth } from "../context/useAuth";
 import styles from "./HomePage.module.css";
 
+// Landing page shown to all users (logged in or not).
+// Displays the app hero, feature highlights, and call-to-action buttons.
 export default function HomePage() {
     const { user, loading } = useAuth()
     const isLoggedIn = !!user

@@ -5,6 +5,7 @@ import L from 'leaflet'
 import MarkerClusterGroup from 'react-leaflet-cluster'
 
 import LocationPermissionDialog from '../components/LocationPermissionDialog.tsx'
+import { CHALLENGE_RADIUS_KM, CHALLENGE_RADIUS_METRES } from '../config/constants'
 import { DEV_SHOW_ALL } from '../config/featureFlags'
 import {
   LOCATION_PERMISSION_BANNER_MESSAGE,
@@ -21,16 +22,17 @@ import { ArrowLeft } from 'lucide-react'
 
 type PermissionStatus = 'not-asked' | 'granted' | 'denied'
 
+// Default map center coordinates for Auckland CBD
 const DEFAULT_MAP_CENTER: [number, number] = [-36.8485, 174.7633]
-const RADIUS_METRES = 500
-const RADIUS_KM = RADIUS_METRES / 1000
 
+// Maps the browser's PermissionState string to the app's PermissionStatus type
 function mapPermissionState(state: string): PermissionStatus {
   if (state === 'granted') return 'granted'
   if (state === 'denied') return 'denied'
   return 'not-asked'
 }
 
+// Creates a teardrop-shaped map marker icon coloured by challenge category
 function createTeardropIcon(challengeCategory: Challenge['challenge_category']) {
   return L.divIcon({
     className: 'challenge-marker',
@@ -58,6 +60,7 @@ function createTeardropIcon(challengeCategory: Challenge['challenge_category']) 
   })
 }
 
+// Calculates the distance in metres between two GPS coordinates using the Haversine formula.
 function getDistanceMetres(a: [number, number], b: [number, number]) {
   const earthRadiusMetres = 6371000
   const lat1 = (a[0] * Math.PI) / 180
@@ -71,6 +74,7 @@ function getDistanceMetres(a: [number, number], b: [number, number]) {
   return earthRadiusMetres * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h))
 }
 
+// Safely converts lat/lng values to a coordinate tuple, returning null if invalid.
 function toLatLng(
   lat: number | string | null | undefined,
   lng: number | string | null | undefined
@@ -89,6 +93,8 @@ function toLatLng(
   return [parsedLat, parsedLng]
 }
 
+// Imperatively repositions the Leaflet map when center or focus points change.
+// If focus points are provided, fits the map bounds to show all of them.
 function RecenterMap({
   center,
   focusPoints,
@@ -107,6 +113,7 @@ function RecenterMap({
         return
       }
 
+      // Fit the map to show all focus points with padding
       map.fitBounds(L.latLngBounds(focusPoints), {
         padding: [48, 48],
         maxZoom: 16,
@@ -120,6 +127,8 @@ function RecenterMap({
   return null
 }
 
+// Interactive map view showing the user's location and nearby challenge markers.
+// Supports focusing on a specific challenge route when navigated to with a focusUserChallengeId param.
 export default function MapView() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -130,19 +139,26 @@ export default function MapView() {
   const [permissionStatus, setPermissionStatus] = useState<PermissionStatus>('not-asked')
   const [showPermissionDialog, setShowPermissionDialog] = useState(false)
   const [isRequestingLocation, setIsRequestingLocation] = useState(false)
+  // Skip initializing location in DEV_SHOW_ALL mode since location permission is bypassed
   const [isInitializingLocation, setIsInitializingLocation] = useState(!DEV_SHOW_ALL)
   const [locationMessage, setLocationMessage] = useState<string | null>(null)
-  const [focusedRouteChallenge, setFocusedRouteChallenge] = useState<UserChallenge | null>(null)
-  const [route, setRoute] = useState<[number, number][] | null>(null)
-  const [routeError, setRouteError] = useState<string | null>(null)
+  const [loadedFocusedRouteChallenge, setLoadedFocusedRouteChallenge] =
+    useState<UserChallenge | null>(null)
+  const [routeState, setRouteState] = useState<{
+    key: string
+    points: [number, number][] | null
+    error: string | null
+  } | null>(null)
 
   const location = useLocation()
-  // fetch passed challenge if we came here from View Route via Challenge Detail View
+  // Fetch passed challenge if we came here from View Route via Challenge Detail View
   const passedChallenge = location.state?.userChallenge
 
+  // Read focused challenge ID and return path from URL params
   const focusedUserChallengeId = Number(searchParams.get('focusUserChallengeId') || 0)
   const returnTo = searchParams.get('returnTo') || '/challenges'
 
+  // Requests the user's current GPS position and updates location state.
   const fetchCurrentLocation = (
     options: { showErrors?: boolean; onComplete?: () => void } = {}
   ) => {
@@ -193,6 +209,8 @@ export default function MapView() {
   }
   const handlePermissionDialogDeny = () => setShowPermissionDialog(false)
 
+  // Checks the browser's geolocation permission state on mount and fetches location if already granted.
+  // Skipped entirely in DEV_SHOW_ALL mode.
   useEffect(() => {
     if (DEV_SHOW_ALL) {
       return
@@ -206,6 +224,7 @@ export default function MapView() {
         return
       }
 
+      // Listen for permission state changes
       try {
         const result = await navigator.permissions.query({ name: 'geolocation' })
         const mappedState = mapPermissionState(result.state)
@@ -240,10 +259,12 @@ export default function MapView() {
     }
   }, [])
 
+  // Fetches today's challenges when the user's location becomes available.
+  // Uses Auckland CBD coordinates with a large radius in DEV_SHOW_ALL mode.
   useEffect(() => {
     const lat = DEV_SHOW_ALL ? DEFAULT_MAP_CENTER[0] : userLocation?.[0]
     const lng = DEV_SHOW_ALL ? DEFAULT_MAP_CENTER[1] : userLocation?.[1]
-    const radius = DEV_SHOW_ALL ? 99999 : RADIUS_KM
+    const radius = DEV_SHOW_ALL ? 99999 : CHALLENGE_RADIUS_KM
 
     if (!DEV_SHOW_ALL && !userLocation) {
       return
@@ -267,43 +288,53 @@ export default function MapView() {
     }
   }, [userLocation])
 
+  // Find the focused challenge within the already-loaded challenges list
   const focusedUserChallenge = useMemo(
     () => userChallenges.find((challenge) => challenge.id === focusedUserChallengeId),
     [focusedUserChallengeId, userChallenges]
   )
 
+  const matchingPassedChallenge =
+    passedChallenge?.id === focusedUserChallengeId ? passedChallenge : null
+  const matchingLoadedRouteChallenge =
+    loadedFocusedRouteChallenge?.id === focusedUserChallengeId
+      ? loadedFocusedRouteChallenge
+      : null
+
+  // Fetch the focused challenge details if not already available in the challenges list
   useEffect(() => {
     if (!focusedUserChallengeId) {
-      setFocusedRouteChallenge(null)
       return
     }
 
-    if (passedChallenge?.id === focusedUserChallengeId) {
-      setFocusedRouteChallenge(passedChallenge)
+    // Use the passed challenge if its ID matches to avoid an unnecessary API call
+    if (matchingPassedChallenge) {
       return
     }
 
 
     let isActive = true
 
+    // Prefer the freshly fetched challenge details over the one in the list
     getUserChallenge(String(focusedUserChallengeId))
       .then((challenge) => {
-        if (isActive) setFocusedRouteChallenge(challenge)
+        if (isActive) setLoadedFocusedRouteChallenge(challenge)
       })
       .catch((error) => {
         console.error('Could not load focused challenge route details', error)
-        if (isActive) setFocusedRouteChallenge(null)
       })
 
     return () => {
       isActive = false
     }
-  }, [focusedUserChallengeId, passedChallenge])
+  }, [focusedUserChallengeId, matchingPassedChallenge])
 
-  const activeFocusedChallenge = focusedRouteChallenge ?? focusedUserChallenge
+  const activeFocusedChallenge =
+    matchingPassedChallenge ?? matchingLoadedRouteChallenge ?? focusedUserChallenge
   const currUserLocation: [number, number] | null = DEV_SHOW_ALL ? DEFAULT_MAP_CENTER : userLocation
   const mapCenter: [number, number] = currUserLocation ?? DEFAULT_MAP_CENTER
 
+  // Use the accepted_from coordinates as route start if available, otherwise use current location
   const acceptedRouteStart = useMemo(() => {
     if (!activeFocusedChallenge) return null
 
@@ -323,19 +354,26 @@ export default function MapView() {
     )
   }, [activeFocusedChallenge])
 
-  useEffect(() => {
-    setRoute(null)
-    setRouteError(null)
+  const routeKey =
+    activeFocusedChallenge?.status === 'accepted' && focusedRouteStart && focusedChallengeLocation
+      ? [
+          activeFocusedChallenge.id,
+          focusedRouteStart.join(','),
+          focusedChallengeLocation.join(','),
+        ].join('|')
+      : null
 
-    if (
-      !activeFocusedChallenge ||
-      activeFocusedChallenge.status !== 'accepted' ||
-      !focusedRouteStart ||
-      !focusedChallengeLocation
-    ) {
-      if (activeFocusedChallenge?.status === 'accepted' && !focusedRouteStart) {
-        setRouteError('Could not determine the route start location for this challenge.')
-      }
+  const routeStartError =
+    activeFocusedChallenge?.status === 'accepted' && !focusedRouteStart
+      ? 'Could not determine the route start location for this challenge.'
+      : null
+  const currentRouteState = routeState?.key === routeKey ? routeState : null
+  const route = currentRouteState?.points ?? null
+  const routeError = routeStartError ?? currentRouteState?.error ?? null
+
+  // Fetches a walking route to the focused challenge when one is accepted.
+  useEffect(() => {
+    if (!routeKey || !focusedRouteStart || !focusedChallengeLocation) {
       return
     }
 
@@ -346,23 +384,31 @@ export default function MapView() {
         if (!isActive) return
 
         if (points.length > 0) {
-          setRoute(points)
+          setRouteState({ key: routeKey, points, error: null })
         } else {
-          setRouteError('Could not load a route to this challenge right now.')
+          setRouteState({
+            key: routeKey,
+            points: null,
+            error: 'Could not load a route to this challenge right now.',
+          })
         }
       })
       .catch((error) => {
         console.error('Failed to load route for focused challenge', error)
         if (!isActive) return
-        setRoute(null)
-        setRouteError('Could not load a route to this challenge right now.')
+        setRouteState({
+          key: routeKey,
+          points: null,
+          error: 'Could not load a route to this challenge right now.',
+        })
       })
 
     return () => {
       isActive = false
     }
-  }, [activeFocusedChallenge, focusedChallengeLocation, focusedRouteStart])
+  }, [focusedChallengeLocation, focusedRouteStart, routeKey])
 
+  // Determines the map focus points: route points take priority, then start+end, then just destination
   const mapFocusPoints = useMemo(() => {
     if (route) return route
     if (focusedRouteStart && focusedChallengeLocation) return [focusedRouteStart, focusedChallengeLocation]
@@ -372,6 +418,8 @@ export default function MapView() {
 
   const locationRequired = !DEV_SHOW_ALL && permissionStatus === 'denied'
   const showChallengesOnMap = DEV_SHOW_ALL || permissionStatus === 'granted'
+
+  // Filter challenges to only show those within the configured radius
   const visibleChallenges = showChallengesOnMap
     ? userChallenges.filter((userChallenge) => {
         if (DEV_SHOW_ALL || !currUserLocation) return true
@@ -382,11 +430,12 @@ export default function MapView() {
         )
 
         return challengeLocation
-          ? getDistanceMetres(currUserLocation, challengeLocation) <= RADIUS_METRES
+          ? getDistanceMetres(currUserLocation, challengeLocation) <= CHALLENGE_RADIUS_METRES
           : false
       })
     : []
 
+  // When a challenge is focused, only show that challenge on the map
   const challengesForMap = activeFocusedChallenge ? [activeFocusedChallenge] : visibleChallenges
 
   return (
@@ -409,6 +458,7 @@ export default function MapView() {
       )}
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        {/* Banner shown when a challenge route is being displayed */}
         {activeFocusedChallenge && (
           <div className="map-focus-banner">
             <div>
@@ -481,15 +531,18 @@ export default function MapView() {
             />
             {currUserLocation && (
               <>
+                {/* Blue dot marker for the user's current location */}
                 <CircleMarker center={currUserLocation} radius={8} pathOptions={{ color: 'white', weight: 2, fillColor: 'blue', fillOpacity: 0.8 }}>
                   <Popup>You are here</Popup>
                 </CircleMarker>
+                {/* Accuracy circle showing GPS precision */}
                 {accuracy && (
                   <Circle center={currUserLocation} radius={accuracy} pathOptions={{ weight: 0, fillColor: '#73a1d5', fillOpacity: 0.15, dashArray: '4 6' }} />
                 )}
               </>
             )}
 
+            {/* Cluster group that groups nearby challenge markers into a single icon */}
             <MarkerClusterGroup
               maxClusterRadius={10}
               spiderfyOnMaxZoom
@@ -548,6 +601,7 @@ export default function MapView() {
                           </span>
                           <span style={xpStyle}>+{userChallenge.challenge.xp_worth} XP</span>
                         </div>
+                        {/* Only show the detail link when not in route focus mode */}
                         {!activeFocusedChallenge && (
                           <Link
                             className="challenge-map-popup__link"
@@ -564,6 +618,7 @@ export default function MapView() {
               })}
             </MarkerClusterGroup>
 
+            {/* Walking route polyline shown when a challenge is accepted and focused */}
             {route && (
               <Polyline
                 positions={route}

@@ -4,28 +4,45 @@ import ChallengeDetailView from './ChallengeDetailView'
 import type { UserChallenge } from '../types/userChallenge'
 import { getUserChallenge } from '../services/userChallenges'
 
+// Route wrapper for the challenge detail view.
+// Reads the challenge ID from the URL, fetches the challenge data, and renders ChallengeDetailView.
+// Uses a challenge passed via router state if available to avoid an unnecessary API call.
 export default function ChallengeRoute() {
   const navigate = useNavigate()
   const { userChallengeId } = useParams()
+
+  // Convert the URL param to a number for validation and API calls
   const normalisedId = userChallengeId ? Number(userChallengeId) : null
   const hasInvalidChallengeId =
     normalisedId !== null &&
     (!Number.isInteger(normalisedId) || normalisedId <= 0)
 
   const location = useLocation()
-  // fetch passed challenge if we came here from View Route via Challenge Detail View
+
+  // Use challenge passed via router state if navigating from the map view. Avoids a redundant fetch
   const passedUserChallenge = location.state?.userChallenge
 
-  const [userChallenge, setUserChallenge] = useState<UserChallenge | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [loadedUserChallenge, setLoadedUserChallenge] = useState<UserChallenge | null>(null)
+  const [errorState, setErrorState] = useState<{
+    id: number
+    message: string
+  } | null>(null)
 
+  const matchingPassedUserChallenge =
+    passedUserChallenge?.id === normalisedId ? passedUserChallenge : null
+  const matchingLoadedUserChallenge =
+    loadedUserChallenge?.id === normalisedId ? loadedUserChallenge : null
+  const userChallenge = matchingPassedUserChallenge ?? matchingLoadedUserChallenge
+  const error = errorState?.id === normalisedId ? errorState.message : null
+
+  // Loading is inferred from both challenge and error being null
   const isLoading = userChallenge === null && error === null
 
   useEffect(() => {
     if (normalisedId === null || hasInvalidChallengeId) return
 
-    if (passedUserChallenge?.id === normalisedId) {
-      setUserChallenge(passedUserChallenge)
+    // Use the passed challenge if its ID matches the URL param
+    if (matchingPassedUserChallenge) {
       return
     }
 
@@ -34,17 +51,20 @@ export default function ChallengeRoute() {
     getUserChallenge(String(normalisedId))
       .then((data) => {
         if (!isActive) return
-        setUserChallenge(data)
+        setLoadedUserChallenge(data)
       })
       .catch(() => {
         if (!isActive) return
-        setError('Could not load challenge details.')
+        setErrorState({
+          id: normalisedId,
+          message: 'Could not load challenge details.',
+        })
       })
 
     return () => {
       isActive = false
     }
-  }, [passedUserChallenge, normalisedId, hasInvalidChallengeId])
+  }, [matchingPassedUserChallenge, normalisedId, hasInvalidChallengeId])
 
   if (!userChallengeId) {
     return (

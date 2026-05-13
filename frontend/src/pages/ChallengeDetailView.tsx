@@ -24,10 +24,13 @@ import {
 import type { UserChallenge } from '../types/userChallenge'
 import { ArrowLeft, Check, MapPinned, X, MapPin } from 'lucide-react'
 import LevelUpNotification from '../components/LevelUpNotification'
+import BadgeNotification from '../components/BadgeNotification'
+import type { BadgeAwardedNotification, LevelUpNotificationData } from '../services/userChallenges'
 
+// Must match ALLOWED_COMPLETION_RADIUS_METERS in the backend constants
 const ALLOWED_COMPLETION_RADIUS_METERS = 700
 
-
+// Calculates the distance in metres between two GPS coordinates using the Haversine formula.
 function getDistanceMetres(a: [number, number], b: [number, number]) {
   const earthRadiusMetres = 6371000
   const lat1 = (a[0] * Math.PI) / 180
@@ -41,6 +44,9 @@ function getDistanceMetres(a: [number, number], b: [number, number]) {
   return earthRadiusMetres * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h))
 }
 
+// Displays the full details of a user challenge including status, location, XP and action buttons.
+// Handles accepting, cancelling, and checking in to a challenge.
+// Shows level up and badge notifications after a successful check-in.
 export default function ChallengeDetailView({
   userChallenge,
   goToChallengeList,
@@ -53,21 +59,12 @@ export default function ChallengeDetailView({
   const [activeUserChallenge, setActiveUserChallenge] = useState<UserChallenge | null>(userChallenge)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
-  const [levelUpNotification, setLevelUpNotification] = useState<{
-    type: string
-    xpGained: number
-    previousXp: number
-    newXp: number
-    previousLevelXpRequired: number
-    nextLevelXpRequired: number
-    levelUp: boolean
-    previousLevel: number
-    newLevel: number
-    xpForLevelStart: number
-    xpForNextLevelStart: number
-    message: string
-  } | null>(null)
+  const [levelUpNotification, setLevelUpNotification] = useState<
+  LevelUpNotificationData | null>(null)
+  const [badgeNotification, setBadgeNotification] = useState<
+  BadgeAwardedNotification[] | null>(null)
 
+  // Sync local state when the parent passes a new challenge
   useEffect(() => {
     setActiveUserChallenge(userChallenge)
   }, [userChallenge])
@@ -113,10 +110,12 @@ export default function ChallengeDetailView({
   const isLocationBlocked = !DEV_SHOW_ALL && permissionStatus !== 'granted'
   const isCheckInDisabled = !isAccepted || isCompleted || isCancelled || isExpired || isLocationBlocked || isSubmitting
 
+  // Extracts a user-friendly error message from an unknown error type
   const handleActionError = (error: unknown, fallbackMessage: string) => {
     setActionError(error instanceof Error ? error.message : fallbackMessage)
   }
 
+  // Verifies the user's proximity to the challenge location and submits a check-in request.
   const checkIn = () => {
     if (isCheckInDisabled) return
 
@@ -135,7 +134,7 @@ export default function ChallengeDetailView({
           [latitude, longitude],
           [Number(challenge.location.latitude), Number(challenge.location.longitude)]
         )
-
+        // Reject check-in if user is outside the allowed radius
         if (distance > ALLOWED_COMPLETION_RADIUS_METERS) {
           setActionError(
             `You are too far away (${Math.round(distance)}m). You must be within ${ALLOWED_COMPLETION_RADIUS_METERS}m of the challenge.`
@@ -147,7 +146,12 @@ export default function ChallengeDetailView({
         try {
           const updated = await checkInUserChallenge(activeUserChallenge.id, latitude, longitude)
           setActiveUserChallenge(updated.userChallenge)
-          setLevelUpNotification(updated.notification)
+          setLevelUpNotification(updated.notification?.level ?? null)
+
+          // Show badge notification if any badges were awarded during this check-in
+          if (updated.notification && updated.notification.badgesAwarded && updated.notification.badgesAwarded.length > 0) {
+            setBadgeNotification(updated.notification!.badgesAwarded)
+          }
         } catch (error) {
           handleActionError(error, 'Failed to check into challenge. Please try again.')
         } finally {
@@ -161,6 +165,7 @@ export default function ChallengeDetailView({
     )
   }
 
+  // Records the user's location and marks the challenge as accepted.
   const acceptChallenge = () => {
     if (!canAccept || isSubmitting) return
 
@@ -191,6 +196,7 @@ export default function ChallengeDetailView({
     )
   }
 
+  // Marks the challenge as cancelled.
   const cancelChallenge = async () => {
     if (!canCancel || isSubmitting) return
 
@@ -207,12 +213,14 @@ export default function ChallengeDetailView({
     }
   }
 
+  // Navigates to the map view focused on this challenge's route
   const openRoute = () => {
     navigate(`/map?focusUserChallengeId=${activeUserChallenge.id}&returnTo=/challenges/${activeUserChallenge.id}`, {
       state: { userChallenge: activeUserChallenge }
     })
   }
 
+  // Determines the check-in button label based on the current challenge status
   const checkInLabel = isSubmitting
     ? 'Check In'
     : isCompleted
@@ -227,6 +235,7 @@ export default function ChallengeDetailView({
 
   return (
     <div>
+      {/* Show level up notification after a successful check-in */}
       {levelUpNotification && (
         <LevelUpNotification
           xpGained={levelUpNotification.xpGained}
@@ -243,7 +252,13 @@ export default function ChallengeDetailView({
           onClose={() => setLevelUpNotification(null)}
         />
       )}
-    
+      {/* Show badge notification after level up notification has closed */}
+      {!levelUpNotification && badgeNotification && (
+        <BadgeNotification
+          badges={badgeNotification}
+          onClose={() => setBadgeNotification(null)}
+        />
+      )}
     <div style={containerStyle}>
       <h1 style={titleStyle}>Challenge Details</h1>
       <div
