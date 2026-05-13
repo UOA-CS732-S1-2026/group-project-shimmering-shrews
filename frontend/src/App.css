@@ -1,7 +1,7 @@
 #root {
   background:
-    linear-gradient(180deg, rgba(201, 114, 255, 0.128), rgba(158, 172, 246, 0.192) 48%),
-    #f6fbff;
+    linear-gradient(180deg, rgba(235, 235, 235, 0.128), rgba(158, 172, 246, 0.192) 48%),
+    rgb(241, 217, 255);
   color: #071317;
 }
 
@@ -25,6 +25,15 @@
   justify-content: space-between;
   gap: 16px;
   padding: 8px 0 12px;
+  background-image: linear-gradient(270deg,#3489ff,  #f469ef);
+  background-size: 50% 50%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  -webkit-animation: gradientFlow 6s ease infinite;
+  -moz-animation: gradientFlow 6s ease infinite;
+  animation: gradientFlow 6s ease infinite;
 }
 
 .topbar a {
