@@ -34,9 +34,13 @@ const getBackendUrl = () => {
 
 export type LiveProfile = BackendProfile
 
-// Fetches the authenticated user's full profile from the backend.
-// Includes XP, level, streak, badge collection and recent challenge history.
-export const getMyProfile = async (): Promise<LiveProfile> => {
+// Retrieves the current session token for API requests.
+// Returns a hardcoded E2E token during Playwright tests to bypass real authentication.
+const getToken = async () => {
+  if (import.meta.env.VITE_E2E_AUTH === 'true') {
+    return 'e2e-token'
+  }
+
   const supabase = getSupabaseClient()
   const { data } = await supabase.auth.getSession()
   const token = data.session?.access_token
@@ -44,6 +48,12 @@ export const getMyProfile = async (): Promise<LiveProfile> => {
   if (!token) {
     throw new Error("No authenticated session found")
   }
+
+  return token
+}
+
+export const getMyProfile = async (): Promise<LiveProfile> => {
+  const token = await getToken()
 
   const res = await fetch(`${getBackendUrl()}/api/profile/me`, {
     headers: {
@@ -91,10 +101,7 @@ export type Leaderboard = {
 // Fetches the leaderboard showing the top 10 users ranked by XP.
 // Also returns the current user's rank if they fall outside the top 10.
 export const getLeaderboard = async (): Promise<Leaderboard> => {
-  const supabase = getSupabaseClient()
-  const { data } = await supabase.auth.getSession()
-  const token = data.session?.access_token
-  if (!token) throw new Error('No authenticated session found')
+  const token = await getToken()
 
   const res = await fetch(`${getBackendUrl()}/api/user/leaderboard`, {
     headers: { Authorization: `Bearer ${token}` },
