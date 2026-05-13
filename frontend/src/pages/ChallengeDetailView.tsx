@@ -260,10 +260,10 @@ export default function ChallengeDetailView({
         <div>
           <h2 style={{ ...challengeTitleStyle, fontSize: '1.3rem', marginBottom: '5px' }}>{challenge.name}</h2>
           <p style={{ margin: '10px 0', fontWeight:'bold', color: '#344b52', fontSize: '1.0rem' }}>Location: {challenge.location.name}</p>
-          <hr></hr>
+          <hr />
           <p style={detailDescriptionStyle}>{challenge.description ?? 'No description available.'}</p>
+          <hr />
         </div>
-        <hr></hr>
          <div
             style={{
               display: 'flex',
