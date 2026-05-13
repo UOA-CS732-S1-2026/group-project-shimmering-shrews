@@ -6,8 +6,11 @@ import { mapLocations } from '../utils/mapLocations'
 
 export const DAILY_CHALLENGE_LIMIT = 3
 
+// Converts degrees to radians.
 const toRad = (deg: number) => (deg * Math.PI) / 180
 
+// Calculates the great-circle distance between two points using the Haversine formula.
+// Returns distance in kilometers.
 export const haversineDistance = (
   lat1: number, lng1: number,
   lat2: number, lng2: number
@@ -21,6 +24,7 @@ export const haversineDistance = (
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
+// Filters challenges to only include those within a specified radius of a point.
 export const filterChallengesByRadius = <
   T extends { location: { latitude: { toNumber(): number } | number; longitude: { toNumber(): number } | number } | null }
 >(
@@ -37,10 +41,12 @@ export const filterChallengesByRadius = <
   })
 }
 
+// Retrieves all active challenges from the database.
 export const getAllChallenges = async () => {
   return findAllActiveChallenges()
 }
 
+// Retrieves challenge details by ID.
 export const getChallengeDetails = async (challengeId: number) => {
   const challenge = await findActiveChallengeById(challengeId)
 
@@ -51,6 +57,8 @@ export const getChallengeDetails = async (challengeId: number) => {
   return challenge
 }
 
+// Creates new challenges for locations that don't have any.
+// Maps locations to challenge categories (Food, Fitness, Social) and bulk creates them.
 export const createNewChallenges = async () => {
   const locations = await getLocationsWithoutChallenges()
   const categories = await findChallengeCategoriesByNames(['Food', 'Fitness', 'Social'])

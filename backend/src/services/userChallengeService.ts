@@ -14,11 +14,13 @@ import {
   getNextStartOfUserCalendarDay,
   getStartOfUserCalendarDay,
 } from '../utils/streak'
-
 import { DAILY_CHALLENGE_LIMIT, filterChallengesByRadius } from './challengeService'
-import { calculateLevel, getXpForLevelStart, getXpRequiredForNextLevel } from '../utils/leveling'
+import { getXpForLevelStart, getXpRequiredForNextLevel } from '../utils/leveling'
+
+// Converts degrees to radians for use in distance calculations.
 const toRad = (deg: number) => (deg * Math.PI) / 180
 
+// Calculates the distance in metres between two GPS coordinates using the Haversine formula.
 const haversineDistanceMetres = (lat1: number, lon1: number, lat2: number, lon2: number) => {
   const earthRadiusMetres = 6371000
   const dLat = toRad(lat2 - lat1)
@@ -31,6 +33,7 @@ const haversineDistanceMetres = (lat1: number, lon1: number, lat2: number, lon2:
   return earthRadiusMetres * c
 }
 
+// Returns all user challenges for the authenticated user.
 export const getUserChallenges = async (authId: string) => {
   const user = await userDAO.getUserByAuthId(authId)
   const userId = user?.id
@@ -48,6 +51,7 @@ export const getUserChallenges = async (authId: string) => {
   return userChallenges
 }
 
+// Returns a single user challenge by ID, scoped to the authenticated user.
 export const getUserChallenge = async (authId: string, userChallengeId: number) => {
   const user = await userDAO.getUserByAuthId(authId)
 
@@ -65,6 +69,8 @@ export const getUserChallenge = async (authId: string, userChallengeId: number) 
 }
 
 export const userChallengeService = {
+  // Returns today's challenges for the user based on their location and radius.
+  // Expires any unfinished challenges from previous days, then creates new ones if none exist for today.
   async getOrCreateTodayChallenges(
     authId: string,
     lat: number,
@@ -79,9 +85,11 @@ export const userChallengeService = {
     }
 
     const now = new Date()
+    // Use the user's local timezone to determine the correct day boundaries
     const todayStart = getStartOfUserCalendarDay(now, timeZone)
     const tomorrowStart = getNextStartOfUserCalendarDay(now, timeZone)
 
+    // Expire any challenges from previous days that are still open
     await userChallengeDAO.expireOpenChallengesBeforeDate(user.id, todayStart)
 
     let userChallenges = await userChallengeDAO.getTodayUserChallengesByUserId(
@@ -93,6 +101,7 @@ export const userChallengeService = {
     if (userChallenges.length === 0) {
       const allChallenges = await findAllActiveChallenges()
       const nearbyChallenges = filterChallengesByRadius(allChallenges, lat, lng, radiusKm)
+      // Limit to the configured daily challenge cap
       const limitedChallenges = nearbyChallenges.slice(0, DAILY_CHALLENGE_LIMIT)
 
       if (limitedChallenges.length > 0) {
@@ -109,6 +118,7 @@ export const userChallengeService = {
     return userChallenges
   },
 
+  // Marks a user challenge as accepted, recording the user's location at the time of acceptance.
   async acceptChallenge(
     authId: string,
     userChallengeId: number,
@@ -135,6 +145,7 @@ export const userChallengeService = {
     return acceptedChallenge
   },
 
+  // Marks a user challenge as cancelled.
   async cancelChallenge(authId: string, userChallengeId: number) {
     const user = await userDAO.getUserByAuthId(authId)
 
@@ -151,6 +162,8 @@ export const userChallengeService = {
     return cancelledChallenge
   },
 
+  // Checks in a user to a challenge, verifying they are within the required distance.
+  // Awards XP, updates streak, and returns a notification object for level up or XP gain.
   async checkInChallenge(
     authId: string,
     userChallengeId: number,
@@ -170,6 +183,7 @@ export const userChallengeService = {
       throw new ApiError(404, 'User challenge not found')
     }
 
+    // Return early if already completed — no notification needed
     if (userChallenge.status === 'completed') {
       return {
         userChallenge,
@@ -177,6 +191,7 @@ export const userChallengeService = {
       }
     }
 
+    // Challenge must be accepted before it can be checked in
     if (userChallenge.status !== 'accepted') {
       throw new ApiError(409, 'Challenge must be accepted before check in')
     }
@@ -194,12 +209,14 @@ export const userChallengeService = {
       Number(completedFromLng)
     )
 
+    // Reject check-in if user is too far from the challenge location
     if (distanceMeters > ALLOWED_COMPLETION_RADIUS_METERS) {
       throw new ApiError(
         409,
         `User is not within required distance to complete challenge (${Math.round(distanceMeters)}m away, must be within ${ALLOWED_COMPLETION_RADIUS_METERS}m)`
       )
     }
+
     const result = await completeUserChallengeByUserChallengeId(
       userChallengeId,
       user.id,
@@ -214,6 +231,7 @@ export const userChallengeService = {
     const { userChallenge: checkIn, previousUser, updatedUser, xpAwarded } = result
     const xpGained = xpAwarded ?? checkIn.xp_worth ?? checkIn.challenge?.xp_worth ?? 0
 
+    // No XP awarded — return without notification
     if (xpGained <= 0) {
       return {
         userChallenge: checkIn,
@@ -229,10 +247,10 @@ export const userChallengeService = {
 
     const previousLevelXpRequired = getXpRequiredForNextLevel(previousLevel)
     const nextLevelXpRequired = getXpRequiredForNextLevel(newLevel)
-
     const xpForLevelStart = getXpForLevelStart(previousLevel)
     const xpForNextLevelStart = getXpForLevelStart(newLevel)
 
+    // Build notification payload for the frontend to display XP gain or level up message
     const notificationMessage = {
       type: 'challenge_completed',
       xpGained,
@@ -249,6 +267,7 @@ export const userChallengeService = {
         ? `Congratulations! You've completed the challenge, earned ${xpGained} XP, and reached Level ${newLevel}!`
         : `Challenge completed! You've earned ${xpGained} XP.`,
     }
+
     return {
       userChallenge: checkIn,
       notification: notificationMessage,
