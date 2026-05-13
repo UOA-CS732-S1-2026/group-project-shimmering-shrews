@@ -134,9 +134,13 @@ export default function MapView() {
   // Skip initializing location in DEV_SHOW_ALL mode since location permission is bypassed
   const [isInitializingLocation, setIsInitializingLocation] = useState(!DEV_SHOW_ALL)
   const [locationMessage, setLocationMessage] = useState<string | null>(null)
-  const [focusedRouteChallenge, setFocusedRouteChallenge] = useState<UserChallenge | null>(null)
-  const [route, setRoute] = useState<[number, number][] | null>(null)
-  const [routeError, setRouteError] = useState<string | null>(null)
+  const [loadedFocusedRouteChallenge, setLoadedFocusedRouteChallenge] =
+    useState<UserChallenge | null>(null)
+  const [routeState, setRouteState] = useState<{
+    key: string
+    points: [number, number][] | null
+    error: string | null
+  } | null>(null)
 
   const location = useLocation()
   // Fetch passed challenge if we came here from View Route via Challenge Detail View
@@ -282,16 +286,21 @@ export default function MapView() {
     [focusedUserChallengeId, userChallenges]
   )
 
+  const matchingPassedChallenge =
+    passedChallenge?.id === focusedUserChallengeId ? passedChallenge : null
+  const matchingLoadedRouteChallenge =
+    loadedFocusedRouteChallenge?.id === focusedUserChallengeId
+      ? loadedFocusedRouteChallenge
+      : null
+
   // Fetch the focused challenge details if not already available in the challenges list
   useEffect(() => {
     if (!focusedUserChallengeId) {
-      setFocusedRouteChallenge(null)
       return
     }
 
     // Use the passed challenge if its ID matches to avoid an unnecessary API call
-    if (passedChallenge?.id === focusedUserChallengeId) {
-      setFocusedRouteChallenge(passedChallenge)
+    if (matchingPassedChallenge) {
       return
     }
 
@@ -301,19 +310,19 @@ export default function MapView() {
     // Prefer the freshly fetched challenge details over the one in the list
     getUserChallenge(String(focusedUserChallengeId))
       .then((challenge) => {
-        if (isActive) setFocusedRouteChallenge(challenge)
+        if (isActive) setLoadedFocusedRouteChallenge(challenge)
       })
       .catch((error) => {
         console.error('Could not load focused challenge route details', error)
-        if (isActive) setFocusedRouteChallenge(null)
       })
 
     return () => {
       isActive = false
     }
-  }, [focusedUserChallengeId, passedChallenge])
+  }, [focusedUserChallengeId, matchingPassedChallenge])
 
-  const activeFocusedChallenge = focusedRouteChallenge ?? focusedUserChallenge
+  const activeFocusedChallenge =
+    matchingPassedChallenge ?? matchingLoadedRouteChallenge ?? focusedUserChallenge
   const currUserLocation: [number, number] | null = DEV_SHOW_ALL ? DEFAULT_MAP_CENTER : userLocation
   const mapCenter: [number, number] = currUserLocation ?? DEFAULT_MAP_CENTER
 
@@ -337,20 +346,26 @@ export default function MapView() {
     )
   }, [activeFocusedChallenge])
 
+  const routeKey =
+    activeFocusedChallenge?.status === 'accepted' && focusedRouteStart && focusedChallengeLocation
+      ? [
+          activeFocusedChallenge.id,
+          focusedRouteStart.join(','),
+          focusedChallengeLocation.join(','),
+        ].join('|')
+      : null
+
+  const routeStartError =
+    activeFocusedChallenge?.status === 'accepted' && !focusedRouteStart
+      ? 'Could not determine the route start location for this challenge.'
+      : null
+  const currentRouteState = routeState?.key === routeKey ? routeState : null
+  const route = currentRouteState?.points ?? null
+  const routeError = routeStartError ?? currentRouteState?.error ?? null
+
   // Fetches a walking route to the focused challenge when one is accepted.
   useEffect(() => {
-    setRoute(null)
-    setRouteError(null)
-
-    if (
-      !activeFocusedChallenge ||
-      activeFocusedChallenge.status !== 'accepted' ||
-      !focusedRouteStart ||
-      !focusedChallengeLocation
-    ) {
-      if (activeFocusedChallenge?.status === 'accepted' && !focusedRouteStart) {
-        setRouteError('Could not determine the route start location for this challenge.')
-      }
+    if (!routeKey || !focusedRouteStart || !focusedChallengeLocation) {
       return
     }
 
@@ -361,24 +376,31 @@ export default function MapView() {
         if (!isActive) return
 
         if (points.length > 0) {
-          setRoute(points)
+          setRouteState({ key: routeKey, points, error: null })
         } else {
-          setRouteError('Could not load a route to this challenge right now.')
+          setRouteState({
+            key: routeKey,
+            points: null,
+            error: 'Could not load a route to this challenge right now.',
+          })
         }
       })
       .catch((error) => {
         console.error('Failed to load route for focused challenge', error)
         if (!isActive) return
-        setRoute(null)
-        setRouteError('Could not load a route to this challenge right now.')
+        setRouteState({
+          key: routeKey,
+          points: null,
+          error: 'Could not load a route to this challenge right now.',
+        })
       })
 
     return () => {
       isActive = false
     }
-  }, [activeFocusedChallenge, focusedChallengeLocation, focusedRouteStart])
+  }, [focusedChallengeLocation, focusedRouteStart, routeKey])
 
-  // Determines the map focus points — route points take priority, then start+end, then just destination
+  // Determines the map focus points: route points take priority, then start+end, then just destination
   const mapFocusPoints = useMemo(() => {
     if (route) return route
     if (focusedRouteStart && focusedChallengeLocation) return [focusedRouteStart, focusedChallengeLocation]
