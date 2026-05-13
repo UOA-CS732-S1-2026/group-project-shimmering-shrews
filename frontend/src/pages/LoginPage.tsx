@@ -17,11 +17,10 @@ const LoginPage = () => {
   return (
     <main className={styles.page}>
       <div className={styles.card}>
-        <h1>Sign In / Create Account</h1>
+        <h1>Sign In Using Google</h1>
 
         <p className={styles.subcopy}>
-          Sign in to unlock walking trails, local challenges, and hidden stories
-          around the city.
+          Sign in with your Google account to use CityQuest to begin or continue your adventure around the city.
         </p>
 
         <button className={styles["gsi-material-button"]} onClick={handleGoogleLogin}>
