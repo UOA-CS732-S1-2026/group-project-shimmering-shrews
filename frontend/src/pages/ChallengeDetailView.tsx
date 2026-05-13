@@ -278,7 +278,7 @@ export default function ChallengeDetailView({
             <span style={xpStyle}>{challenge.xp_worth} XP</span>
             <span
               className={isAccepted ? 'challenge-status--accepted' : undefined}
-              style={{ ...badgeStyle, background: challengeStatusColors[activeUserChallenge.status] || '#ddd', boxShadow: `0 0px 8px ${challengeStatusColors[activeUserChallenge.status] || '#ddd'}` }}
+              style={{ ...badgeStyle, background: challengeStatusColors[activeUserChallenge.status] || '#ddd' }}
             >
               {challengeStatusText[activeUserChallenge.status]}
             </span>

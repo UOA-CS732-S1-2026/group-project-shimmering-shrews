@@ -16,8 +16,7 @@ export const cardStyle = {
         position: "relative",
         border: "1px solid #d8ebf2",
         borderRadius: "8px",
-        boxShadow: "0 2px 8px rgba(8, 8, 8, 0.18)",
-      } as const
+        } as const
 export const badgeStyle = {
         padding: "6px 12px",
         borderRadius: "20px",
@@ -39,7 +38,7 @@ export const buttonStyle = {
         padding: "14px",
         marginTop: "12px",
         borderRadius: "12px",
-        border: "2px solid white",
+        border: "1px #cfe3ea solid",
         background: "linear-gradient(270deg, #3489ff,  #f469ef)",
         color: "white",
         fontSize: "16px",

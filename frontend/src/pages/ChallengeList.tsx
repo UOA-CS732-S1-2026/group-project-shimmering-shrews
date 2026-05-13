@@ -230,7 +230,7 @@ export default function ChallengeList({
             {challenge.challenge_category.name}
           </span>
           <span style={xpStyle}>{challenge.xp_worth} XP</span>
-          <span className={`challenge-status challenge-status--${userChallenge.status}`} style={{ ...badgeStyle, boxShadow: `0 2px 8px ${challengeStatusColors[userChallenge.status]}`, background: challengeStatusColors[userChallenge.status] || '#ddd' }}>
+          <span className={`challenge-status challenge-status--${userChallenge.status}`} style={{ ...badgeStyle, background: challengeStatusColors[userChallenge.status] || '#ddd' }}>
             {challengeStatusText[userChallenge.status]}
           </span>
         </div>

@@ -198,8 +198,8 @@ function renderTabContent(
                     marginBottom: '8px',
                     borderRadius: '12px',
                     background: entry.isCurrentUser ? '#0095ff' : '#f5f7fa',
-                    color: entry.isCurrentUser ? '#e7e7e7' : '#1b1b1b',
-                    border: entry.isCurrentUser ? '2px solid #66d1ff' : '1px solid #e0e0e0',
+                    color: entry.isCurrentUser ? '#e7e7e7' : '#1f1d1d',
+                    border: entry.isCurrentUser ? '1px solid #66d1ff' : '1px solid #e0e0e0',
                   }}
                 >
                   <span style={{ fontSize: '1.2rem', width: '32px', textAlign: 'center' }}>
