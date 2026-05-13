@@ -22,9 +22,11 @@ import {
   xpStyle,
 } from '../styles/challengeStyle'
 import type { UserChallenge } from '../types/userChallenge'
-import { ArrowLeft, Check, MapPinned, Weight, X } from 'lucide-react'
+import { ArrowLeft, Check, MapPinned, X } from 'lucide-react'
+import LevelUpNotification from '../components/LevelUpNotification'
 
 const ALLOWED_COMPLETION_RADIUS_METERS = 700
+
 
 function getDistanceMetres(a: [number, number], b: [number, number]) {
   const earthRadiusMetres = 6371000
@@ -51,6 +53,20 @@ export default function ChallengeDetailView({
   const [activeUserChallenge, setActiveUserChallenge] = useState<UserChallenge | null>(userChallenge)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
+  const [levelUpNotification, setLevelUpNotification] = useState<{
+    type: string
+    xpGained: number
+    previousXp: number
+    newXp: number
+    previousLevelXpRequired: number
+    nextLevelXpRequired: number
+    levelUp: boolean
+    previousLevel: number
+    newLevel: number
+    xpForLevelStart: number
+    xpForNextLevelStart: number
+    message: string
+  } | null>(null)
 
   useEffect(() => {
     setActiveUserChallenge(userChallenge)
@@ -130,7 +146,8 @@ export default function ChallengeDetailView({
 
         try {
           const updated = await checkInUserChallenge(activeUserChallenge.id, latitude, longitude)
-          setActiveUserChallenge(updated)
+          setActiveUserChallenge(updated.userChallenge)
+          setLevelUpNotification(updated.notification)
         } catch (error) {
           handleActionError(error, 'Failed to check into challenge. Please try again.')
         } finally {
@@ -209,6 +226,24 @@ export default function ChallengeDetailView({
             : 'Check In'
 
   return (
+    <div>
+      {levelUpNotification && (
+        <LevelUpNotification
+          xpGained={levelUpNotification.xpGained}
+          previousXp={levelUpNotification.previousXp}
+          newXp={levelUpNotification.newXp}
+          previousLevelXpRequired={levelUpNotification.previousLevelXpRequired}
+          nextLevelXpRequired={levelUpNotification.nextLevelXpRequired}
+          levelUp={levelUpNotification.levelUp}
+          previousLevel={levelUpNotification.previousLevel}
+          newLevel={levelUpNotification.newLevel}
+          xpForLevelStart={levelUpNotification.xpForLevelStart}
+          xpForNextLevelStart={levelUpNotification.xpForNextLevelStart}
+          message={levelUpNotification.message}
+          onClose={() => setLevelUpNotification(null)}
+        />
+      )}
+    
     <div style={containerStyle}>
       <h1 style={titleStyle}>Challenge Details</h1>
       <div
@@ -399,5 +434,6 @@ export default function ChallengeDetailView({
         Return to list 
       </button>
     </div>
+  </div>
   )
 }

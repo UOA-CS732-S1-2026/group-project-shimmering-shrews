@@ -1,6 +1,5 @@
-import { afterAll, beforeAll } from 'vitest'
-import { Client } from 'pg'
-import { readFileSync } from 'fs'
+import { beforeAll } from 'vitest'
+import { execFileSync } from 'child_process'
 import { resolve } from 'path'
 
 /**
@@ -9,62 +8,159 @@ import { resolve } from 'path'
  * Default unit and contract tests use this file only to provide safe dummy
  * Supabase environment values. Integration setup runs only when
  * RUN_INTEGRATION=1 is present, and it is additionally guarded by
- * ALLOW_DB_RESET=1 because it rebuilds the public schema.
+ * ALLOW_DB_RESET=1 because Prisma resets and rebuilds the public schema.
+ * Postgres features Prisma cannot model are then applied through Prisma CLI.
  */
 process.env.SUPABASE_URL ||= 'http://localhost:54321'
 process.env.SUPABASE_PUBLISHABLE_KEY ||= 'test-supabase-key'
 
-let setupClient: Client | undefined
+const runIntegration = process.env.RUN_INTEGRATION === '1'
+const testDatabaseUrl = process.env.TEST_DATABASE_URL
+const testDirectDatabaseUrl = process.env.TEST_DIRECT_DATABASE_URL
 
-const readSql = (relativePath: string) =>
-  readFileSync(resolve(__dirname, relativePath), 'utf8')
+// Some integration modules create Prisma clients at import time. Put the test
+// database URL into DATABASE_URL before those modules are imported so they
+// cannot accidentally bind to a developer/shared database from DATABASE_URL.
+if (runIntegration && testDatabaseUrl) {
+  process.env.DATABASE_URL = testDatabaseUrl
+}
 
-const closeSetupClient = async () => {
-  if (!setupClient) {
-    return
+type ExecFileError = Error & {
+  stdout?: Buffer | string
+  stderr?: Buffer | string
+}
+
+const backendRoot = resolve(__dirname, '..')
+
+const assertDirectSetupUrl = (databaseUrl: string) => {
+  let parsedUrl: URL
+
+  try {
+    parsedUrl = new URL(databaseUrl)
+  } catch {
+    throw new Error('TEST_DIRECT_DATABASE_URL must be a valid PostgreSQL connection URL.')
   }
 
-  const client = setupClient
-  setupClient = undefined
-  await client.end()
+  if (parsedUrl.searchParams.get('pgbouncer') === 'true' || parsedUrl.port === '6543') {
+    throw new Error(
+      'TEST_DIRECT_DATABASE_URL must be a direct/non-pgbouncer test database URL so Prisma can reset schema safely.'
+    )
+  }
+}
+
+const runPrismaCommand = (
+  args: string[],
+  clientDatabaseUrl: string,
+  setupDatabaseUrl: string
+) => {
+  const prismaCli = resolve(__dirname, '../node_modules/prisma/build/index.js')
+
+  try {
+    execFileSync(process.execPath, [prismaCli, ...args], {
+      cwd: backendRoot,
+      env: {
+        ...process.env,
+        DATABASE_URL: clientDatabaseUrl,
+        DIRECT_URL: setupDatabaseUrl,
+      },
+      encoding: 'utf8',
+      stdio: 'pipe',
+    })
+  } catch (error) {
+    const execError = error as ExecFileError
+    const output = [execError.stdout, execError.stderr]
+      .map((stream) => stream?.toString().trim())
+      .filter(Boolean)
+      .join('\n')
+
+    throw new Error(
+      `Prisma command failed: prisma ${args.join(' ')}\n${output || execError.message}`
+    )
+  }
 }
 
 beforeAll(async () => {
-  if (!process.env.RUN_INTEGRATION) {
+  if (!runIntegration) {
     return
   }
 
-  // Integration tests are destructive by design: schema.sql drops and recreates
-  // the public schema, then trigger SQL is applied. Keep this gated behind both
+  // Integration tests are destructive by design: Prisma resets and rebuilds the
+  // public schema, then Prisma executes DB-native SQL extras. Keep this gated behind both
   // RUN_INTEGRATION and ALLOW_DB_RESET so the default unit test path cannot
   // accidentally reset a developer or shared database.
-  const databaseUrl = process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL
+  if (!testDatabaseUrl) {
+    throw new Error(
+      'RUN_INTEGRATION=1 requires TEST_DATABASE_URL. DATABASE_URL is not accepted for destructive integration tests.'
+    )
+  }
 
-  if (!databaseUrl) {
-    throw new Error('RUN_INTEGRATION requires TEST_DATABASE_URL or DATABASE_URL')
+  if (!testDirectDatabaseUrl) {
+    throw new Error(
+      'RUN_INTEGRATION=1 requires TEST_DIRECT_DATABASE_URL for Prisma schema reset and trigger setup.'
+    )
   }
 
   if (process.env.ALLOW_DB_RESET !== '1') {
     throw new Error(
-      'Integration setup runs schema.sql, which drops public schema. Set ALLOW_DB_RESET=1 for a dedicated test database.'
+      'Integration setup resets the database with Prisma. Set ALLOW_DB_RESET=1 only for a dedicated test database.'
     )
   }
 
-  process.env.DATABASE_URL = databaseUrl
-  setupClient = new Client({ connectionString: databaseUrl })
+  assertDirectSetupUrl(testDirectDatabaseUrl)
 
-  try {
-    await setupClient.connect()
+  process.env.DATABASE_URL = testDatabaseUrl
+  process.env.DIRECT_URL = testDirectDatabaseUrl
 
-    await setupClient.query(readSql('../sql_scripts/schema.sql'))
-    await setupClient.query(readSql('../sql_scripts/stat_trigger.sql'))
-    await setupClient.query(readSql('../sql_scripts/badge_trigger.sql'))
-  } catch (error) {
-    await closeSetupClient()
-    throw error
-  }
-})
+  runPrismaCommand(
+    [
+      'db',
+      'push',
+      '--force-reset',
+      '--accept-data-loss',
+      '--skip-generate',
+      '--schema',
+      'prisma/schema.prisma',
+    ],
+    testDatabaseUrl,
+    testDirectDatabaseUrl
+  )
 
-afterAll(async () => {
-  await closeSetupClient()
+  runPrismaCommand(
+    [
+      'db',
+      'execute',
+      '--schema',
+      'prisma/schema.prisma',
+      '--file',
+      'sql_scripts/badge_criteria_constraints.sql',
+    ],
+    testDatabaseUrl,
+    testDirectDatabaseUrl
+  )
+
+  runPrismaCommand(
+    [
+      'db',
+      'execute',
+      '--schema',
+      'prisma/schema.prisma',
+      '--file',
+      'sql_scripts/stat_trigger.sql',
+    ],
+    testDatabaseUrl,
+    testDirectDatabaseUrl
+  )
+
+  runPrismaCommand(
+    [
+      'db',
+      'execute',
+      '--schema',
+      'prisma/schema.prisma',
+      '--file',
+      'sql_scripts/badge_trigger.sql',
+    ],
+    testDatabaseUrl,
+    testDirectDatabaseUrl
+  )
 })

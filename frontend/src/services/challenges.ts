@@ -1,5 +1,4 @@
 import type { Challenge } from '../types/challenge'
-import { getSupabaseClient } from '../lib/supabase'
 
 type ApiResponse<T> = {
   success: boolean
@@ -37,37 +36,4 @@ export const getChallenge = async (challengeId: string): Promise<Challenge> => {
 
   const json = (await res.json()) as ApiResponse<Challenge>
   return json.data
-}
-
-export const checkInChallenge = async (challengeId: number): Promise<void> => {
-  const supabase = getSupabaseClient()
-  const { data } = await supabase.auth.getSession()
-  const token = data.session?.access_token
-
-  if (!token) {
-    throw new Error('User not authenticated')
-  }
-
-  const res = await fetch(`${getBackendUrl()}/challenges/${challengeId}/checkin`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  })
-
-  if (!res.ok) {
-    let message = 'Failed to check in'
-
-    try {
-      const errorJson = (await res.json()) as { message?: string }
-
-      if (errorJson.message) {
-        message = errorJson.message
-      }
-    } catch {
-      // Keep the generic message when the response body is not JSON.
-    }
-
-    throw new Error(message)
-  }
 }
