@@ -59,6 +59,7 @@ function ProfileHeader({ profile, loading }: ProfileHeaderProps) {
         currentXP={profile.xp_earned}
         levelStartXP={profile.xpForCurrentLevel}
         nextLevelXP={profile.xpForNextLevel}
+        currentLevel={profile.level}
       />
     </header>
   )

@@ -2,9 +2,10 @@ type XPProgressProps = {
   currentXP: number
   levelStartXP: number
   nextLevelXP: number
+  currentLevel: number
 }
 
-function XPProgress({ currentXP, levelStartXP, nextLevelXP }: XPProgressProps) {
+function XPProgress({ currentXP, levelStartXP, nextLevelXP, currentLevel }: XPProgressProps) {
   const earnedThisLevel = currentXP - levelStartXP
   const requiredThisLevel = nextLevelXP - levelStartXP
   const progress = Math.min(Math.max((earnedThisLevel / requiredThisLevel) * 100, 0), 100)
@@ -13,13 +14,13 @@ function XPProgress({ currentXP, levelStartXP, nextLevelXP }: XPProgressProps) {
   return (
     <div className="xp-progress" aria-label={`${Math.round(progress)} percent to next level`}>
       <div className="xp-progress__meta">
-        <span>{earnedThisLevel.toLocaleString()} XP</span>
-        <span>{requiredThisLevel.toLocaleString()} XP</span>
+        <span>Level {currentLevel.toLocaleString()}</span>
+        <span>Level {(currentLevel + 1).toLocaleString()}</span>
       </div>
       <div className="xp-progress__track">
         <div className="xp-progress__bar" style={{ width: `${progress}%` }} />
       </div>
-      <p>{xpRemaining.toLocaleString()} XP to Level Up</p>
+      <p>Next Level XP: {xpRemaining.toLocaleString()} / {requiredThisLevel.toLocaleString()}</p>
     </div>
   )
 }
