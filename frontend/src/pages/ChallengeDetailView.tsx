@@ -139,10 +139,10 @@ export default function ChallengeDetailView({
         try {
           const updated = await checkInUserChallenge(activeUserChallenge.id, latitude, longitude)
           setActiveUserChallenge(updated.userChallenge)
-          setLevelUpNotification(updated.notification.level)
+          setLevelUpNotification(updated.notification?.level ?? null)
 
-          if (updated.notification.badgesAwarded.length > 0) {
-            setBadgeNotification(updated.notification.badgesAwarded)
+          if (updated.notification && updated.notification.badgesAwarded && updated.notification.badgesAwarded.length > 0) {
+            setBadgeNotification(updated.notification!.badgesAwarded)
           }
         } catch (error) {
           handleActionError(error, 'Failed to check into challenge. Please try again.')
