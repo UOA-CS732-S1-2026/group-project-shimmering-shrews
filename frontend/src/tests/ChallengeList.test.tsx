@@ -144,7 +144,8 @@ describe('ChallengeList', () => {
     })
 
     const list = container.querySelector('.challenge-list-container')
-    expect(list?.children).toHaveLength(0)
+    // one child will be displayed: the no challenges found message
+    expect(list?.children).toHaveLength(1)
     expect(screen.getByRole('heading', { name: /today's challenges/i })).toBeInTheDocument()
   })
 

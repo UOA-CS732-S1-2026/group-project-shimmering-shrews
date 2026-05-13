@@ -1,3 +1,5 @@
+import { useEffect } from "react"
+
 type BadgeNotificationProps = {
   badges: {
     id: number
@@ -9,6 +11,13 @@ type BadgeNotificationProps = {
 }
 
 function BadgeNotification({ badges, onClose }: BadgeNotificationProps) {
+  useEffect(() => {
+    // close after short delay
+    setTimeout(() => {
+      onClose?.();
+    }, 2000); 
+  }, [onClose])
+
   return (
     <div style={styles.overlay}>
       <div style={styles.card}>
@@ -54,6 +63,7 @@ function BadgeNotification({ badges, onClose }: BadgeNotificationProps) {
       </div>
     </div>
   )
+  
 }
 
 const styles: Record<string, React.CSSProperties> = {

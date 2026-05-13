@@ -11,11 +11,11 @@ type ApiResponse<T> = {
 
 export type LevelUpNotificationData = {
   type: string
-  xpGained: number;
-  previousXp: number;
-  newXp: number;
-  previousLevelXpRequired: number;
-  nextLevelXpRequired: number;
+  xpGained: number
+  previousXp: number
+  newXp: number
+  previousLevelXpRequired: number
+  nextLevelXpRequired: number
   levelUp: boolean
   previousLevel: number
   newLevel: number

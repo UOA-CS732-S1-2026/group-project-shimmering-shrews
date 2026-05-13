@@ -284,7 +284,10 @@ describe('ChallengeDetailView', () => {
       expect(screen.getByText('Level 1')).toBeInTheDocument()
       expect(screen.getByText('+50 XP')).toBeInTheDocument()
       expect(screen.getByText(/50\s*\/\s*100 XP/)).toBeInTheDocument()
-      expect(screen.getByText('New Badge Unlocked')).toBeInTheDocument()
+      // will display after the level up message has disappeared.
+      expect(
+        await screen.findByText('New Badge Unlocked', {}, {timeout: 5000})
+      ).toBeInTheDocument()
       expect(screen.getByText('Waterfront Wanderer')).toBeInTheDocument()
       expect(screen.getByText('Completed a waterfront challenge.')).toBeInTheDocument()
     })

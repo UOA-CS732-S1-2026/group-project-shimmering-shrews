@@ -25,7 +25,7 @@ import type { UserChallenge } from '../types/userChallenge'
 import { ArrowLeft, Check, MapPinned, X } from 'lucide-react'
 import LevelUpNotification from '../components/LevelUpNotification'
 import BadgeNotification from '../components/BadgeNotification'
-import type { BadgeAwardedNotification } from '../services/userChallenges'
+import type { BadgeAwardedNotification, LevelUpNotificationData } from '../services/userChallenges'
 
 const ALLOWED_COMPLETION_RADIUS_METERS = 700
 
@@ -55,21 +55,10 @@ export default function ChallengeDetailView({
   const [activeUserChallenge, setActiveUserChallenge] = useState<UserChallenge | null>(userChallenge)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
-  const [levelUpNotification, setLevelUpNotification] = useState<{
-    type: string
-    xpGained: number
-    previousXp: number
-    newXp: number
-    previousLevelXpRequired: number
-    nextLevelXpRequired: number
-    levelUp: boolean
-    previousLevel: number
-    newLevel: number
-    xpForLevelStart: number
-    xpForNextLevelStart: number
-    message: string
-  } | null>(null)
-  const [badgeNotification, setBadgeNotification] = useState<BadgeAwardedNotification[] | null>(null)
+  const [levelUpNotification, setLevelUpNotification] = useState<
+  LevelUpNotificationData | null>(null)
+  const [badgeNotification, setBadgeNotification] = useState<
+  BadgeAwardedNotification[] | null>(null)
 
   useEffect(() => {
     setActiveUserChallenge(userChallenge)
@@ -250,7 +239,7 @@ export default function ChallengeDetailView({
           onClose={() => setLevelUpNotification(null)}
         />
       )}
-      {badgeNotification && (
+      {!levelUpNotification && badgeNotification && (
         <BadgeNotification
           badges={badgeNotification}
           onClose={() => setBadgeNotification(null)}

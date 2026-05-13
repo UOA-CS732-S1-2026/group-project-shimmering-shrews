@@ -343,21 +343,30 @@ describe('userChallengeService', () => {
     )
 
     expect(result.userChallenge).toBe(completed)
-    expect(result.notification.level).toMatchObject({
-      type: 'challenge_completed',
-      xpGained: 10,
-      previousXp: 0,
-      newXp: 10,
-      levelUp: false,
-      previousLevel: 1,
-      newLevel: 1,
-      message: expect.any(String),
+    expect(result.notification).toMatchObject({
+      badgesAwarded: [],
+      level: {
+        type: 'challenge_completed',
+        xpGained: 10,
+        previousXp: 0,
+        newXp: 10,
+        nextLevelXpRequired: 30,
+        levelUp: false,
+        previousLevel: 1,
+        previousLevelXpRequired: 30,
+        newLevel: 1,
+        xpForLevelStart: 0,
+        xpForNextLevelStart: 0,
+        message: expect.any(String),
+      }
     })
-    expect(result.notification.badgesAwarded).toEqual([])
-    expect(result.notification.level).toHaveProperty('previousLevelXpRequired')
-    expect(result.notification.level).toHaveProperty('nextLevelXpRequired')
-    expect(result.notification.level).toHaveProperty('xpForLevelStart')
-    expect(result.notification.level).toHaveProperty('xpForNextLevelStart')
+
+    expect(result.notification?.badgesAwarded).toEqual([])
+    expect(result.notification).toHaveProperty('level')
+    expect(result.notification?.level).toHaveProperty('previousLevelXpRequired')
+    expect(result.notification?.level).toHaveProperty('nextLevelXpRequired')
+    expect(result.notification?.level).toHaveProperty('xpForLevelStart')
+    expect(result.notification?.level).toHaveProperty('xpForNextLevelStart')
     expect(challengeDaoMocks.completeUserChallengeByUserChallengeId).toHaveBeenCalledWith(
       20,
       1,
@@ -392,21 +401,23 @@ describe('userChallengeService', () => {
     expect(results).toHaveLength(2)
     results.forEach((result) => {
       expect(result.userChallenge).toBe(completed)
-      expect(result.notification.level).toMatchObject({
-        type: 'challenge_completed',
-        xpGained: 10,
-        previousXp: 0,
-        newXp: 10,
-        levelUp: false,
-        previousLevel: 1,
-        newLevel: 1,
-        message: expect.any(String),
+      expect(result.notification).toMatchObject({
+        badgesAwarded: [],
+        level: {
+          type: 'challenge_completed',
+          xpGained: 10,
+          previousXp: 0,
+          newXp: 10,
+          levelUp: false,
+          previousLevel: 1,
+          newLevel: 1,
+          message: expect.any(String),
+        }
       })
-      expect(result.notification.badgesAwarded).toEqual([])
-      expect(result.notification.level).toHaveProperty('previousLevelXpRequired')
-      expect(result.notification.level).toHaveProperty('nextLevelXpRequired')
-      expect(result.notification.level).toHaveProperty('xpForLevelStart')
-      expect(result.notification.level).toHaveProperty('xpForNextLevelStart')
+      expect(result.notification?.level).toHaveProperty('previousLevelXpRequired')
+      expect(result.notification?.level).toHaveProperty('nextLevelXpRequired')
+      expect(result.notification?.level).toHaveProperty('xpForLevelStart')
+      expect(result.notification?.level).toHaveProperty('xpForNextLevelStart')
     })
 
     expect(userChallengeDaoMocks.findUserChallengeForUser).toHaveBeenCalledTimes(2)
@@ -440,29 +451,41 @@ describe('userChallengeService', () => {
       xpAwarded: 10,
     } as any)
 
-    const result = await userChallengeService.checkInChallenge(authId, 20, -36.852, 174.765)
+    const result = await userChallengeService.checkInChallenge(
+      authId,
+      20,
+      -36.852,
+      174.765
+    )
 
     expect(result.userChallenge).toBe(completed)
-    const notification = result.notification?.level
+    const notification = result.notification
     expect(notification).not.toBeNull()
     if (!notification) {
       throw new Error('Expected challenge completion notification')
     }
     expect(notification).toMatchObject({
-      type: 'challenge_completed',
-      xpGained: 10,
-      previousXp: 25,
-      newXp: 35,
-      levelUp: true,
-      previousLevel: 1,
-      newLevel: 2,
-      message: expect.stringContaining('Level 2'),
+      badgesAwarded: null,
+      level: {
+        type: 'challenge_completed',
+        xpGained: 10,
+        previousXp: 25,
+        newXp: 35,
+        levelUp: true,
+        previousLevel: 1,
+        previousLevelXpRequired: 30,
+        nextLevelXpRequired: 45,
+        xpForLevelStart: 0,
+        xpForNextLevelStart: 30,
+        newLevel: 2,
+        message: expect.stringContaining('Level 2'),
+      }
     })
     // Verify XP boundary fields exist
-    expect(notification.previousLevelXpRequired).toBe(30)
-    expect(notification.nextLevelXpRequired).toBe(45)
-    expect(notification.xpForLevelStart).toBe(0)
-    expect(notification.xpForNextLevelStart).toBe(30)
+    expect(notification.level.previousLevelXpRequired).toBe(30)
+    expect(notification.level.nextLevelXpRequired).toBe(45)
+    expect(notification.level.xpForLevelStart).toBe(0)
+    expect(notification.level.xpForNextLevelStart).toBe(30)
   })
 
   it('throws 409 when the DAO cannot complete the challenge from its current status', async () => {
