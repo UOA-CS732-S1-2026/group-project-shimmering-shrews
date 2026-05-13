@@ -59,8 +59,18 @@
   align-items: center;
   box-shadow: 0 0px 4px rgba(0, 0, 0, 0.361);
   transition:
-    background 180ms ease,
-    transform 180ms ease;
+  background 180ms ease,
+  transform 180ms ease;
+}
+
+.topbar .login-button {
+  -webkit-text-fill-color: black;
+  color: black;
+}
+
+.topbar .login-button:hover {
+  -webkit-text-fill-color: black;
+  color: black;
 }
 
 .topbar a.button:hover,
@@ -78,6 +88,7 @@
   outline: 3px solid rgba(25, 139, 111, 0.32);
   outline-offset: 3px;
 }
+
 
 .profile-header {
   display: grid;

@@ -50,6 +50,7 @@ function ProfileHeader({ profile, loading }: ProfileHeaderProps) {
           <h1>{profile.username}</h1>
           <div className="profile-header__level">
             <span>Level {profile.level}</span>
+            <span>{profile.xp_earned} XP</span>
           </div>
         </div>
       </div>
