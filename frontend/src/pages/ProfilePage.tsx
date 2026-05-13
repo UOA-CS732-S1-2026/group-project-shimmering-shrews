@@ -116,7 +116,7 @@ function ProfilePage() {
         <div className="shell shell-profile">
           <nav className="topbar" aria-label="Main navigation">
             <Link to="/" aria-label="CityQuest home">CityQuest</Link>
-            <Link className="logout-button" to="/login">Login</Link>
+            <Link className="login-button" to="/login">Login</Link>
           </nav>
           <p className="status-message">Please sign in to view your profile.</p>
         </div>
@@ -129,7 +129,7 @@ function ProfilePage() {
       <div className="shell shell-profile">
         <nav className="topbar" aria-label="Main navigation">
           <Link to="/" aria-label="CityQuest home">CityQuest</Link>
-          <button className="logout-button" type="button" onClick={logout}>Logout</button>
+          <button className="logout-button" type="button" onClick={logout}>Log Out</button>
         </nav>
 
         <ProfileHeader profile={profile} loading={profileLoading} />
