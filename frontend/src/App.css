@@ -133,7 +133,7 @@
   width: 112px;
   height: 112px;
   flex: 0 0 112px;
-  border: 2px solid #cfe3ea;
+  border: 2px solid rgb(145, 145, 145);
   border-radius: 8px;
   object-fit: cover;
 }
@@ -148,7 +148,7 @@
 }
 
 .profile-header h1 {
-  color: #071317;
+  color: #41545a;
   font-size: 2.65rem;
   line-height: 1.05;
   letter-spacing: 0;
