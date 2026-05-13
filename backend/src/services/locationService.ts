@@ -35,7 +35,7 @@ export const fetchLocations = async (category = DEFAULT_LOCATION_CATEGORY, limit
   const { lngMin, latMin, lngMax, latMax } = getRandomisedBoundingBox()
 
   // Searches for locations in a randomised bounding box around the CBD
-  const url = `https://api.geoapify.com/v2/places?categories=${category}&filter=rect:${lngMin},${latMin},${lngMax},${latMax}&limit=${limit}&apiKey=${process.env.VITE_GEOAPIFY_KEY}`
+  const url = `https://api.geoapify.com/v2/places?categories=${category}&filter=rect:${lngMin},${latMin},${lngMax},${latMax}&limit=${limit}&apiKey=${process.env.GEOAPIFY_KEY}`
 
   try {
     const res = await fetch(url)
