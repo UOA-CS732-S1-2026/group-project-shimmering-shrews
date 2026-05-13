@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { calculateNextStreakCount, getCalendarDayDifference } from '../src/utils/streak'
+import {
+  calculateNextStreakCount,
+  getCalendarDayDifference,
+  getNextStartOfAppCalendarDay,
+  getNextStartOfUserCalendarDay,
+  getStartOfAppCalendarDay,
+  getStartOfUserCalendarDay,
+} from '../src/utils/streak'
 
 /**
  * Test category: Unit tests.
@@ -14,6 +21,43 @@ describe('streak utilities', () => {
       getCalendarDayDifference(
         new Date('2026-05-08T13:30:00.000Z'),
         new Date('2026-05-08T11:30:00.000Z')
+      )
+    ).toBe(1)
+  })
+
+  it('returns Pacific/Auckland calendar-day bounds as UTC instants', () => {
+    const now = new Date('2026-05-08T23:30:00.000Z')
+
+    expect(getStartOfAppCalendarDay(now).toISOString())
+      .toBe('2026-05-08T12:00:00.000Z')
+    expect(getNextStartOfAppCalendarDay(now).toISOString())
+      .toBe('2026-05-09T12:00:00.000Z')
+  })
+
+  it('uses the daylight-saving Auckland offset for summer day bounds', () => {
+    const now = new Date('2026-01-08T23:30:00.000Z')
+
+    expect(getStartOfAppCalendarDay(now).toISOString())
+      .toBe('2026-01-08T11:00:00.000Z')
+    expect(getNextStartOfAppCalendarDay(now).toISOString())
+      .toBe('2026-01-09T11:00:00.000Z')
+  })
+
+  it('returns user timezone calendar-day bounds as UTC instants', () => {
+    const now = new Date('2026-05-08T06:30:00.000Z')
+
+    expect(getStartOfUserCalendarDay(now, 'America/Los_Angeles').toISOString())
+      .toBe('2026-05-07T07:00:00.000Z')
+    expect(getNextStartOfUserCalendarDay(now, 'America/Los_Angeles').toISOString())
+      .toBe('2026-05-08T07:00:00.000Z')
+  })
+
+  it('calculates streak differences in the supplied user timezone', () => {
+    expect(
+      getCalendarDayDifference(
+        new Date('2026-05-08T08:30:00.000Z'),
+        new Date('2026-05-08T06:30:00.000Z'),
+        'America/Los_Angeles'
       )
     ).toBe(1)
   })

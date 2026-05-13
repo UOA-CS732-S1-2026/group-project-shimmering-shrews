@@ -1,11 +1,32 @@
 import confetti from 'canvas-confetti'
 import { getSupabaseClient } from '../lib/supabase'
 import type { UserChallenge } from '../types/userChallenge'
+import { getTimeZoneHeaders } from './timeZone'
 
 type ApiResponse<T> = {
   success: boolean
   data: T
   message?: string
+}
+
+export type ChallengeCompletionNotification = {
+  type: string
+  xpGained: number;
+  previousXp: number;
+  newXp: number;
+  previousLevelXpRequired: number;
+  nextLevelXpRequired: number;
+  levelUp: boolean
+  previousLevel: number
+  newLevel: number
+  xpForLevelStart: number
+  xpForNextLevelStart: number
+  message: string
+}
+
+export type CheckInUserChallengeResponse = {
+  userChallenge: UserChallenge
+  notification: ChallengeCompletionNotification | null
 }
 
 const getBackendUrl = () => {
@@ -60,7 +81,10 @@ export const getUserChallenges = async (
   const queryString = params.toString()
   const url = `${getBackendUrl()}/user-challenges/today${queryString ? `?${queryString}` : ''}`
   const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...getTimeZoneHeaders(),
+    },
   })
 
   if (!res.ok) {
@@ -129,13 +153,14 @@ export const checkInUserChallenge = async (
   userChallengeId: number,
   completedFromLat: number,
   completedFromLng: number
-): Promise<UserChallenge> => {
+): Promise<CheckInUserChallengeResponse> => {
   const token = await getToken()
   const res = await fetch(`${getBackendUrl()}/user-challenges/${userChallengeId}/checkin`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
+      ...getTimeZoneHeaders(),
     },
     body: JSON.stringify({ completedFromLat, completedFromLng }),
   })
@@ -144,7 +169,7 @@ export const checkInUserChallenge = async (
     throw new Error(await getErrorMessage(res, 'Failed to check in'))
   }
 
-  const json = (await res.json()) as ApiResponse<UserChallenge>
+  const json = (await res.json()) as ApiResponse<CheckInUserChallengeResponse>
 
 
   confetti({

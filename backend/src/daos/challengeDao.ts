@@ -131,7 +131,11 @@ export const createChallenges = async (data: Prisma.challengeCreateManyInput[]) 
   })
 }
 
-export const completeUserChallenge = async (challengeId: number, userId: number) => {
+export const completeUserChallenge = async (
+  challengeId: number,
+  userId: number,
+  timeZone?: string
+) => {
   return prisma.$transaction(async (tx) => {
     const [challenge, user] = await Promise.all([
       tx.challenge.findFirst({
@@ -179,7 +183,8 @@ export const completeUserChallenge = async (challengeId: number, userId: number)
     const nextStreakCount = calculateNextStreakCount(
       user.last_completed_challenge,
       user.streak_count,
-      completedAt
+      completedAt,
+      timeZone
     )
 
     const completedUserChallenge = await tx.user_challenge.update({
@@ -211,7 +216,8 @@ export const completeUserChallenge = async (challengeId: number, userId: number)
 
 export const completeUserChallengeByUserChallengeId = async (
   userChallengeId: number,
-  userId: number
+  userId: number,
+  timeZone?: string
 ) => {
   return prisma.$transaction(async (tx) => {
     const userChallenge = await tx.user_challenge.findFirst({
@@ -238,7 +244,18 @@ export const completeUserChallengeByUserChallengeId = async (
     }
 
     if (userChallenge.status === 'completed') {
-      return userChallenge
+      const previousUser = {
+        id: user.id,
+        xp_earned: user.xp_earned,
+        level: user.level,
+      }
+
+      return {
+        userChallenge,
+        previousUser,
+        updatedUser: previousUser,
+        xpAwarded: 0,
+      }
     }
 
     if (userChallenge.status !== 'accepted') {
@@ -247,16 +264,18 @@ export const completeUserChallengeByUserChallengeId = async (
 
     const completedAt = new Date()
     const xpWorth = userChallenge.xp_worth ?? userChallenge.challenge.xp_worth
-    const nextXpEarned = user.xp_earned + xpWorth
     const nextStreakCount = calculateNextStreakCount(
       user.last_completed_challenge,
       user.streak_count,
-      completedAt
+      completedAt,
+      timeZone
     )
 
-    const completedUserChallenge = await tx.user_challenge.update({
+    const completionUpdate = await tx.user_challenge.updateMany({
       where: {
         id: userChallenge.id,
+        user_id: userId,
+        status: 'accepted',
       },
       data: {
         status: 'completed',
@@ -266,19 +285,88 @@ export const completeUserChallengeByUserChallengeId = async (
         expired_at: null,
         xp_worth: xpWorth,
       },
+    })
+
+    if (completionUpdate.count === 0) {
+      const [latestUserChallenge, latestUser] = await Promise.all([
+        tx.user_challenge.findFirst({
+          where: {
+            id: userChallengeId,
+            user_id: userId,
+          },
+          select: userChallengeResponseSelect,
+        }),
+        tx.users.findUnique({
+          where: { id: userId },
+          select: {
+            id: true,
+            xp_earned: true,
+            level: true,
+          },
+        }),
+      ])
+
+      if (!latestUserChallenge || !latestUser) {
+        return null
+      }
+
+      return {
+        userChallenge: latestUserChallenge,
+        previousUser: latestUser,
+        updatedUser: latestUser,
+        xpAwarded: 0,
+      }
+    }
+
+    const completedUserChallenge = await tx.user_challenge.findFirst({
+      where: {
+        id: userChallenge.id,
+        user_id: userId,
+      },
       select: userChallengeResponseSelect,
     })
 
-    await tx.users.update({
+    if (!completedUserChallenge) {
+      return null
+    }
+
+    const userAfterXp = await tx.users.update({
       where: { id: userId },
       data: {
-        xp_earned: nextXpEarned,
-        level: calculateLevel(nextXpEarned),
+        xp_earned: {
+          increment: xpWorth,
+        },
         streak_count: nextStreakCount,
         last_completed_challenge: completedAt,
       },
+      select: {
+        id: true,
+        xp_earned: true,
+      },
     })
 
-    return completedUserChallenge
+    const previousXpEarned = userAfterXp.xp_earned - xpWorth
+    const updatedUser = await tx.users.update({
+      where: { id: userId },
+      data: {
+        level: calculateLevel(userAfterXp.xp_earned),
+      },
+      select: {
+        id: true,
+        xp_earned: true,
+        level: true,
+      },
+    })
+
+    return {
+      userChallenge: completedUserChallenge,
+      previousUser: {
+        id: user.id,
+        xp_earned: previousXpEarned,
+        level: calculateLevel(previousXpEarned),
+      },
+      updatedUser,
+      xpAwarded: xpWorth,
+    }
   })
 }

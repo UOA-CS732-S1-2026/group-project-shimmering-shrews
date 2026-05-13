@@ -10,9 +10,13 @@ import {
 import { userDAO } from '../daos/userDao'
 import { ALLOWED_COMPLETION_RADIUS_METERS } from '../config/constants'
 import { ApiError } from '../utils/ApiError'
+import {
+  getNextStartOfUserCalendarDay,
+  getStartOfUserCalendarDay,
+} from '../utils/streak'
 
 import { DAILY_CHALLENGE_LIMIT, filterChallengesByRadius } from './challengeService'
-
+import { calculateLevel, getXpForLevelStart, getXpRequiredForNextLevel } from '../utils/leveling'
 const toRad = (deg: number) => (deg * Math.PI) / 180
 
 const haversineDistanceMetres = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -65,7 +69,8 @@ export const userChallengeService = {
     authId: string,
     lat: number,
     lng: number,
-    radiusKm: number
+    radiusKm: number,
+    timeZone?: string
   ) {
     const user = await userDAO.getUserByAuthId(authId)
 
@@ -73,12 +78,17 @@ export const userChallengeService = {
       throw new ApiError(404, 'User not found')
     }
 
-    const today = new Date()
-    today.setUTCHours(0, 0, 0, 0)
+    const now = new Date()
+    const todayStart = getStartOfUserCalendarDay(now, timeZone)
+    const tomorrowStart = getNextStartOfUserCalendarDay(now, timeZone)
 
-    await userChallengeDAO.expireOpenChallengesBeforeDate(user.id, today)
+    await userChallengeDAO.expireOpenChallengesBeforeDate(user.id, todayStart)
 
-    let userChallenges = await userChallengeDAO.getTodayUserChallengesByUserId(user.id, today)
+    let userChallenges = await userChallengeDAO.getTodayUserChallengesByUserId(
+      user.id,
+      todayStart,
+      tomorrowStart
+    )
 
     if (userChallenges.length === 0) {
       const allChallenges = await findAllActiveChallenges()
@@ -89,7 +99,11 @@ export const userChallengeService = {
         await userChallengeDAO.createTodayUserChallenges(user.id, limitedChallenges)
       }
 
-      userChallenges = await userChallengeDAO.getTodayUserChallengesByUserId(user.id, today)
+      userChallenges = await userChallengeDAO.getTodayUserChallengesByUserId(
+        user.id,
+        todayStart,
+        tomorrowStart
+      )
     }
 
     return userChallenges
@@ -141,7 +155,8 @@ export const userChallengeService = {
     authId: string,
     userChallengeId: number,
     completedFromLat: number,
-    completedFromLng: number
+    completedFromLng: number,
+    timeZone?: string
   ) {
     const user = await userDAO.getUserByAuthId(authId)
 
@@ -156,7 +171,10 @@ export const userChallengeService = {
     }
 
     if (userChallenge.status === 'completed') {
-      return userChallenge
+      return {
+        userChallenge,
+        notification: null,
+      }
     }
 
     if (userChallenge.status !== 'accepted') {
@@ -182,13 +200,58 @@ export const userChallengeService = {
         `User is not within required distance to complete challenge (${Math.round(distanceMeters)}m away, must be within ${ALLOWED_COMPLETION_RADIUS_METERS}m)`
       )
     }
+    const result = await completeUserChallengeByUserChallengeId(
+      userChallengeId,
+      user.id,
+      timeZone
+    )
 
-    const checkIn = await completeUserChallengeByUserChallengeId(userChallengeId, user.id)
-
-    if (!checkIn) {
+    if (!result) {
       throw new ApiError(409, 'Challenge cannot be checked in from its current status')
     }
 
-    return checkIn
+    // Use transactional user data from the DAO to ensure consistency
+    const { userChallenge: checkIn, previousUser, updatedUser, xpAwarded } = result
+    const xpGained = xpAwarded ?? checkIn.xp_worth ?? checkIn.challenge?.xp_worth ?? 0
+
+    if (xpGained <= 0) {
+      return {
+        userChallenge: checkIn,
+        notification: null,
+      }
+    }
+
+    const previousXp = previousUser.xp_earned
+    const previousLevel = previousUser.level
+    const newXp = updatedUser.xp_earned
+    const newLevel = updatedUser.level
+    const levelUp = newLevel > previousLevel
+
+    const previousLevelXpRequired = getXpRequiredForNextLevel(previousLevel)
+    const nextLevelXpRequired = getXpRequiredForNextLevel(newLevel)
+
+    const xpForLevelStart = getXpForLevelStart(previousLevel)
+    const xpForNextLevelStart = getXpForLevelStart(newLevel)
+
+    const notificationMessage = {
+      type: 'challenge_completed',
+      xpGained,
+      previousXp,
+      newXp,
+      previousLevelXpRequired,
+      nextLevelXpRequired,
+      levelUp,
+      previousLevel,
+      newLevel,
+      xpForLevelStart,
+      xpForNextLevelStart,
+      message: levelUp
+        ? `Congratulations! You've completed the challenge, earned ${xpGained} XP, and reached Level ${newLevel}!`
+        : `Challenge completed! You've earned ${xpGained} XP.`,
+    }
+    return {
+      userChallenge: checkIn,
+      notification: notificationMessage,
+    }
   },
 }
