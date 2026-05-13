@@ -22,7 +22,7 @@ import {
   xpStyle,
 } from '../styles/challengeStyle'
 import type { UserChallenge } from '../types/userChallenge'
-import { ArrowLeft, Check, MapPinned, X } from 'lucide-react'
+import { ArrowLeft, Check, MapPinned, X, MapPin } from 'lucide-react'
 import LevelUpNotification from '../components/LevelUpNotification'
 
 const ALLOWED_COMPLETION_RADIUS_METERS = 700
@@ -258,8 +258,14 @@ export default function ChallengeDetailView({
         }}
       >
         <div>
-          <h2 style={{ ...challengeTitleStyle, fontSize: '1.3rem', marginBottom: '5px' }}>{challenge.name}</h2>
-          <p style={{ margin: '10px 0', fontWeight:'bold', color: '#344b52', fontSize: '1.0rem' }}>Location: {challenge.location.name}</p>
+          <h2 style={{ ...challengeTitleStyle, fontSize: '1.3rem', marginBottom: '5px' }}>
+            <img src={challenge.challenge_category.icon || '/default-icon.png'} alt="Category Icon" style={{ height: '24px'}}/>
+            {challenge.name}
+          </h2>
+          <p style={{ margin: '10px 0', fontWeight:'bold', color: '#344b52', fontSize: '1.0rem' }}>
+            <MapPin style={{ marginRight: '3px', height: '18px' }} />
+            Location: {challenge.location.name}
+          </p>
           <hr />
           <p style={detailDescriptionStyle}>{challenge.description ?? 'No description available.'}</p>
           <hr />
