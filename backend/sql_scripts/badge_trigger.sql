@@ -40,6 +40,8 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Trigger that fires after any insert or update on user_stat
+DROP TRIGGER IF EXISTS trg_check_badges_on_stat_change ON user_stat;
+
 CREATE TRIGGER trg_check_badges_on_stat_change
 AFTER INSERT OR UPDATE ON user_stat
 FOR EACH ROW

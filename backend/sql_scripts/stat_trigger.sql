@@ -35,6 +35,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_update_user_stats_on_challenge_completion ON user_challenge;
+
 CREATE TRIGGER trg_update_user_stats_on_challenge_completion
 AFTER INSERT OR UPDATE ON user_challenge
 FOR EACH ROW
