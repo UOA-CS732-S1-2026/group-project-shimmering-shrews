@@ -38,7 +38,7 @@ export type ChallengeCompletionNotification = {
 
 export type CheckInUserChallengeResponse = {
   userChallenge: UserChallenge
-  notification: ChallengeCompletionNotification
+  notification: ChallengeCompletionNotification | null
 }
 
 

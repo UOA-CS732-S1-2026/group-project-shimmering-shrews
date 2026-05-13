@@ -29,23 +29,15 @@ function LevelUpNotification({
   onClose,
 }: ChallengeCompletionNotificationProps) {
 
-  const [progress, setProgress] = useState(0);
-
   const progressBefore =
-    previousXp / previousLevelXpRequired;
+    Math.min(100, Math.max(0, ((previousXp - xpForLevelStart) / previousLevelXpRequired) * 100));
 
   const progressAfter =
-    ((newXp - xpForNextLevelStart) /
-    (nextLevelXpRequired))*100;
+    Math.min(100, Math.max(0, ((newXp - xpForNextLevelStart) / nextLevelXpRequired) * 100));
 
-  console.log(newXp)
-  console.log(xpForNextLevelStart)
-  console.log(nextLevelXpRequired)
+  const [progress, setProgress] = useState(progressBefore);
 
   useEffect(() => {
-    // Start at previous progress
-    setProgress(progressBefore);
-
     // Animate after short delay
     const timeout = setTimeout(() => {
       if (levelUp) {
@@ -96,6 +88,7 @@ function LevelUpNotification({
           </div>
 
           <div style={styles.xpGain}>+{xpGained} XP</div>
+          <p style={styles.message}>{message}</p>
 
           <div style={styles.barContainer}>
             <div
@@ -167,6 +160,13 @@ function LevelUpNotification({
     fontWeight: 700,
     marginBottom: 16,
     color: "#6ee7ff",
+  },
+
+  message: {
+    margin: "0 0 16px",
+    color: "#24424d",
+    fontSize: 14,
+    lineHeight: 1.4,
   },
 
   barContainer: {

@@ -17,7 +17,7 @@ import {
 } from '../utils/streak'
 
 import { DAILY_CHALLENGE_LIMIT, filterChallengesByRadius } from './challengeService'
-import { calculateLevel, getXpForLevelStart, getXpRequiredForNextLevel } from '../utils/leveling'
+import { getXpForLevelStart, getXpRequiredForNextLevel } from '../utils/leveling'
 const toRad = (deg: number) => (deg * Math.PI) / 180
 
 const haversineDistanceMetres = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -172,7 +172,10 @@ export const userChallengeService = {
     }
 
     if (userChallenge.status === 'completed') {
-      return userChallenge
+      return {
+        userChallenge,
+        notification: null,
+      }
     }
 
     if (userChallenge.status !== 'accepted') {
@@ -198,24 +201,35 @@ export const userChallengeService = {
         `User is not within required distance to complete challenge (${Math.round(distanceMeters)}m away, must be within ${ALLOWED_COMPLETION_RADIUS_METERS}m)`
       )
     }
-    const previousXp = user.xp_earned || 0
-    const previousLevel = user.level || 1
+
     const badgesBefore = await badgeDAO.getBadgesForUser(user.id)
 
-    const checkIn = await completeUserChallengeByUserChallengeId(
+
+    const result = await completeUserChallengeByUserChallengeId(
       userChallengeId,
       user.id,
       timeZone
     )
 
-    if (!checkIn) {
+    if (!result) {
       throw new ApiError(409, 'Challenge cannot be checked in from its current status')
     }
 
-    const xpGained = checkIn.xp_worth || checkIn.challenge?.xp_worth || 0
+    // Use transactional user data from the DAO to ensure consistency
+    const { userChallenge: checkIn, previousUser, updatedUser, xpAwarded } = result
+    const xpGained = xpAwarded ?? checkIn.xp_worth ?? checkIn.challenge?.xp_worth ?? 0
 
-    const newXp = previousXp + xpGained
-    const newLevel = calculateLevel(newXp)
+    if (xpGained <= 0) {
+      return {
+        userChallenge: checkIn,
+        notification: null,
+      }
+    }
+
+    const previousXp = previousUser.xp_earned
+    const previousLevel = previousUser.level
+    const newXp = updatedUser.xp_earned
+    const newLevel = updatedUser.level
     const levelUp = newLevel > previousLevel
     const badgesAfter = await badgeDAO.getBadgesForUser(user.id)
     const badgesAwarded = badgesAfter
