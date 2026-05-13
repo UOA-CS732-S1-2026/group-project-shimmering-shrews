@@ -366,5 +366,8 @@ export const completeUserChallengeByUserChallengeId = async (
       updatedUser,
       xpAwarded: xpWorth,
     }
+  },
+  {
+    timeout: 20000
   })
 }

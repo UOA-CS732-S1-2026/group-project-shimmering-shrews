@@ -8,6 +8,7 @@ import {
   userChallengeDAO,
 } from '../daos/userChallengeDao'
 import { userDAO } from '../daos/userDao'
+import { badgeDAO } from '../daos/badgeDAO'
 import { ALLOWED_COMPLETION_RADIUS_METERS } from '../config/constants'
 import { ApiError } from '../utils/ApiError'
 import {
@@ -217,6 +218,10 @@ export const userChallengeService = {
       )
     }
 
+    // Fetch the user's current badges before check-in to detect newly awarded badges after completion
+    const badgesBefore = await badgeDAO.getBadgesForUser(user.id)
+
+
     const result = await completeUserChallengeByUserChallengeId(
       userChallengeId,
       user.id,
@@ -244,6 +249,29 @@ export const userChallengeService = {
     const newXp = updatedUser.xp_earned
     const newLevel = updatedUser.level
     const levelUp = newLevel > previousLevel
+    
+    // Fetch badges after completion to compare with badges before
+    const badgesAfter = await badgeDAO.getBadgesForUser(user.id)
+
+    let badgesAwarded = null;
+
+    if (badgesAfter && badgesBefore) {
+      // Get IDs of badges the user had before check-in
+      const beforeIds = new Set(
+        badgesBefore
+          .map(b => b.badge?.id)
+          .filter(Boolean)
+      );
+      // Filter to only badges that were newly awarded during this check-in
+      badgesAwarded = badgesAfter
+      .filter((badgeAfter) => badgeAfter?.badge && !beforeIds.has(badgeAfter.badge.id))
+      .map((badge) => ({
+        id: badge.badge.id,
+        name: badge.badge.name,
+        description: badge.badge.description,
+        activeUrl: badge.badge.active_url,
+      }));
+    }
 
     const previousLevelXpRequired = getXpRequiredForNextLevel(previousLevel)
     const nextLevelXpRequired = getXpRequiredForNextLevel(newLevel)
@@ -252,6 +280,7 @@ export const userChallengeService = {
 
     // Build notification payload for the frontend to display XP gain or level up message
     const notificationMessage = {
+      level:{
       type: 'challenge_completed',
       xpGained,
       previousXp,
@@ -265,7 +294,8 @@ export const userChallengeService = {
       xpForNextLevelStart,
       message: levelUp
         ? `Congratulations! You've completed the challenge, earned ${xpGained} XP, and reached Level ${newLevel}!`
-        : `Challenge completed! You've earned ${xpGained} XP.`,
+        : `Challenge completed! You've earned ${xpGained} XP.`,},
+        badgesAwarded,
     }
 
     return {
