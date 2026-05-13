@@ -14,7 +14,6 @@ function XPProgress({ currentXP, levelStartXP, nextLevelXP, currentLevel }: XPPr
 
   // Clamp progress between 0 and 100 to avoid overflowing the bar
   const progress = Math.min(Math.max((earnedThisLevel / requiredThisLevel) * 100, 0), 100)
-  const xpRemaining = Math.max(nextLevelXP - currentXP, 0)
 
   return (
     <div className="xp-progress" aria-label={`${Math.round(progress)} percent to next level`}>
