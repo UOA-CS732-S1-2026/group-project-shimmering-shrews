@@ -239,6 +239,6 @@ test('opens the focused map route and returns to challenge detail', async ({ pag
   await expect(page.getByText('Follow the line to the challenge')).toBeVisible()
   await expect(page.getByText('Visit the waterfront')).toBeVisible()
 
-  await page.getByRole('button', { name: /return to check in/i }).click()
+  await page.getByRole('button', { name: /return to challenge details/i }).click()
   await expect(page.getByRole('heading', { name: 'Challenge Details' })).toBeVisible()
 })
