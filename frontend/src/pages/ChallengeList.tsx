@@ -294,6 +294,8 @@ export default function ChallengeList({
                   ? "challenge-card--skipped"
                   : userChallenge.status === "cancelled"
                   ? "challenge-card--cancelled"
+                  : userChallenge.status === "expired"
+                  ? "challenge-card--expired"
                   : ""
                 }
               />
