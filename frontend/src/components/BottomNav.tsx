@@ -1,5 +1,8 @@
 import { NavLink } from "react-router-dom"
 
+
+// Bottom navigation bar with links to the map, challenges, and profile pages.
+// Applies an active class to the current route's nav item.
 function BottomNav() {
   return (
     <nav className="bottom-nav" aria-label="Bottom navigation">

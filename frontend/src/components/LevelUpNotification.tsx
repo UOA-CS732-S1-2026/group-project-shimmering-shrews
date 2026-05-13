@@ -15,6 +15,9 @@ type ChallengeCompletionNotificationProps = {
   onClose?: () => void
 }
 
+// Displays an animated XP progress notification after completing a challenge.
+// Shows a level up animation if the user has reached a new level,
+// otherwise shows XP gained and updated progress bar.
 function LevelUpNotification({
   xpGained,
   previousXp,
@@ -30,6 +33,7 @@ function LevelUpNotification({
   onClose,
 }: ChallengeCompletionNotificationProps) {
 
+  // Calculate progress percentage within the current level before and after XP gain
   const progressBefore =
     Math.min(100, Math.max(0, ((previousXp - xpForLevelStart) / previousLevelXpRequired) * 100));
 
@@ -39,16 +43,16 @@ function LevelUpNotification({
   const [progress, setProgress] = useState(progressBefore);
 
   useEffect(() => {
-    // Animate after short delay
+    // Animate progress bar after a short delay to allow the component to render first
     const timeout = setTimeout(() => {
       if (levelUp) {
         /**
-         * Fill current level bar
+         * Fill current level bar to 100% to show level completion
          */
         setProgress(100);
 
         /**
-         * Reset and animate new level
+         * Reset bar to 0 for new level, then animate to new progress
          */
         setTimeout(() => {
           setProgress(0);
@@ -56,6 +60,7 @@ function LevelUpNotification({
           setTimeout(() => {
             setProgress(progressAfter);
 
+            // Auto-close after animation completes
             setTimeout(() => {
               onClose?.();
             }, 2000); 
@@ -64,6 +69,7 @@ function LevelUpNotification({
         }, 900);
       } else {
         setProgress(progressAfter);
+        // Auto-close after progress animation completes
         setTimeout(() => {
             onClose?.();
         }, 2000); 
