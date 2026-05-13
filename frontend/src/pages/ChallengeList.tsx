@@ -159,7 +159,7 @@ export default function ChallengeList({
             ;(e.currentTarget as HTMLDivElement).style.transform = 'scale(1)'
           }}
         >
-          <h2 style={challengeTitleStyle} className="skeleton skeleton-text" />
+          <h2 style={challengeTitleStyle} className="skeleton skeleton-text"/>
           <p style={descriptionStyle} className="skeleton skeleton-text small" />
           <div style={rowStyle}>
             <span style={{ ...badgeStyle, background: '#ddd' }} />
@@ -174,7 +174,7 @@ export default function ChallengeList({
     return (
       <div
         className={className}
-        style={{ ...cardStyle, cursor: 'pointer', transition: 'transform 0.2s'}}
+        style={{ ...cardStyle, cursor: 'pointer', transition: 'transform 0.2s',borderLeftStyle: 'solid', borderLeftColor: categoryColorsStrong[challenge.challenge_category.name] || '#aaa', borderLeftWidth: '4px'}}
         onClick={() => goToDetailView(userChallenge)}
         onMouseEnter={(e) => {
           ;(e.currentTarget as HTMLDivElement).style.transform = 'scale(1.02)'
@@ -183,7 +183,9 @@ export default function ChallengeList({
           ;(e.currentTarget as HTMLDivElement).style.transform = 'scale(1)'
         }}
       >
-        <h2 style={challengeTitleStyle}>{challenge.name}</h2>
+        <h2 style={challengeTitleStyle}>{challenge.name}
+        <img src={challenge.challenge_category.icon || '/default-icon.png'} alt="Category Icon" style={{ height: '24px'}}/>
+        </h2>
         <p style={descriptionStyle}>{challenge.description ?? 'No description available.'}</p>
         <div style={rowStyle}>
           <span style={{ ...badgeStyle, background: categoryColors[challenge.challenge_category.name] || '#ddd' }}>

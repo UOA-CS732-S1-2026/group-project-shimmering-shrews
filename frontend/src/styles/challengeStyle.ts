@@ -16,7 +16,7 @@ export const cardStyle = {
         position: "relative",
         border: "1px solid #d8ebf2",
         borderRadius: "8px",
-        boxShadow: "0 20px 60px rgba(35, 82, 96, 0.12)",
+        boxShadow: "0 2px 8px rgba(8, 8, 8, 0.18)",
       } as const
 export const badgeStyle = {
         padding: "6px 12px",
@@ -65,8 +65,11 @@ export const categoryColorsStrong: { [key: string]: string } = {
 export const challengeTitleStyle = {
         margin: 0, 
         textAlign: "left", 
-        fontSize: "16px", 
-        fontWeight: "bold"
+        fontSize: "1.2rem", 
+        fontWeight: "bold",
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
     } as const
 export const titleStyle = {
         color: "#071317",

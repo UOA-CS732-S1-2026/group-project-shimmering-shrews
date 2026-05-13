@@ -10,10 +10,10 @@ export async function seedDatabase() {
   // 1. Seed challenge categories safely
   const categorySeeds = [
     { id: 0, name: 'Global', icon: null },
-    { id: 1, name: 'Food', icon: '\u{1F354}' },
-    { id: 2, name: 'Fitness', icon: '\u{1F3C3}' },
-    { id: 3, name: 'Social', icon: '\u{1F465}' },
-    { id: 4, name: 'Nature', icon: '\u{1F332}' },
+    { id: 1, name: 'Food', icon: '/category/food_icon.svg' },
+    { id: 2, name: 'Fitness', icon: '/category/fitness_icon.svg' },
+    { id: 3, name: 'Social', icon: '/category/social_icon.svg' },
+    { id: 4, name: 'Nature', icon: '/category/nature_icon.svg' },
   ]
 
   for (const category of categorySeeds) {

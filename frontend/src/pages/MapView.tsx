@@ -42,7 +42,15 @@ function createTeardropIcon(challengeCategory: Challenge['challenge_category']) 
           stroke="white"
           stroke-width="1.6"
         />
-        <circle cx="12" cy="9" r="2.3" fill="white" />
+        <image
+          href="${challengeCategory.icon}"
+          x="7.5"
+          y="4.5"
+          width="9"
+          height="9"
+          preserveAspectRatio="xMidYMid meet"
+        />
+      </svg>
       </svg>
     `,
     iconSize: [24, 24],
