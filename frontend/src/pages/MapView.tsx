@@ -5,6 +5,7 @@ import L from 'leaflet'
 import MarkerClusterGroup from 'react-leaflet-cluster'
 
 import LocationPermissionDialog from '../components/LocationPermissionDialog.tsx'
+import { CHALLENGE_RADIUS_KM, CHALLENGE_RADIUS_METRES } from '../config/constants'
 import { DEV_SHOW_ALL } from '../config/featureFlags'
 import {
   LOCATION_PERMISSION_BANNER_MESSAGE,
@@ -22,8 +23,6 @@ import { ArrowLeft } from 'lucide-react'
 type PermissionStatus = 'not-asked' | 'granted' | 'denied'
 
 const DEFAULT_MAP_CENTER: [number, number] = [-36.8485, 174.7633]
-const RADIUS_METRES = 500
-const RADIUS_KM = RADIUS_METRES / 1000
 
 function mapPermissionState(state: string): PermissionStatus {
   if (state === 'granted') return 'granted'
@@ -235,7 +234,7 @@ export default function MapView() {
   useEffect(() => {
     const lat = DEV_SHOW_ALL ? DEFAULT_MAP_CENTER[0] : userLocation?.[0]
     const lng = DEV_SHOW_ALL ? DEFAULT_MAP_CENTER[1] : userLocation?.[1]
-    const radius = DEV_SHOW_ALL ? 99999 : RADIUS_KM
+    const radius = DEV_SHOW_ALL ? 99999 : CHALLENGE_RADIUS_KM
 
     if (!DEV_SHOW_ALL && !userLocation) {
       return
@@ -374,7 +373,7 @@ export default function MapView() {
         )
 
         return challengeLocation
-          ? getDistanceMetres(currUserLocation, challengeLocation) <= RADIUS_METRES
+          ? getDistanceMetres(currUserLocation, challengeLocation) <= CHALLENGE_RADIUS_METRES
           : false
       })
     : []
