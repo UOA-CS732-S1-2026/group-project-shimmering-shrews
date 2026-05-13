@@ -8,6 +8,7 @@ import {
   userChallengeDAO,
 } from '../daos/userChallengeDao'
 import { userDAO } from '../daos/userDao'
+import { badgeDAO } from '../daos/badgeDAO'
 import { ALLOWED_COMPLETION_RADIUS_METERS } from '../config/constants'
 import { ApiError } from '../utils/ApiError'
 import {
@@ -16,7 +17,7 @@ import {
 } from '../utils/streak'
 
 import { DAILY_CHALLENGE_LIMIT, filterChallengesByRadius } from './challengeService'
-import { calculateLevel, getXpForLevelStart, getXpRequiredForNextLevel } from '../utils/leveling'
+import { getXpForLevelStart, getXpRequiredForNextLevel } from '../utils/leveling'
 const toRad = (deg: number) => (deg * Math.PI) / 180
 
 const haversineDistanceMetres = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -200,6 +201,11 @@ export const userChallengeService = {
         `User is not within required distance to complete challenge (${Math.round(distanceMeters)}m away, must be within ${ALLOWED_COMPLETION_RADIUS_METERS}m)`
       )
     }
+
+
+    const badgesBefore = await badgeDAO.getBadgesForUser(user.id)
+
+
     const result = await completeUserChallengeByUserChallengeId(
       userChallengeId,
       user.id,
@@ -226,6 +232,26 @@ export const userChallengeService = {
     const newXp = updatedUser.xp_earned
     const newLevel = updatedUser.level
     const levelUp = newLevel > previousLevel
+    const badgesAfter = await badgeDAO.getBadgesForUser(user.id)
+
+    let badgesAwarded = null;
+
+    if (badgesAfter && badgesBefore) {
+      const beforeIds = new Set(
+        badgesBefore
+          .map(b => b.badge?.id)
+          .filter(Boolean)
+      );
+  
+      badgesAwarded = badgesAfter
+      .filter((badgeAfter) => badgeAfter?.badge && !beforeIds.has(badgeAfter.badge.id))
+      .map((badge) => ({
+        id: badge.badge.id,
+        name: badge.badge.name,
+        description: badge.badge.description,
+        activeUrl: badge.badge.active_url,
+      }));
+    }
 
     const previousLevelXpRequired = getXpRequiredForNextLevel(previousLevel)
     const nextLevelXpRequired = getXpRequiredForNextLevel(newLevel)
@@ -234,6 +260,7 @@ export const userChallengeService = {
     const xpForNextLevelStart = getXpForLevelStart(newLevel)
 
     const notificationMessage = {
+      level:{
       type: 'challenge_completed',
       xpGained,
       previousXp,
@@ -247,7 +274,8 @@ export const userChallengeService = {
       xpForNextLevelStart,
       message: levelUp
         ? `Congratulations! You've completed the challenge, earned ${xpGained} XP, and reached Level ${newLevel}!`
-        : `Challenge completed! You've earned ${xpGained} XP.`,
+        : `Challenge completed! You've earned ${xpGained} XP.`,},
+        badgesAwarded,
     }
     return {
       userChallenge: checkIn,

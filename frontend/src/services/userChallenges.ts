@@ -9,13 +9,13 @@ type ApiResponse<T> = {
   message?: string
 }
 
-export type ChallengeCompletionNotification = {
+export type LevelUpNotificationData = {
   type: string
-  xpGained: number;
-  previousXp: number;
-  newXp: number;
-  previousLevelXpRequired: number;
-  nextLevelXpRequired: number;
+  xpGained: number
+  previousXp: number
+  newXp: number
+  previousLevelXpRequired: number
+  nextLevelXpRequired: number
   levelUp: boolean
   previousLevel: number
   newLevel: number
@@ -24,10 +24,23 @@ export type ChallengeCompletionNotification = {
   message: string
 }
 
+export type BadgeAwardedNotification = {
+  id: number
+  name: string
+  description: string | null
+  activeUrl: string | null
+}
+
+export type ChallengeCompletionNotification = {
+  level: LevelUpNotificationData
+  badgesAwarded: BadgeAwardedNotification[]
+}
+
 export type CheckInUserChallengeResponse = {
   userChallenge: UserChallenge
   notification: ChallengeCompletionNotification | null
 }
+
 
 const getBackendUrl = () => {
   const url = import.meta.env.VITE_BACKEND_URL
