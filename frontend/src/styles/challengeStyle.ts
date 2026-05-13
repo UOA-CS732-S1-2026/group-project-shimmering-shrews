@@ -26,7 +26,7 @@ export const badgeStyle = {
         margin: "0",
     } as const
 export const xpStyle = {
-        background: "#c997f7",
+        background: "#9c71ff",
         color: "white",
         padding: "6px 12px",
         borderRadius: "20px",
@@ -39,7 +39,7 @@ export const buttonStyle = {
         marginTop: "12px",
         borderRadius: "12px",
         border: "1px #cfe3ea solid",
-        background: "linear-gradient(270deg, #3489ff,  #f469ef)",
+        background: "#9c71ff",
         color: "white",
         fontSize: "16px",
         fontWeight: "bold",

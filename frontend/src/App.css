@@ -44,7 +44,23 @@
 }
 
 .topbar a.button,
-.login-button,
+.login-button {
+  border: 0;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #cfe3ea;
+  color: #198b6f;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  min-height: 44px;
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  transition:
+    background 180ms ease,
+    transform 180ms ease;
+}
 .logout-button {
   border: 0;
   border-radius: 12px;
@@ -74,7 +90,12 @@
 }
 
 .topbar a.button:hover,
-.login-button:hover,
+.login-button:hover {
+  background: #198b6f;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
 .logout-button:hover {
   background: #e63333;
   color: white;
@@ -399,9 +420,9 @@
 }
 
 .status-message {
-  border: 1px solid rgba(25, 139, 111, 0.28);
+  border: 1px solid #9c71ff;
   border-radius: 8px;
-  background: #af98dc;
+  background: #9c71ff;
   color: #ffffff;
   font-weight: bold;
   margin: 20px 0 0;
