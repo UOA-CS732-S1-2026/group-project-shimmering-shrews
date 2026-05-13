@@ -8,8 +8,8 @@ import { resolve } from 'path'
  * Default unit and contract tests use this file only to provide safe dummy
  * Supabase environment values. Integration setup runs only when
  * RUN_INTEGRATION=1 is present, and it is additionally guarded by
- * ALLOW_DB_RESET=1 because Prisma resets and rebuilds the public schema.
- * Postgres features Prisma cannot model are then applied through Prisma CLI.
+ * ALLOW_DB_RESET=1 because Prisma resets and rebuilds the public schema
+ * from migrations.
  */
 process.env.SUPABASE_URL ||= 'http://localhost:54321'
 process.env.SUPABASE_PUBLISHABLE_KEY ||= 'test-supabase-key'
@@ -85,7 +85,7 @@ beforeAll(async () => {
   }
 
   // Integration tests are destructive by design: Prisma resets and rebuilds the
-  // public schema, then Prisma executes DB-native SQL extras. Keep this gated behind both
+  // public schema from migrations. Keep this gated behind both
   // RUN_INTEGRATION and ALLOW_DB_RESET so the default unit test path cannot
   // accidentally reset a developer or shared database.
   if (!testDatabaseUrl) {
@@ -113,52 +113,11 @@ beforeAll(async () => {
 
   runPrismaCommand(
     [
-      'db',
-      'push',
-      '--force-reset',
-      '--accept-data-loss',
+      'migrate',
+      'reset',
+      '--force',
       '--skip-generate',
-      '--schema',
-      'prisma/schema.prisma',
-    ],
-    testDatabaseUrl,
-    testDirectDatabaseUrl
-  )
-
-  runPrismaCommand(
-    [
-      'db',
-      'execute',
-      '--schema',
-      'prisma/schema.prisma',
-      '--file',
-      'sql_scripts/badge_criteria_constraints.sql',
-    ],
-    testDatabaseUrl,
-    testDirectDatabaseUrl
-  )
-
-  runPrismaCommand(
-    [
-      'db',
-      'execute',
-      '--schema',
-      'prisma/schema.prisma',
-      '--file',
-      'sql_scripts/stat_trigger.sql',
-    ],
-    testDatabaseUrl,
-    testDirectDatabaseUrl
-  )
-
-  runPrismaCommand(
-    [
-      'db',
-      'execute',
-      '--schema',
-      'prisma/schema.prisma',
-      '--file',
-      'sql_scripts/badge_trigger.sql',
+      '--skip-seed',
     ],
     testDatabaseUrl,
     testDirectDatabaseUrl

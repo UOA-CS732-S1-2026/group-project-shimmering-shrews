@@ -142,7 +142,7 @@ describe('ChallengeDetailView', () => {
       expect(screen.getByText('Location: Auckland Waterfront')).toBeInTheDocument()
       expect(screen.getByText('Outdoor')).toBeInTheDocument()
       expect(screen.getByText('50 XP')).toBeInTheDocument()
-      expect(screen.getByText('In Progress')).toBeInTheDocument()
+      expect(screen.getByText('Ready to start')).toBeInTheDocument()
       expect(screen.getByRole('button', { name: /accept/i })).toBeInTheDocument()
     })
 
