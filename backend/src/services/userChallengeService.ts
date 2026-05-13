@@ -248,12 +248,6 @@ export const userChallengeService = {
     const xpForLevelStart = getXpForLevelStart(previousLevel)
     const xpForNextLevelStart = getXpForLevelStart(newLevel)
 
-    const previousLevelXpRequired = getXpRequiredForNextLevel(previousLevel)
-    const nextLevelXpRequired = getXpRequiredForNextLevel(newLevel)
-
-    const xpForLevelStart = getXpForLevelStart(previousLevel)
-    const xpForNextLevelStart = getXpForLevelStart(newLevel)
-
     const notificationMessage = {
       level:{
       type: 'challenge_completed',
