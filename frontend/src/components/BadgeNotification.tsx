@@ -15,7 +15,7 @@ function BadgeNotification({ badges, onClose }: BadgeNotificationProps) {
     // close after short delay
     setTimeout(() => {
       onClose?.();
-    }, 2000); 
+    }, 5000); 
   }, [onClose])
 
   return (

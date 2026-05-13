@@ -19,7 +19,6 @@ jobs:
 
     env:
       VITE_BACKEND_URL: http://mock.api
-      VITE_E2E_AUTH: "true"
       VITE_GEOAPIFY_KEY: test-geoapify-key
       VITE_SUPABASE_URL: http://localhost:54321
       VITE_SUPABASE_PUBLISHABLE_KEY: test-supabase-key
@@ -48,6 +47,8 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Run end-to-end tests
+        env:
+          VITE_E2E_AUTH: "true"
         run: npm run test:e2e
 
       - name: Build
