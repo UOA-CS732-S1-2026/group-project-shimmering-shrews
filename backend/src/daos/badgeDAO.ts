@@ -2,6 +2,7 @@ import prisma from '../config/prisma'
 
 export const badgeDAO = {
   async getBadgesForUser(userId: number) {
+    // Returns all badges awarded to a user, including badge details and the date earned.
     return prisma.awarded_badge.findMany({
       where: {
         user_id: userId,

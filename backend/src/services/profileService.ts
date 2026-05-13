@@ -10,11 +10,11 @@ import { getXpForLevelStart, getXpForNextLevel } from '../utils/leveling'
 import { getActiveStreakCount } from '../utils/streak'
 import { isExploratoryUsername } from '../utils/username'
 
+// Formats a completed challenge date for display.
 const formatCompletedDate = (date: Date | null) => {
   if (!date) {
     return 'Challenge completed'
   }
-
   return `Completed on ${date.toLocaleDateString('en-NZ', {
     day: 'numeric',
     month: 'short',
@@ -22,6 +22,8 @@ const formatCompletedDate = (date: Date | null) => {
   })}`
 }
 
+// Retrieves and formats the user's full profile including badges and challenge history.
+// Creates or syncs the user profile if it doesn't exist or has an invalid username.
 export const getUserProfile = async (
   authId: string,
   email?: string,
@@ -29,20 +31,22 @@ export const getUserProfile = async (
 ) => {
   let profile = await findUserProfileByAuthId(authId)
 
+  // Upsert profile if missing or username is not in the expected exploratory format
   if (!profile || !isExploratoryUsername(profile.username)) {
     if (!email) {
       throw new ApiError(404, 'User profile not found')
     }
-
     profile = await upsertUserProfileByAuth(authId, email)
   }
 
+  // Fetch badges, completed challenge count and recent history in parallel
   const [completedChallenges, badgeRows, recentHistoryRows] = await Promise.all([
     countCompletedChallengesByUserId(profile.id),
     findBadgesByUserId(profile.id),
     findRecentCompletedChallengesByUserId(profile.id),
   ])
 
+  // Map badge rows to a consistent shape, falling back to placeholder assets if URLs are missing
   const badgeItems = badgeRows.map((badge) => ({
     id: badge.id,
     name: badge.name,
@@ -59,6 +63,7 @@ export const getUserProfile = async (
     name: profile.username,
     level: profile.level,
     xp: profile.xp_earned,
+    // Active streak recalculates based on last completion date and user timezone
     streak: getActiveStreakCount(
       profile.streak_count,
       profile.last_completed_challenge,

@@ -1,6 +1,9 @@
 import "dotenv/config";
 import { PrismaClient } from '@prisma/client'
 
+// Seeds the database with initial data for challenge categories, badges, locations and challenges.
+// Uses upsert to avoid duplicates — safe to run multiple times.
+
 const prisma = new PrismaClient()
 type ChallengeCategory = Awaited<ReturnType<typeof prisma.challenge_category.findMany>>[number]
 
@@ -27,6 +30,7 @@ export async function seedDatabase() {
     })
   }
 
+  // Reset the auto-increment sequence to avoid ID conflicts after manual inserts
   await prisma.$executeRaw`
     SELECT setval(
       pg_get_serial_sequence('challenge_category', 'id'),
@@ -104,6 +108,7 @@ export async function seedDatabase() {
     })
   }
 
+  // Reset the auto-increment sequence to avoid ID conflicts after manual inserts
   await prisma.$executeRaw`
     SELECT setval(
       pg_get_serial_sequence('badge', 'id'),
@@ -116,7 +121,7 @@ export async function seedDatabase() {
     {
       badge_id: 1,
       stat_name: 'challenges_completed',
-      category_id: 0,
+      category_id: 0, // category_id 0 means all categories
       target_value: 3,
     },
     {
@@ -146,7 +151,7 @@ export async function seedDatabase() {
     {
       badge_id: 6,
       stat_name: 'challenges_completed',
-      category_id: 0,
+      category_id: 0, // category_id 0 means all categories
       target_value: 10,
     },
   ]
@@ -168,8 +173,7 @@ export async function seedDatabase() {
   }
 
   // 3. Seed locations safely
-
-  // Existing locations
+  // Uses findFirst then create to avoid duplicate key errors on non-unique fields
   const park =
     (await prisma.location.findFirst({
       where: { name: 'Auckland Domain' },
@@ -208,12 +212,6 @@ export async function seedDatabase() {
         longitude: 174.76,
       },
     }))
-
-  // --- NEW: Hobsonville area locations (within ~1km of your location) ---
-
-  // Your approximate reference point:
-  // Latitude: -36.7927
-  // Longitude: 174.6560
 
   const hobsonvillePark =
     (await prisma.location.findFirst({
@@ -255,8 +253,8 @@ export async function seedDatabase() {
     }))
 
   // 4. Seed challenges safely
+  // Uses findFirst to skip existing challenges and avoid duplicates
   const challengeSeeds = [
-    // Existing challenges
     {
       name: 'Grab a coffee',
       description: 'Visit a local cafe and enjoy a coffee.',
@@ -285,8 +283,6 @@ export async function seedDatabase() {
       category_id: fitnessCategory.id,
       xp_worth: 25,
     },
-
-    // --- NEW: Nearby challenges ---
     {
       name: 'Relax at Hobsonville Point Park',
       description: 'Spend some time outdoors and enjoy the waterfront park.',
@@ -323,10 +319,12 @@ export async function seedDatabase() {
   console.log('Seeding successful!')
 }
 
+// Disconnects the Prisma client after seeding is complete.
 export async function disconnectSeedDatabase() {
   await prisma.$disconnect()
 }
 
+// Allows the seed file to be run directly via ts-node or npm script
 if (require.main === module) {
   seedDatabase()
     .catch((e) => {

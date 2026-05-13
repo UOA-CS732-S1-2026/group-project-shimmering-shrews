@@ -1,4 +1,5 @@
--- ⚠️ DEV ONLY: Reset database
+-- ⚠️ DEV ONLY: Reset database — drops and recreates the entire public schema.
+-- Do not run this in production.
 DROP SCHEMA public CASCADE;
 CREATE SCHEMA public;
 
@@ -93,6 +94,7 @@ CREATE TABLE awarded_badge (
         ON DELETE CASCADE
 );
 
+-- USER STATS: tracks per-user progress counters used for badge criteria evaluation
 CREATE TABLE user_stat (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL,
@@ -112,11 +114,12 @@ CREATE TABLE user_stat (
         ON DELETE CASCADE
 );
 
+-- BADGE CRITERIA: defines the conditions required to earn each badge
 CREATE TABLE badge_criteria (
     id SERIAL PRIMARY KEY,
     badge_id INTEGER NOT NULL,
     stat_name VARCHAR(100) NOT NULL,
-    category_id INTEGER NOT NULL DEFAULT 0,
+    category_id INTEGER NOT NULL DEFAULT 0, -- 0 means global (all categories)
     target_value INTEGER NOT NULL,
 
     FOREIGN KEY (badge_id) REFERENCES badge(id) ON DELETE CASCADE,
@@ -154,6 +157,7 @@ CREATE TABLE user_challenge (
 /* Speed up querying users on auth id */
 CREATE INDEX idx_users_auth_id ON users(auth_id);
 
+-- Ensures badge criteria combinations are unique per badge, category and stat
 CREATE UNIQUE INDEX badge_criteria_unique
 ON badge_criteria (badge_id, category_id, stat_name);
 
@@ -161,6 +165,7 @@ ALTER TABLE user_stat
 ADD CONSTRAINT user_stat_unique
 UNIQUE (user_id, name, category_id);
 
+-- Ensures category_id is either 0 (global) or the stat is category-specific
 ALTER TABLE badge_criteria
 ADD CONSTRAINT badge_criteria_category_rule
 CHECK (

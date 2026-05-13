@@ -13,7 +13,9 @@ export type UserStat = {
   name: string
 }
 
-// Returns badge ids that should be awarded given the user's stat and all badge criteria
+// Determines which badges should be awarded based on the user's current stat and badge criteria.
+// Filters criteria by stat name, category (or global), and checks if the current value meets the target.
+// Returns deduplicated list of badge IDs to award.
 export function getBadgesToAward(userStat: UserStat, badgeCriteria: BadgeCriteria[]) {
   const eligible: number[] = []
 

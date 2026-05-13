@@ -1,37 +1,25 @@
-import { badgeDAO } from '../daos/badgeDAO'
 import { userDAO } from '../daos/userDao'
-import { AuthRequest } from '../middleware/auth'
 
 export const UserService = {
-	/**
-	 * Gets the profile info and badges of the targetUser. If targetUserId field is not supplied,
-	 * get the user info of the user making the call.
-	 * 
-	 * Users can only get their only profile info, but this is setup such that it is possible to expand this
-	 * so that admins can also fetch user details.
-	 * 
-	 * @param authUserId the id of the user making the call
-	 * @param targetUserId the id of the user to get the profile data of. If this field is not supplied, get auth user instead.
-	 * @returns the user profile data, or a 403 forbidden status code if they're unauthorised to view that info
-	 */
-	async getProfile(authUserId: string, targetUserId?: string) {
-		// if no targetID is provided, use the id of the user making the call
-		const authId = targetUserId ?? authUserId
+  // Retrieves the profile info and badges of a user.
+  // Users can only access their own profile; setup supports expanding for admin access.
+  async getProfile(authUserId: string, targetUserId?: string) {
+    // If no targetID is provided, use the id of the user making the call
+    const authId = targetUserId ?? authUserId
 
-		// only the current user can get their profile info (suppports adding admin support later)
-		if (authId !== authUserId) {
-			const err = new Error("Forbidden") as Error & { statusCode?: number }
-			err.statusCode = 403
-			throw err
+    // Only the current user can get their profile info (supports adding admin support later)
+    if (authId !== authUserId) {
+      const err = new Error("Forbidden") as Error & { statusCode?: number }
+      err.statusCode = 403
+      throw err
     }
 
-		const user = await userDAO.getProfileByAuthId(authId)
-
-		if (!user) {
-			const err = new Error("User not found") as Error & { statusCode?: number }
-			err.statusCode = 404
-			throw err
-		}
+    const user = await userDAO.getProfileByAuthId(authId)
+    if (!user) {
+      const err = new Error("User not found") as Error & { statusCode?: number }
+      err.statusCode = 404
+      throw err
+    }
 
     return {
       ...user,
@@ -43,17 +31,20 @@ export const UserService = {
         // Keep inactive_icon faithful to the badge row. Tests cover this because
         // the frontend badge UI depends on active/inactive assets being distinct
         // when the database provides both.
-				inactive_icon: b.badge.inactive_url ?? b.badge.active_url,
+        inactive_icon: b.badge.inactive_url ?? b.badge.active_url,
         earnedAt: b.earned_at,
         earned: true,
       })),
     }
   },
+
+  // Returns the top 10 users ranked by XP and the current user's rank.
+  // Maps raw database results to ranked entries and flags the current user with isCurrentUser.
   async getLeaderboard(authUserId: string) {
     const { topUsers, currentUserRank } = await userDAO.getLeaderboard(authUserId)
 
     const topUsersWithRank = topUsers.map((user, index) => ({
-      rank: index + 1,
+      rank: index + 1, // rank is 1-based
       username: user.username,
       xp_earned: user.xp_earned,
       level: user.level,
@@ -62,6 +53,7 @@ export const UserService = {
 
     return {
       topUsers: topUsersWithRank,
+      // null if the current user is already in the top 10
       currentUserRank: currentUserRank
         ? {
             rank: currentUserRank.rank,
