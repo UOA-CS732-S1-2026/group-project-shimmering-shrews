@@ -6,6 +6,8 @@ type LocationPermissionDialogProps = {
   onCancel: () => void
 }
 
+// Modal dialog that prompts the user to allow or deny location access.
+// Returns null when closed to avoid rendering unnecessary DOM elements.
 export default function LocationPermissionDialog({
   open,
   title,
@@ -18,6 +20,7 @@ export default function LocationPermissionDialog({
   }
 
   return (
+    // Full screen overlay that dims the background
     <div
       style={{
         position: 'fixed',

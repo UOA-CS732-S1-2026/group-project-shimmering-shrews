@@ -5,7 +5,10 @@ type BadgeCardProps = {
   loading?: boolean
 }
 
+// Displays a single badge card showing the badge icon, name, description and earned status.
+// Shows a skeleton loading state when badge data is not yet available.
 function BadgeCard({ badge, loading }: BadgeCardProps) {
+  // Show skeleton placeholder while loading
   if (loading || !badge) {
     return (
       <article className='badge-card badge-card--locked'>
@@ -21,8 +24,10 @@ function BadgeCard({ badge, loading }: BadgeCardProps) {
   }
 
   return (
+    // Apply earned or locked styling based on badge status
     <article className={badge.earned ? 'badge-card badge-card--earned' : 'badge-card badge-card--locked'}>
       <div className="badge-card__icon" aria-hidden="true">
+        {/* Show active icon if earned, inactive (greyed out) icon if locked */}
         <img
           src={badge.earned ? badge.active_icon : badge.inactive_icon}
           alt={badge.name}
