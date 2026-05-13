@@ -158,7 +158,7 @@ describe('MapView', () => {
     expect(screen.getByText('Loading your location...')).toBeInTheDocument()
     expect(await screen.findByText('Visit the waterfront')).toBeInTheDocument()
     expect(screen.getByText('You are here')).toBeInTheDocument()
-    expect(mockGetUserChallenges).toHaveBeenCalledWith(-36.8406, 174.7677, 0.5)
+    expect(mockGetUserChallenges).toHaveBeenCalledWith(-36.8406, 174.7677, 2)
   })
 
   it('shows permission denied fallback UI', async () => {

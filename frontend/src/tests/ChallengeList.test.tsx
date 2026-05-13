@@ -110,7 +110,7 @@ describe('ChallengeList', () => {
     expect(screen.getByText('Find a cafe nearby.')).toBeInTheDocument()
     expect(screen.getByText('25 XP')).toBeInTheDocument()
     expect(screen.getByText('Accepted')).toBeInTheDocument()
-    expect(mockGetUserChallenges).toHaveBeenCalledWith(-36.8406, 174.7677, 5)
+    expect(mockGetUserChallenges).toHaveBeenCalledWith(-36.8406, 174.7677, 2)
   })
 
   it('shows a loading state while fetching challenges', () => {
