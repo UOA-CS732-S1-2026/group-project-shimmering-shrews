@@ -9,8 +9,12 @@ type AuthProfileInput = {
   email: string
 }
 
+// Maximum number of attempts to generate a unique username before giving up.
 const MAX_USERNAME_ATTEMPTS = 250
 
+// Generates a unique exploratory-themed username for a user.
+// Retries up to MAX_USERNAME_ATTEMPTS times if the generated username is already taken.
+// Returns the existing username if it already belongs to the same user.
 const findAvailableUsername = async (authId: string) => {
   for (let attempt = 1; attempt <= MAX_USERNAME_ATTEMPTS; attempt += 1) {
     const candidate = generateExploratoryUsername()
@@ -23,6 +27,7 @@ const findAvailableUsername = async (authId: string) => {
       },
     })
 
+    // Accept the candidate if it's unclaimed or already belongs to this user
     if (!existingUser || existingUser.auth_id === authId) {
       return candidate
     }
@@ -31,6 +36,7 @@ const findAvailableUsername = async (authId: string) => {
   throw new Error('Could not generate a unique username')
 }
 
+// Returns a user's profile by their Supabase auth ID.
 export const findUserProfileByAuthId = async (authId: string) => {
   return prisma.users.findUnique({
     where: {
@@ -47,6 +53,9 @@ export const findUserProfileByAuthId = async (authId: string) => {
   })
 }
 
+// Syncs a user's profile with the database after login.
+// Creates a new user record if one doesn't exist, or updates the username
+// if the existing one is not in the exploratory format.
 export const syncUserProfileByAuth = async ({
   authId,
   email,
@@ -71,10 +80,12 @@ export const syncUserProfileByAuth = async ({
       username?: string
     } = {}
 
+    // Replace non-exploratory usernames with a generated one
     if (!isExploratoryUsername(existingProfile.username)) {
       updateData.username = await findAvailableUsername(authId)
     }
 
+    // No updates needed — return existing profile as is
     if (!updateData.username) {
       return existingProfile
     }
@@ -97,7 +108,7 @@ export const syncUserProfileByAuth = async ({
   }
 
   const username = await findAvailableUsername(authId)
-
+  // Upsert to handle rare race conditions where two requests create the same user simultaneously
   return prisma.users.upsert({
     where: {
       auth_id: authId,
@@ -121,6 +132,7 @@ export const syncUserProfileByAuth = async ({
   })
 }
 
+// Alias for syncUserProfileByAuth — kept for backwards compatibility.
 export const upsertUserProfileByAuth = async (
   authId: string,
   email: string
@@ -128,6 +140,7 @@ export const upsertUserProfileByAuth = async (
   return syncUserProfileByAuth({ authId, email })
 }
 
+// Returns the total number of completed challenges for a user.
 export const countCompletedChallengesByUserId = async (userId: number) => {
   return prisma.user_challenge.count({
     where: {
@@ -137,6 +150,7 @@ export const countCompletedChallengesByUserId = async (userId: number) => {
   })
 }
 
+// Returns the 5 most recently completed challenges for a user, ordered by completion date.
 export const findRecentCompletedChallengesByUserId = async (userId: number) => {
   return prisma.user_challenge.findMany({
     where: {
@@ -161,6 +175,8 @@ export const findRecentCompletedChallengesByUserId = async (userId: number) => {
   })
 }
 
+// Returns all badges with a flag indicating whether the user has earned each one.
+// Ordered by badge ID for consistent display order.
 export const findBadgesByUserId = async (userId: number) => {
   return prisma.badge.findMany({
     orderBy: {

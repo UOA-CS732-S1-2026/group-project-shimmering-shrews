@@ -6,6 +6,8 @@ import { calculateNextStreakCount } from '../utils/streak'
 // Streak calculation is kept as a pure utility and imported here so timezone
 // edge cases can be unit-tested without running a database transaction, while
 // the DAO still applies the tested result atomically with completion updates.
+
+// Reusable select shape for challenge queries
 const challengeSelect = {
   id: true,
   name: true,
@@ -28,6 +30,7 @@ const challengeSelect = {
   },
 } satisfies Prisma.challengeSelect
 
+// Reusable select shape for user challenge queries, includes nested challenge and location data
 const userChallengeResponseSelect = {
   user_id: true,
   challenge_id: true,
@@ -68,6 +71,7 @@ const userChallengeResponseSelect = {
   },
 } satisfies Prisma.user_challengeSelect
 
+// Returns all active challenges from the database.
 export const findAllActiveChallenges = async () => {
   return prisma.challenge.findMany({
     where: {
@@ -77,6 +81,7 @@ export const findAllActiveChallenges = async () => {
   })
 }
 
+// Returns a single active challenge by ID, or null if not found.
 export const findActiveChallengeById = async (id: number) => {
   return prisma.challenge.findFirst({
     where: {
@@ -87,29 +92,7 @@ export const findActiveChallengeById = async (id: number) => {
   })
 }
 
-// export const findActiveChallengesByCategory = async () => {
-//   const categories = await prisma.challenge_category.findMany({
-//     select: {
-//       id: true,
-//       name: true,
-//     },
-//   })
-
-//   const challenges = await Promise.all(
-//     categories.map((category) =>
-//       prisma.challenge.findFirst({
-//         where: {
-//           is_active: true,
-//           challenge_category_id: category.id,
-//         },
-//         select: challengeSelect,
-//       })
-//     )
-//   )
-
-//   return challenges.filter((challenge) => challenge !== null)
-// }
-
+// Returns challenge categories matching the given names.
 export const findChallengeCategoriesByNames = async (names: string[]) => {
   return prisma.challenge_category.findMany({
     where: {
@@ -124,6 +107,7 @@ export const findChallengeCategoriesByNames = async (names: string[]) => {
   })
 }
 
+// Inserts multiple challenges into the database, skipping any duplicates.
 export const createChallenges = async (data: Prisma.challengeCreateManyInput[]) => {
   return prisma.challenge.createMany({
     data,
@@ -131,6 +115,9 @@ export const createChallenges = async (data: Prisma.challengeCreateManyInput[]) 
   })
 }
 
+// Completes a user challenge by challenge ID, awarding XP and updating the user's streak.
+// Runs atomically in a transaction to prevent partial updates.
+// Returns null if the challenge or user is not found, or if the challenge is not in accepted status.
 export const completeUserChallenge = async (
   challengeId: number,
   userId: number,
@@ -156,6 +143,7 @@ export const completeUserChallenge = async (
 
     if (!challenge || !user) return null
 
+    // Get the most recently assigned instance of this challenge for the user
     const latestUserChallenge = await tx.user_challenge.findFirst({
       where: {
         user_id: userId,
@@ -168,10 +156,12 @@ export const completeUserChallenge = async (
 
     if (!latestUserChallenge) return null
 
+    // Return early if already completed to avoid double awarding XP
     if (latestUserChallenge.status === 'completed') {
       return latestUserChallenge
     }
 
+    // Challenge must be accepted before it can be completed
     if (latestUserChallenge.status !== 'accepted') {
       return null
     }
@@ -214,6 +204,9 @@ export const completeUserChallenge = async (
   })
 }
 
+// Completes a user challenge by user challenge ID, awarding XP and updating the user's streak.
+// Returns previous and updated user state so the caller can detect level ups.
+// Uses optimistic locking via updateMany to prevent race conditions on concurrent check-ins.
 export const completeUserChallengeByUserChallengeId = async (
   userChallengeId: number,
   userId: number,
@@ -243,6 +236,7 @@ export const completeUserChallengeByUserChallengeId = async (
       return null
     }
 
+    // Return early if already completed, with xpAwarded: 0 to signal no change
     if (userChallenge.status === 'completed') {
       const previousUser = {
         id: user.id,
@@ -257,7 +251,7 @@ export const completeUserChallengeByUserChallengeId = async (
         xpAwarded: 0,
       }
     }
-
+    // Challenge must be accepted before it can be completed
     if (userChallenge.status !== 'accepted') {
       return null
     }
@@ -270,7 +264,7 @@ export const completeUserChallengeByUserChallengeId = async (
       completedAt,
       timeZone
     )
-
+    // Use updateMany with status condition to prevent double completion in concurrent requests
     const completionUpdate = await tx.user_challenge.updateMany({
       where: {
         id: userChallenge.id,
@@ -287,6 +281,7 @@ export const completeUserChallengeByUserChallengeId = async (
       },
     })
 
+    // If count is 0, another request already completed the challenge — return current state
     if (completionUpdate.count === 0) {
       const [latestUserChallenge, latestUser] = await Promise.all([
         tx.user_challenge.findFirst({
@@ -330,6 +325,7 @@ export const completeUserChallengeByUserChallengeId = async (
       return null
     }
 
+    // Increment XP separately to get the post-increment value for level calculation
     const userAfterXp = await tx.users.update({
       where: { id: userId },
       data: {
@@ -346,6 +342,8 @@ export const completeUserChallengeByUserChallengeId = async (
     })
 
     const previousXpEarned = userAfterXp.xp_earned - xpWorth
+
+    // Update level in a separate query after XP is confirmed to avoid stale level calculation
     const updatedUser = await tx.users.update({
       where: { id: userId },
       data: {
