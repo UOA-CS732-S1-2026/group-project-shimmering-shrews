@@ -222,7 +222,7 @@ export default function ChallengeDetailView({
 
   // Determines the check-in button label based on the current challenge status
   const checkInLabel = isSubmitting
-    ? 'Check In'
+    ? 'Working...'
     : isCompleted
       ? 'Completed'
       : isExpired
@@ -319,7 +319,7 @@ export default function ChallengeDetailView({
                   opacity: isSubmitting ? 0.6 : 1,
                 }}
               >
-                {isSubmitting ? 'Accepting...' : 'Accept'}
+                {isSubmitting ? 'Working...' : 'Accept'}
               </button>
             )}
 

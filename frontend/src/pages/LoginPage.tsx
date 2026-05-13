@@ -29,7 +29,7 @@ const LoginPage = () => {
   return (
     <main className={styles.page}>
       <div className={styles.card}>
-        <h1>Sign In Using Google</h1>
+        <h1>Sign In / Create Account</h1>
 
         <p className={styles.subcopy}>
           Sign in with your Google account to use CityQuest to begin or continue your adventure around the city.

@@ -101,7 +101,7 @@ export const challengeStatusColors: { [key: string]: string } = {
     }
 
 export const challengeStatusText: { [key: string]: string } = {
-        in_progress: 'Pending',
+        in_progress: 'In Progress',
         accepted: 'Accepted',
         cancelled: 'Cancelled',
         expired: 'Expired',
