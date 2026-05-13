@@ -11,7 +11,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 vi.mock('../src/services/challengeService', () => ({
   getAllChallenges: vi.fn(),
   getChallengeDetails: vi.fn(),
-  checkInToChallenge: vi.fn(),
   createNewChallenges: vi.fn(),
 }))
 
@@ -46,7 +45,6 @@ vi.mock('../src/services/locationService', () => ({
 }))
 
 import {
-  checkInToChallenge,
   createNewChallenges,
   getAllChallenges,
   getChallengeDetails,
@@ -117,43 +115,7 @@ describe('challengeController', () => {
     expect(getChallengeDetails).not.toHaveBeenCalled()
   })
 
-  it('checks in to a challenge with authenticated user data', async () => {
-    const { res, status, json } = response()
-    const completed = { id: 20, status: 'completed' }
-    vi.mocked(checkInToChallenge).mockResolvedValue(completed as any)
 
-    await challengeController.checkInChallenge(
-      {
-        params: { id: '5' },
-        auth: { sub: 'auth-1', email: 'user@example.com' },
-      } as any,
-      res,
-      createNext()
-    )
-
-    expect(checkInToChallenge).toHaveBeenCalledWith(5, 'auth-1', 'user@example.com')
-    expect(status).toHaveBeenCalledWith(200)
-    expect(json).toHaveBeenCalledWith({
-      success: true,
-      message: 'Challenge checked in',
-      data: completed,
-    })
-  })
-
-  it('requires an email before challenge check-in', async () => {
-    const next = createNext()
-
-    await challengeController.checkInChallenge(
-      { params: { id: '5' }, auth: { sub: 'auth-1' } } as any,
-      response().res,
-      next
-    )
-
-    expect(nextError(next)).toMatchObject({
-      statusCode: 401,
-      message: 'Authenticated user email is missing',
-    })
-  })
 
   it('creates challenges from locations', async () => {
     const { res, status, json } = response()
@@ -239,10 +201,57 @@ describe('userChallengeController', () => {
       'auth-1',
       -36.852,
       174.765,
-      5
+      5,
+      'Pacific/Auckland'
     )
     expect(status).toHaveBeenCalledWith(200)
     expect(json).toHaveBeenCalledWith({ success: true, data: challenges })
+  })
+
+  it("passes the user's timezone into today's challenge generation", async () => {
+    const { res } = response()
+    const challenges = [{ id: 1 }]
+    vi.mocked(userChallengeService.getOrCreateTodayChallenges).mockResolvedValue(
+      challenges as any
+    )
+
+    await userChallengeController.getTodayUserChallenges(
+      {
+        auth: { sub: 'auth-1' },
+        query: { lat: '-36.852', lng: '174.765' },
+        get: vi.fn(() => 'America/Los_Angeles'),
+      } as any,
+      res,
+      createNext()
+    )
+
+    expect(userChallengeService.getOrCreateTodayChallenges).toHaveBeenCalledWith(
+      'auth-1',
+      -36.852,
+      174.765,
+      5,
+      'America/Los_Angeles'
+    )
+  })
+
+  it("rejects invalid timezone headers for today's challenges", async () => {
+    const next = createNext()
+
+    await userChallengeController.getTodayUserChallenges(
+      {
+        auth: { sub: 'auth-1' },
+        query: { lat: '-36.852', lng: '174.765' },
+        get: vi.fn(() => 'Not/AZone'),
+      } as any,
+      response().res,
+      next
+    )
+
+    expect(nextError(next)).toMatchObject({
+      statusCode: 400,
+      message: 'X-Time-Zone must be a valid IANA timezone',
+    })
+    expect(userChallengeService.getOrCreateTodayChallenges).not.toHaveBeenCalled()
   })
 
   it('rejects invalid radius query params', async () => {
@@ -421,7 +430,11 @@ describe('userChallengeController', () => {
   it('checks in a user challenge with parsed body coordinates', async () => {
     const { res, status, json } = response()
     const completed = { id: 20, status: 'completed' }
-    vi.mocked(userChallengeService.checkInChallenge).mockResolvedValue(completed as any)
+    const checkInResponse = {
+      userChallenge: completed,
+      notification: null,
+    }
+    vi.mocked(userChallengeService.checkInChallenge).mockResolvedValue(checkInResponse as any)
 
     await userChallengeController.checkInUserChallenge(
       {
@@ -437,13 +450,14 @@ describe('userChallengeController', () => {
       'auth-1',
       20,
       -36.852,
-      174.765
+      174.765,
+      'Pacific/Auckland'
     )
     expect(status).toHaveBeenCalledWith(200)
     expect(json).toHaveBeenCalledWith({
       success: true,
       message: 'Challenge checked in',
-      data: completed,
+      data: checkInResponse,
     })
   })
 })
@@ -464,7 +478,11 @@ describe('profile, auth, user, and location controllers', () => {
       createNext()
     )
 
-    expect(getUserProfile).toHaveBeenCalledWith('auth-1', 'user@example.com')
+    expect(getUserProfile).toHaveBeenCalledWith(
+      'auth-1',
+      'user@example.com',
+      'Pacific/Auckland'
+    )
     expect(status).toHaveBeenCalledWith(200)
     expect(json).toHaveBeenCalledWith({ success: true, data: profile })
   })
@@ -629,7 +647,11 @@ describe('profileController', () => {
       createNext()
     )
 
-    expect(getUserProfile).toHaveBeenCalledWith('auth-1', 'user@example.com')
+    expect(getUserProfile).toHaveBeenCalledWith(
+      'auth-1',
+      'user@example.com',
+      'Pacific/Auckland'
+    )
     expect(status).toHaveBeenCalledWith(200)
     expect(json).toHaveBeenCalledWith({ success: true, data: profile })
   })

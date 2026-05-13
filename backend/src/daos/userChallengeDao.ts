@@ -88,19 +88,17 @@ export const userChallengeDAO = {
     })
   },
 
-  async getTodayUserChallengesByUserId(userId: number, today: Date) {
-    const startOfDay = new Date(today)
-    startOfDay.setUTCHours(0, 0, 0, 0)
-
-    const endOfDay = new Date(today)
-    endOfDay.setUTCHours(23, 59, 59, 999)
-
+  async getTodayUserChallengesByUserId(
+    userId: number,
+    startOfDay: Date,
+    nextStartOfDay: Date
+  ) {
     return prisma.user_challenge.findMany({
       where: {
         user_id: userId,
         assigned_at: {
           gte: startOfDay,
-          lte: endOfDay,
+          lt: nextStartOfDay,
         },
       },
       select: userChallengeSelect,

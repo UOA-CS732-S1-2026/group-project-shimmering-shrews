@@ -1,5 +1,6 @@
 import { getSupabaseClient } from "../lib/supabase"
 import type { Badge, HistoryItem } from "../types/profile"
+import { getTimeZoneHeaders } from "./timeZone"
 
 type ApiResponse<T> = {
   success: boolean
@@ -44,6 +45,7 @@ export const getMyProfile = async (): Promise<LiveProfile> => {
   const res = await fetch(`${getBackendUrl()}/api/profile/me`, {
     headers: {
       Authorization: `Bearer ${token}`,
+      ...getTimeZoneHeaders(),
     },
   })
 
@@ -65,5 +67,34 @@ export const getMyProfile = async (): Promise<LiveProfile> => {
 
   const json = (await res.json()) as ApiResponse<BackendProfile>
 
+  return json.data
+}
+
+export type LeaderboardEntry = {
+  rank: number
+  username: string
+  xp_earned: number
+  level: number
+  isCurrentUser?: boolean
+}
+
+export type Leaderboard = {
+  topUsers: LeaderboardEntry[]
+  currentUserRank: Omit<LeaderboardEntry, 'isCurrentUser'> | null
+}
+
+export const getLeaderboard = async (): Promise<Leaderboard> => {
+  const supabase = getSupabaseClient()
+  const { data } = await supabase.auth.getSession()
+  const token = data.session?.access_token
+  if (!token) throw new Error('No authenticated session found')
+
+  const res = await fetch(`${getBackendUrl()}/api/user/leaderboard`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+
+  if (!res.ok) throw new Error('Failed to fetch leaderboard')
+
+  const json = (await res.json()) as ApiResponse<Leaderboard>
   return json.data
 }
