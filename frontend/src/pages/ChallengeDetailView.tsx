@@ -214,7 +214,7 @@ export default function ChallengeDetailView({
   }
 
   const checkInLabel = isSubmitting
-    ? 'Working...'
+    ? 'Check In'
     : isCompleted
       ? 'Completed'
       : isExpired
@@ -299,12 +299,12 @@ export default function ChallengeDetailView({
                 style={{
                   ...checkInButtonStyle,
                   margin: 0,
-                  background: isSubmitting ? '#86a3c8' : '#1463c7',
+                  background: isSubmitting ? '#86a3c8' : '#287eee',
                   cursor: isSubmitting ? 'not-allowed' : 'pointer',
                   opacity: isSubmitting ? 0.6 : 1,
                 }}
               >
-                {isSubmitting ? 'Working...' : 'Accept'}
+                {isSubmitting ? 'Accepting...' : 'Accept'}
               </button>
             )}
 
