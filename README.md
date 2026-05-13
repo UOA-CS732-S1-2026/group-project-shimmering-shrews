@@ -104,6 +104,74 @@ This will:
 - Set up badge and stat trigger functions
 - Populate initial seed data for categories, badges, locations, and challenges
 
+## Testing
+
+The project includes backend tests, frontend tests, Playwright end-to-end tests, linting, type checking, and build checks.
+
+Install dependencies before running tests:
+
+```bash
+cd backend
+npm install
+
+cd ../frontend
+npm install
+```
+
+### Backend
+
+```bash
+cd backend
+npm run test:typecheck
+npm test
+npm run build
+```
+
+To run backend integration tests, use a disposable PostgreSQL test database because the integration setup resets the public schema:
+
+```powershell
+cd backend
+$env:RUN_INTEGRATION = "1"
+$env:ALLOW_DB_RESET = "1"
+$env:TEST_DATABASE_URL = "postgresql://user:password@host:6543/postgres?pgbouncer=true"
+$env:TEST_DIRECT_DATABASE_URL = "postgresql://user:password@host:5432/postgres"
+npm run test:integration
+```
+
+### Frontend
+
+```bash
+cd frontend
+npm run lint
+npm test -- --run
+npm run build
+```
+
+### End-to-End Tests
+
+```bash
+cd frontend
+npx playwright install chromium
+npm run test:e2e
+```
+
+### Run All Safe Local Checks
+
+```bash
+cd backend
+npm run test:typecheck
+npm test
+npm run build
+
+cd ../frontend
+npm run lint
+npm test -- --run
+npm run test:e2e
+npm run build
+```
+
+The backend integration suite is not included in the combined command because it requires a disposable database.
+
 ## Deployment
 
 This project is deployed using [Vercel](https://vercel.com) for the frontend web server, [Render](https://render.com) for the backend API, and [Supabase](https://supabase.com) for the backend database.
