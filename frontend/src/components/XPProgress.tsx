@@ -20,7 +20,7 @@ function XPProgress({ currentXP, levelStartXP, nextLevelXP, currentLevel }: XPPr
       <div className="xp-progress__track">
         <div className="xp-progress__bar" style={{ width: `${progress}%` }} />
       </div>
-      <p>Next Level XP: {xpRemaining.toLocaleString()} / {requiredThisLevel.toLocaleString()}</p>
+      <p>Next Level XP: {earnedThisLevel.toLocaleString()} / {requiredThisLevel.toLocaleString()}</p>
     </div>
   )
 }
