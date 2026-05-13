@@ -22,7 +22,7 @@ import {
   xpStyle,
 } from '../styles/challengeStyle'
 import type { UserChallenge } from '../types/userChallenge'
-import { ArrowLeft, Check, MapPinned, X } from 'lucide-react'
+import { ArrowLeft, Check, MapPinned, X, MapPin } from 'lucide-react'
 import LevelUpNotification from '../components/LevelUpNotification'
 import BadgeNotification from '../components/BadgeNotification'
 import type { BadgeAwardedNotification, LevelUpNotificationData } from '../services/userChallenges'
@@ -80,12 +80,12 @@ export default function ChallengeDetailView({
     marginTop: '20px',
     padding: '10px 20px',
     borderRadius: '8px',
-    background: 'green',
     color: 'white',
     border: 'none',
     cursor: 'pointer',
     alignSelf: 'flex-end',
     width: '100%',
+    fontWeight: 'bold',
   } as const
 
   if (!activeUserChallenge) {
@@ -273,10 +273,19 @@ export default function ChallengeDetailView({
         }}
       >
         <div>
-          <h2 style={challengeTitleStyle}>{challenge.name}</h2>
+          <h2 style={{ ...challengeTitleStyle, fontSize: '1.3rem', marginBottom: '5px' }}>
+            <img src={challenge.challenge_category.icon || '/default-icon.png'} alt="Category Icon" style={{ height: '24px'}}/>
+            {challenge.name}
+          </h2>
+          <p style={{ margin: '10px 0', fontWeight:'bold', color: '#344b52', fontSize: '1.0rem' }}>
+            <MapPin style={{ marginRight: '3px', height: '18px' }} />
+            Location: {challenge.location.name}
+          </p>
+          <hr />
           <p style={detailDescriptionStyle}>{challenge.description ?? 'No description available.'}</p>
-          <p style={{ margin: '10px 0' }}>Location: {challenge.location.name}</p>
-          <div
+          <hr />
+        </div>
+         <div
             style={{
               display: 'flex',
               gap: '10px',
@@ -295,7 +304,6 @@ export default function ChallengeDetailView({
               {challengeStatusText[activeUserChallenge.status]}
             </span>
           </div>
-        </div>
 
         <div>
           <div style={{ display: 'flex', marginTop: '60px', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-start' }}>
@@ -306,7 +314,7 @@ export default function ChallengeDetailView({
                 style={{
                   ...checkInButtonStyle,
                   margin: 0,
-                  background: isSubmitting ? '#86a3c8' : '#1463c7',
+                  background: isSubmitting ? '#86a3c8' : '#287eee',
                   cursor: isSubmitting ? 'not-allowed' : 'pointer',
                   opacity: isSubmitting ? 0.6 : 1,
                 }}
@@ -323,6 +331,7 @@ export default function ChallengeDetailView({
                   ...checkInButtonStyle,
                   margin: 0,
                   background: '#7a52cc',
+                  fontWeight: 'bold',
                   cursor: isSubmitting ? 'not-allowed' : 'pointer',
                   opacity: isSubmitting ? 0.6 : 1,
                   position: 'relative',
@@ -352,13 +361,14 @@ export default function ChallengeDetailView({
                 style={{
                   ...checkInButtonStyle,
                   margin: 0,
-                  background: '#a32638',
+                  background: '#d21f3a',
                   cursor: isSubmitting ? 'not-allowed' : 'pointer',
                   opacity: isSubmitting ? 0.6 : 1,
                   position: 'relative',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  fontWeight: 'bold',
                 }}
               >
                 Cancel Challenge
@@ -384,7 +394,7 @@ export default function ChallengeDetailView({
             style={{
               ...checkInButtonStyle,
               marginTop: '10px',
-              background: isCompleted || isCancelled || isExpired || isCheckInDisabled ? 'gray' : isLocationBlocked ? '#ccc' : 'green',
+              background: isCompleted || isCancelled || isExpired || isCheckInDisabled ? 'gray' : isLocationBlocked ? '#ccc' : '#3ecf4f',
               cursor: isCheckInDisabled ? 'not-allowed' : 'pointer',
               opacity: isCheckInDisabled ? 0.6 : 1,
               position: 'relative',
@@ -396,6 +406,7 @@ export default function ChallengeDetailView({
             {checkInLabel}
             <span
               style={{
+                
                 position: 'absolute',
                 right: '16px',
                 display: 'flex',

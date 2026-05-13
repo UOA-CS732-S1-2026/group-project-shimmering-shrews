@@ -53,6 +53,7 @@ function ProfileHeader({ profile, loading }: ProfileHeaderProps) {
           <h1>{profile.username}</h1>
           <div className="profile-header__level">
             <span>Level {profile.level}</span>
+            <span>Total XP: {profile.xp_earned}</span>
           </div>
         </div>
       </div>
@@ -61,6 +62,7 @@ function ProfileHeader({ profile, loading }: ProfileHeaderProps) {
         currentXP={profile.xp_earned}
         levelStartXP={profile.xpForCurrentLevel}
         nextLevelXP={profile.xpForNextLevel}
+        currentLevel={profile.level}
       />
     </header>
   )

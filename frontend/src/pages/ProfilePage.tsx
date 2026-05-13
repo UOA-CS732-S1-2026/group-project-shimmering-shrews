@@ -123,7 +123,7 @@ function ProfilePage() {
         <div className="shell shell-profile">
           <nav className="topbar" aria-label="Main navigation">
             <Link to="/" aria-label="CityQuest home">CityQuest</Link>
-            <Link className="logout-button" to="/login">Login</Link>
+            <Link className="login-button" to="/login">Login</Link>
           </nav>
           <p className="status-message">Please sign in to view your profile.</p>
         </div>
@@ -132,11 +132,11 @@ function ProfilePage() {
   }
 
   return (
-    <main className="container page page-profile">
+    <main className="container page page-profile paddingForBottomNav">
       <div className="shell shell-profile">
         <nav className="topbar" aria-label="Main navigation">
           <Link to="/" aria-label="CityQuest home">CityQuest</Link>
-          <button className="logout-button" type="button" onClick={logout}>Logout</button>
+          <button className="logout-button" type="button" onClick={logout}>Log Out</button>
         </nav>
 
         <ProfileHeader profile={profile} loading={profileLoading} />
@@ -205,19 +205,20 @@ function renderTabContent(
                     padding: '12px 16px',
                     marginBottom: '8px',
                     borderRadius: '12px',
-                    background: entry.isCurrentUser ? '#e8f5e9' : '#f5f7fa',
-                    border: entry.isCurrentUser ? '2px solid #4caf50' : '1px solid #e0e0e0',
+                    background: entry.rank === 1? 'linear-gradient(180deg, #f7f313, #cec54f)' : entry.isCurrentUser ? '#0095ff' : '#f5f7fa',
+                    color: entry.rank === 1 ? '#4e3c2f' : entry.isCurrentUser ? '#e7e7e7' : '#1f1d1d',
+                    border: entry.rank === 1 ? '2px solid rgba(139, 118, 25, 0.42)' : entry.isCurrentUser ? '1px solid #66d1ff' : '1px solid #e0e0e0',
                   }}
                 >
-                  <span style={{ fontSize: '1.2rem', width: '32px', textAlign: 'center' }}>
-                    {entry.rank === 1 ? '👑' : `#${entry.rank}`}
+                  <span style={{ fontSize: '1.2rem', fontWeight: 'bold', width: '32px', textAlign: 'center' }}>
+                    {`#${entry.rank}`}
                   </span>
                   <div style={{ flex: 1 }}>
-                    <strong>{entry.username}{entry.isCurrentUser ? ' (You)' : ''}</strong>
-                    <div style={{ fontSize: '0.85rem', color: '#666' }}>Level {entry.level}</div>
+                    <strong>{entry.username}{entry.rank === 1 ? '👑' : ''}{entry.isCurrentUser ? ' (You)' : ''}</strong>
+                    <div style={{ fontSize: '0.85rem', color: entry.isCurrentUser ? '#e7e7e7' : '#3e3e3e' }}>Level {entry.level}</div>
                   </div>
                   <span style={{
-                    background: '#4caf50',
+                    background: '#c997f7',
                     color: 'white',
                     borderRadius: '8px',
                     padding: '4px 10px',

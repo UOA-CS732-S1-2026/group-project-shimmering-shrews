@@ -150,7 +150,7 @@ describe('ProfilePage', () => {
     renderProfilePage()
 
     expect(await screen.findByRole('heading', { name: 'Vivienne' })).toBeInTheDocument()
-    expect(screen.getByText('Level 2')).toBeInTheDocument()
+    expect(screen.getAllByText('Level 2')).toHaveLength(2)
     expect(screen.getByText('First Quest')).toBeInTheDocument()
     expect(screen.getByText('3')).toBeInTheDocument()
     expect(mockGetMyProfile).toHaveBeenCalledTimes(1)
@@ -188,7 +188,7 @@ describe('ProfilePage', () => {
 
     expect(await screen.findByRole('heading', { name: 'Leaderboard' })).toBeInTheDocument()
     expect(mockGetLeaderboard).toHaveBeenCalledTimes(1)
-    expect(screen.getByText('Avery')).toBeInTheDocument()
+    expect(screen.getByText('Avery👑')).toBeInTheDocument()
     expect(screen.getByText('Level 5')).toBeInTheDocument()
     expect(screen.getByText('900 XP')).toBeInTheDocument()
     expect(screen.getByText('Morgan')).toBeInTheDocument()

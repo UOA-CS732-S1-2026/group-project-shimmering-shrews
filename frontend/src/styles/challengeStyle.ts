@@ -3,32 +3,34 @@ export const containerStyle = {
         minWidth: "350px",
         minHeight: "80vh",
         margin: "0 auto",
-        padding: "0 2em 0 2em",
+        padding: "0 2em 64px 2em",
 
         display: "flex",
         flexDirection: "column",
         justifyContent: "flex-start",
       } as const
 export const cardStyle = {
-        background: "white",
-        // borderRadius: "16px",
+        background: "rgba(255, 255, 255, 0.82)",
         padding: "16px",
         marginBottom: "16px",
         position: "relative",
         border: "1px solid #d8ebf2",
         borderRadius: "8px",
-        boxShadow: "0 20px 60px rgba(35, 82, 96, 0.12)",
-      } as const
+        } as const
 export const badgeStyle = {
         padding: "6px 12px",
         borderRadius: "20px",
+        color: "#ffffff",
         fontSize: "12px",
+        fontWeight: "bold",
         margin: "0",
     } as const
 export const xpStyle = {
-        background: "#e0c3fc",
+        background: "#9c71ff",
+        color: "white",
         padding: "6px 12px",
         borderRadius: "20px",
+        fontWeight: "bold",
         fontSize: "12px",
     } as const
 export const buttonStyle = {
@@ -36,8 +38,8 @@ export const buttonStyle = {
         padding: "14px",
         marginTop: "12px",
         borderRadius: "12px",
-        border: "2px solid white",
-        background: "#198b6f",
+        border: "1px #cfe3ea solid",
+        background: "rgb(117, 65, 240)",
         color: "white",
         fontSize: "16px",
         fontWeight: "bold",
@@ -47,26 +49,42 @@ export const buttonStyle = {
         alignItems: 'center',
         justifyContent: 'center',
     } as const
+
+export const locationNameStyle = {
+    margin: 0, 
+    textAlign: "left", 
+    fontSize: "0.9rem", 
+    fontWeight: "bold",
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    color: '#344b52',
+} as const
+
 export const categoryColors: { [key: string]: string } = {
-        Food: "#c8f7c5",
-        Fitness: "#fceabb",
-        Social: "#d5f5f9",
-    Nature: "#dff6d8",
+        Food: "#6acf3c",
+        Fitness: "#ffae00",
+        Social: "#3ac4ff",
+        Nature: "#83c577",
     }
 export const categoryColorsStrong: { [key: string]: string } = {
-        Food: "hsl(116, 100%, 71%)",
-        Fitness: "hsl(43, 100%, 70%)",
-        Social: "hsl(187, 100%, 75%)",
-    Nature: "hsl(102, 55%, 58%)",
+        Food: "#51ff00",
+        Fitness: "#ffae00",
+        Social: "#3ac4ff",
+        Nature: "#83c577",
     }
 export const challengeTitleStyle = {
         margin: 0, 
         textAlign: "left", 
-        fontSize: "16px", 
-        fontWeight: "bold"
+        fontSize: "1.2rem", 
+        fontWeight: "bold",
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+        color: '#344b52',
     } as const
 export const titleStyle = {
-        color: "#071317",
+        color: "#344b52",
         textAlign: "center",
         margin: "16px 0px 16px 0px",
         fontSize: "24px",
@@ -74,12 +92,12 @@ export const titleStyle = {
     } as const
 
 export const challengeStatusColors: { [key: string]: string } = {
-        in_progress: "#f8ec6e",
-        accepted: "#8ac7ff",
+        in_progress: "#e9d500",
+        accepted: "#35a9f1",
         cancelled: "#f5a0a0",
         expired: "#d7c2ff",
         skipped: "#a3a3a3",
-        completed: "#62e260",
+        completed: "#56ea60",
     }
 
 export const challengeStatusText: { [key: string]: string } = {
@@ -91,4 +109,24 @@ export const challengeStatusText: { [key: string]: string } = {
         completed: 'Completed',
     }
 
+
+export const detailDescriptionStyle = {
+    margin: '6px 0',
+    color: '#555',
+    textAlign: 'left',
+    fontSize: '14px',
+  }
+
+export const checkInButtonStyle = {
+    marginTop: '20px',
+    padding: '10px 20px',
+    borderRadius: '8px',
+    background: 'green',
+    color: 'white',
+    border: 'none',
+    cursor: 'pointer',
+    alignSelf: 'flex-end',
+    width: '100%',
+    fontWeight: 'bold',
+  } 
 

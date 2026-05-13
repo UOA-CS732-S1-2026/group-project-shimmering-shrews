@@ -19,7 +19,7 @@ export default function HomePage() {
                     </Link>
                     {!loading && !isLoggedIn && (
                         <Link className="button login-button" to="/login">
-                        Login
+                        Log In
                         </Link>
                     )}
                 </nav>
@@ -43,19 +43,19 @@ export default function HomePage() {
                 {/* Features section */}
                 <section className={styles.cardGrid}>
                     <section className={styles.card}>
-                        <Compass />
+                        <Compass fill='#6388ff' />
                         <h2>Discover</h2>
                         <p>Find hidden spots and interesting landmarks.</p>
                     </section>
 
                     <section className={styles.card}>
-                        <MapPinCheckInside />
+                        <MapPinCheckInside fill='#52e23f' />
                         <h2>Complete Quests</h2>
                         <p>Visit locations, complete challenges, and earn rewards.</p>
                     </section>
 
                     <section className={styles.card}>
-                        <Star />
+                        <Star fill='#ffc107' />
                         <h2>Earn Rewards</h2>
                         <p>Unlock badges as you complete milestones.</p>
                     </section>

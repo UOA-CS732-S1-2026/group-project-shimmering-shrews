@@ -6,13 +6,17 @@ import {
   buttonStyle,
   cardStyle,
   categoryColors,
+  categoryColorsStrong,
   challengeStatusColors,
   challengeStatusText,
   challengeTitleStyle,
   containerStyle,
   titleStyle,
   xpStyle,
+  locationNameStyle,
 } from '../styles/challengeStyle'
+
+import {MapPin} from 'lucide-react'
 import type { UserChallenge } from '../types/userChallenge'
 import { useLocationPermission } from '../hooks/useLocationPermission'
 import { DEV_SHOW_ALL } from '../config/featureFlags'
@@ -186,7 +190,7 @@ export default function ChallengeList({
             ;(e.currentTarget as HTMLDivElement).style.transform = 'scale(1)'
           }}
         >
-          <h2 style={challengeTitleStyle} className="skeleton skeleton-text" />
+          <h2 style={challengeTitleStyle} className="skeleton skeleton-text"/>
           <p style={descriptionStyle} className="skeleton skeleton-text small" />
           <div style={rowStyle}>
             <span style={{ ...badgeStyle, background: '#ddd' }} />
@@ -201,7 +205,7 @@ export default function ChallengeList({
     return (
       <div
         className={className}
-        style={{ ...cardStyle, cursor: 'pointer', transition: 'transform 0.2s'}}
+        style={{ ...cardStyle, cursor: 'pointer', transition: 'transform 0.2s',borderLeftStyle: 'solid', borderLeftColor: categoryColorsStrong[challenge.challenge_category.name] || '#aaa', borderLeftWidth: '4px'}}
         onClick={() => goToDetailView(userChallenge)}
         onMouseEnter={(e) => {
           ;(e.currentTarget as HTMLDivElement).style.transform = 'scale(1.02)'
@@ -210,14 +214,20 @@ export default function ChallengeList({
           ;(e.currentTarget as HTMLDivElement).style.transform = 'scale(1)'
         }}
       >
-        <h2 style={challengeTitleStyle}>{challenge.name}</h2>
+        <h2 style={challengeTitleStyle}>
+          <img src={challenge.challenge_category.icon || '/default-icon.png'} alt="Category Icon" style={{ height: '24px'}}/>
+          {challenge.name}
+        </h2>
+        <span style={locationNameStyle}>
+          <MapPin size={16} color='#242424'/>
+          {challenge.location.name}
+        </span>
         <p style={descriptionStyle}>{challenge.description ?? 'No description available.'}</p>
         <div style={rowStyle}>
           <span style={{ ...badgeStyle, background: categoryColors[challenge.challenge_category.name] || '#ddd' }}>
             {challenge.challenge_category.name}
           </span>
           <span style={xpStyle}>{challenge.xp_worth} XP</span>
-          {/* Status badge with dynamic colour and class based on challenge status */}
           <span className={`challenge-status challenge-status--${userChallenge.status}`} style={{ ...badgeStyle, background: challengeStatusColors[userChallenge.status] || '#ddd' }}>
             {challengeStatusText[userChallenge.status]}
           </span>
@@ -282,6 +292,8 @@ export default function ChallengeList({
                   ? "challenge-card--skipped"
                   : userChallenge.status === "cancelled"
                   ? "challenge-card--cancelled"
+                  : userChallenge.status === "expired"
+                  ? "challenge-card--expired"
                   : ""
                 }
               />
