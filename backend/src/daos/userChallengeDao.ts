@@ -1,7 +1,7 @@
 import type { Prisma } from '@prisma/client'
-
 import prisma from '../config/prisma'
 
+// Reusable select shape for user challenge queries, includes nested challenge and location data
 const userChallengeSelect = {
   user_id: true,
   challenge_id: true,
@@ -41,6 +41,7 @@ const userChallengeSelect = {
   },
 } satisfies Prisma.user_challengeSelect
 
+// Returns all user challenges for a given user.
 export const findUserChallenges = async (userId: number) => {
   return prisma.user_challenge.findMany({
     where: { user_id: userId },
@@ -48,6 +49,7 @@ export const findUserChallenges = async (userId: number) => {
   })
 }
 
+// Returns a single user challenge by its ID.
 export const findUserChallenge = async (userChallengeId: number) => {
   return prisma.user_challenge.findFirst({
     where: {
@@ -57,6 +59,8 @@ export const findUserChallenge = async (userChallengeId: number) => {
   })
 }
 
+// Returns a single user challenge by its ID, scoped to a specific user.
+// Used to prevent users from accessing other users' challenges.
 export const findUserChallengeForUser = async (userChallengeId: number, userId: number) => {
   return prisma.user_challenge.findFirst({
     where: {
@@ -68,6 +72,8 @@ export const findUserChallengeForUser = async (userChallengeId: number, userId: 
 }
 
 export const userChallengeDAO = {
+  // Marks all in_progress or accepted challenges assigned before the cutoff date as expired.
+  // Called at the start of each day to clean up yesterday's unfinished challenges.
   async expireOpenChallengesBeforeDate(userId: number, cutoffDate: Date) {
     return prisma.user_challenge.updateMany({
       where: {
@@ -88,6 +94,8 @@ export const userChallengeDAO = {
     })
   },
 
+  // Returns all challenges assigned to a user within a given day window.
+  // Uses startOfDay and nextStartOfDay to handle timezone-aware day boundaries.
   async getTodayUserChallengesByUserId(
     userId: number,
     startOfDay: Date,
@@ -105,6 +113,7 @@ export const userChallengeDAO = {
     })
   },
 
+  // Assigns a set of challenges to a user for today, skipping any already assigned.
   async createTodayUserChallenges(
     userId: number,
     challenges: { id: number; xp_worth: number }[]
@@ -120,6 +129,8 @@ export const userChallengeDAO = {
     })
   },
 
+  // Marks a user challenge as accepted, recording the user's location at the time of acceptance.
+  // Returns the existing challenge unchanged if it is already completed or expired.
   async acceptUserChallenge(
     userChallengeId: number,
     userId: number,
@@ -138,6 +149,7 @@ export const userChallengeDAO = {
       return null
     }
 
+    // Return unchanged if already in a terminal state
     if (userChallenge.status === 'completed' || userChallenge.status === 'expired') {
       return userChallenge
     }
@@ -160,6 +172,8 @@ export const userChallengeDAO = {
     })
   },
 
+  // Marks a user challenge as cancelled.
+  // Returns the existing challenge unchanged if it is already completed, cancelled, or expired.
   async cancelUserChallenge(userChallengeId: number, userId: number) {
     const userChallenge = await prisma.user_challenge.findFirst({
       where: {
@@ -172,6 +186,7 @@ export const userChallengeDAO = {
       return null
     }
 
+    // Return unchanged if already in a terminal state
     if (
       userChallenge.status === 'completed' ||
       userChallenge.status === 'cancelled' ||

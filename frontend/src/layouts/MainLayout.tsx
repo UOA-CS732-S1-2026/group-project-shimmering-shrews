@@ -1,5 +1,7 @@
 import { Link, Outlet } from "react-router-dom";
 
+// Basic layout wrapper with a top navigation bar and footer.
+// Used for public pages like login and auth callback that don't require the bottom nav.
 export default function Layout() {
 
   return (

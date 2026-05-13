@@ -7,6 +7,8 @@ type GeoapifyPlace = {
   }
 }
 
+// Validates coordinate values are within expected ranges.
+// Ensures latitude is between -90 and 90, longitude between -180 and 180.
 const assertValidCoordinate = (
   value: unknown,
   coordinateName: 'latitude' | 'longitude',
@@ -20,6 +22,8 @@ const assertValidCoordinate = (
   return value
 }
 
+// Converts a Geoapify place object to a location database format.
+// Validates and normalizes coordinates, handles missing names.
 export const mapPlace = (place: GeoapifyPlace, category: string) => {
     const [rawLongitude, rawLatitude] = place.geometry.coordinates
     const latitude = assertValidCoordinate(rawLatitude, 'latitude', -90, 90)

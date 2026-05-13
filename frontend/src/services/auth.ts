@@ -1,5 +1,8 @@
 import { getSupabaseClient } from "../lib/supabase"
 
+// Initiates the Google OAuth login flow.
+// Redirects the user to Google's sign-in page and back to /auth/callback on completion.
+// prompt: "select_account" forces the account picker to show even if already signed in.
 export const loginWithGoogle = async () => {
   const supabase = getSupabaseClient()
   const { error } = await supabase.auth.signInWithOAuth({
@@ -15,11 +18,13 @@ export const loginWithGoogle = async () => {
   if (error) console.error(error)
 }
 
+// Syncs the authenticated user's profile with the backend after login.
+// Sends the Supabase session token to the backend to create or update the user record.
 export const syncUser = async () => {
   const supabase = getSupabaseClient()
   const { data } = await supabase.auth.getSession()
   const token = data.session?.access_token
-
+  // No session available then skip sync
   if (!token) return
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL

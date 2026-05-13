@@ -1,16 +1,28 @@
+import { useState } from "react"
 import { loginWithGoogle } from "../services/auth"
 import styles from "./LoginPage.module.css"
 
+// Login page that allows users to sign in or create an account via Google OAuth.
 const LoginPage = () => {
+  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
   // after login, navigate user to the page they initially tried to visit
   const from = new URLSearchParams(location.search).get("from") || "/";
 
+  // Stores the redirect path and initiates the Google OAuth flow.
   const handleGoogleLogin = async () => {
+    setError(null)
+    setIsLoading(true)
+
     try {
+      // Store redirect path in sessionStorage so AuthCallback can retrieve it after OAuth completes
       sessionStorage.setItem("redirectAfterLogin", from)
       await loginWithGoogle()
     } catch (err) {
       console.error("Login failed:", err)
+      setError("Could not start Google login. Please try again.")
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -24,7 +36,11 @@ const LoginPage = () => {
           around the city.
         </p>
 
-        <button className={styles["gsi-material-button"]} onClick={handleGoogleLogin}>
+        <button
+          className={styles["gsi-material-button"]}
+          disabled={isLoading}
+          onClick={handleGoogleLogin}
+        >
         <div className={styles["gsi-material-button-state"]}></div>
         <div className={styles["gsi-material-button-content-wrapper"]}>
           <div className={styles["gsi-material-button-icon"]}>
@@ -36,10 +52,14 @@ const LoginPage = () => {
               <path fill="none" d="M0 0h48v48H0z"></path>
             </svg>
           </div>
-          <span className={styles["gsi-material-button-contents"]}>Continue with Google</span>
+          <span className={styles["gsi-material-button-contents"]}>
+            {isLoading ? "Signing in..." : "Continue with Google"}
+          </span>
           <span style={{display: 'none'}}>Continue with Google</span>
         </div>
       </button>
+
+      {error && <p role="alert">{error}</p>}
 
       <p className="eyebrow">Explore. Discover. Belong.</p>
 

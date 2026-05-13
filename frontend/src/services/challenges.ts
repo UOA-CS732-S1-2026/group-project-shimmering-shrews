@@ -6,6 +6,7 @@ type ApiResponse<T> = {
   message?: string
 }
 
+// Returns the backend URL from environment variables, throwing if not configured.
 const getBackendUrl = () => {
   const url = import.meta.env.VITE_BACKEND_URL
 
@@ -16,6 +17,7 @@ const getBackendUrl = () => {
   return url
 }
 
+// Fetches all active challenges from the backend.
 export const getChallenges = async (): Promise<Challenge[]> => {
   const res = await fetch(`${getBackendUrl()}/challenges`)
 
@@ -27,6 +29,7 @@ export const getChallenges = async (): Promise<Challenge[]> => {
   return json.data
 }
 
+// Fetches a single challenge by ID from the backend.
 export const getChallenge = async (challengeId: string): Promise<Challenge> => {
   const res = await fetch(`${getBackendUrl()}/challenges/${challengeId}`)
 

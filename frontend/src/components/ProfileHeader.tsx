@@ -6,6 +6,8 @@ type ProfileHeaderProps = {
   loading?: boolean
 }
 
+// Displays the user's avatar, username, level and XP progress bar.
+// Shows a skeleton loading state while profile data is being fetched.
 function ProfileHeader({ profile, loading }: ProfileHeaderProps) {
   if (loading || !profile) {
     return (
@@ -42,6 +44,7 @@ function ProfileHeader({ profile, loading }: ProfileHeaderProps) {
         <img className="profile-header__avatar"
           src={profile.avatarUrl ?? '/profile-placeholder.svg'}
           alt={`${profile.username} avatar`}
+          // Fall back to placeholder if the avatar URL fails to load
           onError={(event) => {
             event.currentTarget.src = '/profile-placeholder.svg'
           }}

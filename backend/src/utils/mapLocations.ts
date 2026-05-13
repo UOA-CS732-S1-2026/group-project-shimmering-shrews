@@ -10,6 +10,8 @@ type ChallengeCategoryIds = {
   social: number
 }
 
+// Checks the location category and returns challenge metadata.
+// Maps location categories to challenge names, XP values, and descriptions.
 const checkCategory = (category: string | null, name: string, categoryIds: ChallengeCategoryIds) => {
     const normalizedCategory = category ?? ''
 
@@ -44,7 +46,8 @@ const checkCategory = (category: string | null, name: string, categoryIds: Chall
     }
 }
 
-
+// Converts a location into a challenge object with category details.
+// Includes challenge name, XP value, and description based on location type.
 export const mapLocations = (location: LocationForChallenge, categoryIds: ChallengeCategoryIds) => {
     const categoryInfo = checkCategory(location.category, location.name, categoryIds);
         

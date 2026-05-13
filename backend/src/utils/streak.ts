@@ -7,6 +7,7 @@ type CalendarDayParts = {
   day: number
 }
 
+// Extracts calendar day components (year, month, day) from a date in a specific time zone.
 const getCalendarDayParts = (
   date: Date,
   timeZone = APP_TIME_ZONE
@@ -25,6 +26,7 @@ const getCalendarDayParts = (
   return { year, month, day }
 }
 
+// Checks if a time zone string is supported by the Intl API.
 export const isSupportedTimeZone = (timeZone: string) => {
   try {
     new Intl.DateTimeFormat('en-US', { timeZone }).format(new Date(0))
@@ -34,6 +36,7 @@ export const isSupportedTimeZone = (timeZone: string) => {
   }
 }
 
+// Calculates the UTC offset in milliseconds for a given time zone and date.
 const getTimeZoneOffsetMs = (date: Date, timeZone = APP_TIME_ZONE) => {
   const offsetPart = new Intl.DateTimeFormat('en-US', {
     timeZone,
@@ -64,12 +67,15 @@ const getTimeZoneOffsetMs = (date: Date, timeZone = APP_TIME_ZONE) => {
   return sign * ((hours * 60 + minutes) * 60 * 1000)
 }
 
+// Converts a date to the number of milliseconds since UTC epoch for midnight of that calendar day.
 const getCalendarDayMs = (date: Date, timeZone = APP_TIME_ZONE) => {
   const { year, month, day } = getCalendarDayParts(date, timeZone)
 
   return Date.UTC(year, month - 1, day)
 }
 
+// Gets the start of a calendar day (midnight) for a given time zone.
+// Accounts for DST transitions by attempting up to 3 iterations to find the correct offset.
 const getStartOfCalendarDayFromParts = (
   { year, month, day }: CalendarDayParts,
   timeZone = APP_TIME_ZONE
@@ -91,10 +97,12 @@ const getStartOfCalendarDayFromParts = (
   return new Date(startOfDayMs)
 }
 
+// Gets the start of the app calendar day (in APP_TIME_ZONE) for a given date.
 export const getStartOfAppCalendarDay = (date: Date) => {
   return getStartOfCalendarDayFromParts(getCalendarDayParts(date))
 }
 
+// Gets the start of the user calendar day in their specified time zone.
 export const getStartOfUserCalendarDay = (
   date: Date,
   timeZone = APP_TIME_ZONE
@@ -105,6 +113,7 @@ export const getStartOfUserCalendarDay = (
   )
 }
 
+// Gets the start of the next app calendar day (in APP_TIME_ZONE).
 export const getNextStartOfAppCalendarDay = (date: Date) => {
   const parts = getCalendarDayParts(date)
 
@@ -114,6 +123,7 @@ export const getNextStartOfAppCalendarDay = (date: Date) => {
   })
 }
 
+// Gets the start of the next user calendar day in their specified time zone.
 export const getNextStartOfUserCalendarDay = (
   date: Date,
   timeZone = APP_TIME_ZONE
@@ -129,6 +139,7 @@ export const getNextStartOfUserCalendarDay = (
   )
 }
 
+// Calculates the difference in calendar days between two dates in a specific time zone.
 export const getCalendarDayDifference = (
   laterDate: Date,
   earlierDate: Date,
@@ -139,6 +150,8 @@ export const getCalendarDayDifference = (
   )
 }
 
+// Calculates the next streak count based on the last completed challenge and current streak.
+// Maintains streak if challenge was completed today or yesterday, otherwise resets to 1.
 export const calculateNextStreakCount = (
   lastCompletedChallenge: Date | null,
   currentStreakCount: number,
@@ -166,6 +179,8 @@ export const calculateNextStreakCount = (
   return 1
 }
 
+// Determines if a streak is still active based on the last completed challenge date.
+// Streak is active if completed within the last two calendar days.
 export const getActiveStreakCount = (
   currentStreakCount: number,
   lastCompletedChallenge: Date | null,
