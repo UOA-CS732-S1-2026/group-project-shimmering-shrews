@@ -48,7 +48,7 @@
   border: 0;
   border-radius: 12px;
   background: #ffffff;
-  border: 1px solid #cfe3ea;
+  border: 2px solid #cfe3ea;
   color: #198b6f;
   cursor: pointer;
   font: inherit;
@@ -65,7 +65,7 @@
   border: 0;
   border-radius: 12px;
   background: #ffffff;
-  border: 1px solid #cfe3ea;
+  border: 2px solid #cfe3ea;
   color: #e73434;
   cursor: pointer;
   font: inherit;
@@ -133,7 +133,7 @@
   width: 112px;
   height: 112px;
   flex: 0 0 112px;
-  border: 2px solid rgb(145, 145, 145);
+  border: 2px solid #a8bcc4;
   border-radius: 8px;
   object-fit: cover;
 }
@@ -223,9 +223,9 @@
 }
 
 .stat-card span {
-  color: #3a3873;
+  color: #41545a;
   display: block;
-  font-weight: 800;
+  font-weight: bold;
   margin-bottom: 12px;
 }
 
