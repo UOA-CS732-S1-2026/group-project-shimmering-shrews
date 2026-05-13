@@ -5,6 +5,8 @@ import { getUserProfile } from '../services/profileService'
 import { sendSuccess } from '../utils/httpResponse'
 import { getRequestTimeZone } from '../utils/timeZone'
 
+// Returns the full profile for the currently authenticated user,
+// including XP, level, streak, badges, and challenge history.
 export const getMyProfile = asyncHandler(async (req, res) => {
   const authUser = (req as AuthRequest).auth
 
@@ -15,7 +17,7 @@ export const getMyProfile = asyncHandler(async (req, res) => {
   const profile = await getUserProfile(
     authUser.sub,
     authUser.email,
-    getRequestTimeZone(req)
+    getRequestTimeZone(req) // timezone is used to correctly group challenge history by local date
   )
 
   // Keep profile responses aligned with the shared success envelope covered by
