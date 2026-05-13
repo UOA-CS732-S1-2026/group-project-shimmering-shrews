@@ -26,7 +26,8 @@ The motivation for this app comes from a simple observation: people are surround
 - **Database**: PostgreSQL hosted by Supabase
 - **APIs:** Geoapify (map tiles and location data), Supabase (authentication and database hosting), Google (OAuth provider)
 
-## Getting Started
+# Getting Started
+## Local Development Deployment
 
 ### Prerequisites 
 
@@ -94,6 +95,8 @@ This project is deployed using [Vercel](https://vercel.com) for the frontend web
 **Live URL:** https://project-gbq3d.vercel.app  
 **Backend API URL:** https://group-project-shimmering-shrews.onrender.com
 
+To see instructions, visit [Cloud Deployment Instructions](#cloud-deployment-instructions)
+
 ### How it works
 
 - Code is hosted on GitHub
@@ -105,6 +108,58 @@ This project is deployed using [Vercel](https://vercel.com) for the frontend web
   - Any calls made after the first response will not have this delay.
 - The backend Database is hosted on Supabase as a PostgreSQL database.
 - Authentication is provided by an OAuth 2.0 Client on the Google Auth Platform
+
+### Cloud Deployment Instructions
+Supabase Database setup:
+* Create a Supabase Project
+* Create Supabase PostgreSQL database
+  * Run the schema in ```backend/sql_scripts/schema.sql```, or let Prisma set it up
+  * Copy the triggers and constraints in ```backend/sql_scripts``` and execute them on the database. This is needed for badges to function.
+* Set the `backend/.env` fields `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `DATABASE_URL` and `DIRECT_URL` with the values from Supabase.
+  * `DIRECT_URL` will be an address with port 5432
+  * `DATABASE_URL` will be an address with port 6543
+    * Append "/postgres?pgbouncer=true" if it i
+* In `frontend/.env` set the `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` fields with these details from Supabase
+* Authentication -> Sign In / Providers -> Google
+  * enable sign in with google
+  * set Client IDS and Client Secrets: These will be obtained during Google OAuth setup, come back to this
+  * callback URL (for OAuth): This will be used for setting up Google OAuth
+
+
+Google OAuth 2.0 Setup:
+* Go to Google Cloud Auth Console, create a Google Auth Platform project if you have not already
+* Clients -> Create Client -> Application Type: Web Application
+* Authorised JavaScript origins: set to the localhost address and port of your frontend server
+* Authorised redirect URLS: set to the value in the "callback URL (for OAuth)" field seen during the Supabase setup
+* Copy the Client ID and Client Secret fields, return to the Supabase setup instructions from earlier and set these fields in Authentication -> Sign In / Providers -> Google 
+
+
+Geoapify setup:
+* Create an account
+* Create project
+* Create API Key
+* API Keys -> Key -> Allowed Origins -> Add the address of your webserver
+  * With this set, Geoapify will only respond to calls from your webserver, so it is now safe to include this key in both your ```/backend/.env``` and ```/frontend/.env``` as `VITE_GEOAPIFY_KEY`
+
+
+Render Setup:
+* Create a Render web service:
+* Settings -> Build settings, set root directory to "backend", branch to "main", and build command to: 
+  * ```npm install --include=dev && npx prisma generate && npm run build```
+* Settings -> Deploy -> set Start Command to ```npm start```
+* Settings -> Manage -> Environment -> Environment Variables -> Add variable -> import from .env (import the backend .env file)
+* My Project -> Overview -> click on your web service
+  * There should be a URL to your web service, with a copy icon, click this and copy it to the frontend end at `frontend/.env` giving it the key `VITE_BACKEND_URL`.
+
+Vercel Setup:
+* Create a Vercel Project
+* Connect that vercel project to this repository
+* Settings -> Build and Development -> Framework settings -> set "Framework preset" to "Vite"
+* Settings -> Build and Development -> set root directory to "frontend"
+* Settings -> Environment connect Production with "main" branch if it isn't already. 
+  * Scroll to the Environment Variables section and import the frontend env file.
+* On commits to main, Vercel will automatically run the commands needed to build and host a React Vite webserver
+* In `backend/.env` set the `WEBSERVER_URLS` field to the deployed Vercel project's URLs, separating each URL with a comma.
 
 ## Project Structure
 
