@@ -258,10 +258,13 @@ export default function ChallengeDetailView({
         }}
       >
         <div>
-          <h2 style={challengeTitleStyle}>{challenge.name}</h2>
+          <h2 style={{ ...challengeTitleStyle, fontSize: '1.3rem', marginBottom: '5px' }}>{challenge.name}</h2>
+          <p style={{ margin: '10px 0', fontWeight:'bold', color: '#344b52', fontSize: '1.0rem' }}>Location: {challenge.location.name}</p>
+          <hr></hr>
           <p style={detailDescriptionStyle}>{challenge.description ?? 'No description available.'}</p>
-          <p style={{ margin: '10px 0' }}>Location: {challenge.location.name}</p>
-          <div
+        </div>
+        <hr></hr>
+         <div
             style={{
               display: 'flex',
               gap: '10px',
@@ -275,12 +278,11 @@ export default function ChallengeDetailView({
             <span style={xpStyle}>{challenge.xp_worth} XP</span>
             <span
               className={isAccepted ? 'challenge-status--accepted' : undefined}
-              style={{ ...badgeStyle, background: challengeStatusColors[activeUserChallenge.status] || '#ddd' }}
+              style={{ ...badgeStyle, background: challengeStatusColors[activeUserChallenge.status] || '#ddd', boxShadow: `0 0px 8px ${challengeStatusColors[activeUserChallenge.status] || '#ddd'}` }}
             >
               {challengeStatusText[activeUserChallenge.status]}
             </span>
           </div>
-        </div>
 
         <div>
           <div style={{ display: 'flex', marginTop: '60px', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-start' }}>

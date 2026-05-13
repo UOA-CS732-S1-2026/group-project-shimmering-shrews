@@ -13,7 +13,10 @@ import {
   containerStyle,
   titleStyle,
   xpStyle,
+  locationNameStyle,
 } from '../styles/challengeStyle'
+
+import {MapPin} from 'lucide-react'
 import type { UserChallenge } from '../types/userChallenge'
 import { useLocationPermission } from '../hooks/useLocationPermission'
 import { DEV_SHOW_ALL } from '../config/featureFlags'
@@ -213,9 +216,14 @@ export default function ChallengeList({
           ;(e.currentTarget as HTMLDivElement).style.transform = 'scale(1)'
         }}
       >
-        <h2 style={challengeTitleStyle}>{challenge.name}
-        <img src={challenge.challenge_category.icon || '/default-icon.png'} alt="Category Icon" style={{ height: '24px'}}/>
+        <h2 style={challengeTitleStyle}>
+          <img src={challenge.challenge_category.icon || '/default-icon.png'} alt="Category Icon" style={{ height: '24px'}}/>
+          {challenge.name}
         </h2>
+        <span style={locationNameStyle}>
+          <MapPin size={16} color='#242424'/>
+          {challenge.location.name}
+        </span>
         <p style={descriptionStyle}>{challenge.description ?? 'No description available.'}</p>
         <div style={rowStyle}>
           <span style={{ ...badgeStyle, background: categoryColors[challenge.challenge_category.name] || '#ddd' }}>

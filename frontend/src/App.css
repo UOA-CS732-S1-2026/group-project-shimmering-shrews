@@ -25,7 +25,6 @@
   justify-content: space-between;
   gap: 16px;
   padding: 8px 0 12px;
-
 }
 
 .topbar a {
@@ -34,7 +33,7 @@
   font-weight: 800;
   text-decoration: none;
   background-image: linear-gradient(270deg,#3489ff,  #f469ef);
-  background-size: 50% 50%;
+  background-size: 100% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -433,7 +432,7 @@
 
 .bottom-nav__item--active {
   color: white;
-  background: #4f26e2;
+  background: #5465ff;
   box-shadow: 0 6px 16px rgba(15, 48, 93, 0.25);
 }
 

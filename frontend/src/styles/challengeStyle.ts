@@ -50,6 +50,18 @@ export const buttonStyle = {
         alignItems: 'center',
         justifyContent: 'center',
     } as const
+
+export const locationNameStyle = {
+    margin: 0, 
+    textAlign: "left", 
+    fontSize: "0.9rem", 
+    fontWeight: "bold",
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    color: '#344b52',
+} as const
+
 export const categoryColors: { [key: string]: string } = {
         Food: "#6acf3c",
         Fitness: "#ffae00",
@@ -69,10 +81,11 @@ export const challengeTitleStyle = {
         fontWeight: "bold",
         display: 'flex',
         alignItems: 'center',
-        gap: '8px',
+        gap: '6px',
+        color: '#344b52',
     } as const
 export const titleStyle = {
-        color: "#071317",
+        color: "#344b52",
         textAlign: "center",
         margin: "16px 0px 16px 0px",
         fontSize: "24px",
