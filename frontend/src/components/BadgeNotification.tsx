@@ -10,9 +10,11 @@ type BadgeNotificationProps = {
   onClose?: () => void
 }
 
+// Displays a modal notification showing newly awarded badges after completing a challenge.
+// Auto-closes after two seconds and can also be manually dismissed.
 function BadgeNotification({ badges, onClose }: BadgeNotificationProps) {
   useEffect(() => {
-    // close after short delay
+    // Auto-close after a short delay to allow the user to see the notification
     setTimeout(() => {
       onClose?.();
     }, 2000); 
@@ -47,6 +49,7 @@ function BadgeNotification({ badges, onClose }: BadgeNotificationProps) {
                   style={styles.badgeImage}
                 />
                 ) : (
+                  // Fall back to a star symbol if no badge image is available
                   <span style={styles.badgeFallback}>★</span>
                 )}
               </div>

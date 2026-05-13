@@ -2,17 +2,20 @@ import { useState } from "react"
 import { loginWithGoogle } from "../services/auth"
 import styles from "./LoginPage.module.css"
 
+// Login page that allows users to sign in or create an account via Google OAuth.
 const LoginPage = () => {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   // after login, navigate user to the page they initially tried to visit
   const from = new URLSearchParams(location.search).get("from") || "/";
 
+  // Stores the redirect path and initiates the Google OAuth flow.
   const handleGoogleLogin = async () => {
     setError(null)
     setIsLoading(true)
 
     try {
+      // Store redirect path in sessionStorage so AuthCallback can retrieve it after OAuth completes
       sessionStorage.setItem("redirectAfterLogin", from)
       await loginWithGoogle()
     } catch (err) {

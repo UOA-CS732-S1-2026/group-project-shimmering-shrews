@@ -21,6 +21,7 @@ type BackendProfile = {
   historyItems: HistoryItem[]
 }
 
+// Returns the backend URL from environment variables, throwing if not configured.
 const getBackendUrl = () => {
   const url = import.meta.env.VITE_BACKEND_URL
 
@@ -33,6 +34,8 @@ const getBackendUrl = () => {
 
 export type LiveProfile = BackendProfile
 
+// Retrieves the current session token for API requests.
+// Returns a hardcoded E2E token during Playwright tests to bypass real authentication.
 const getToken = async () => {
   if (import.meta.env.VITE_E2E_AUTH === 'true') {
     return 'e2e-token'
@@ -55,6 +58,7 @@ export const getMyProfile = async (): Promise<LiveProfile> => {
   const res = await fetch(`${getBackendUrl()}/api/profile/me`, {
     headers: {
       Authorization: `Bearer ${token}`,
+      // Include timezone headers so the backend groups history by the user's local date
       ...getTimeZoneHeaders(),
     },
   })
@@ -90,9 +94,12 @@ export type LeaderboardEntry = {
 
 export type Leaderboard = {
   topUsers: LeaderboardEntry[]
+  // null if the current user is already in the top 10
   currentUserRank: Omit<LeaderboardEntry, 'isCurrentUser'> | null
 }
 
+// Fetches the leaderboard showing the top 10 users ranked by XP.
+// Also returns the current user's rank if they fall outside the top 10.
 export const getLeaderboard = async (): Promise<Leaderboard> => {
   const token = await getToken()
 

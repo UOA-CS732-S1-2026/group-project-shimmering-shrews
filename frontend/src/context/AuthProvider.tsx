@@ -4,6 +4,8 @@ import { isSupabaseConfigured, supabase } from "../lib/supabase"
 import { syncUser } from "../services/auth"
 import type { Session, User } from "@supabase/supabase-js"
 
+// When VITE_E2E_AUTH is true, the provider skips real Supabase auth and seeds a fake session.
+// This allows Playwright E2E tests to bypass Google OAuth without real credentials.
 const isE2EAuthEnabled = import.meta.env.VITE_E2E_AUTH === "true"
 
 const e2eUser = {
@@ -22,11 +24,17 @@ const e2eSession = {
   user: e2eUser,
 } as Session
 
+
+// Provides authentication state to the entire app via AuthContext.
+// Handles session initialisation, auth state changes, and logout.
+// In E2E mode, seeds a fake session to bypass Google OAuth during tests.
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(isE2EAuthEnabled ? e2eUser : null)
   const [session, setSession] = useState<Session | null>(isE2EAuthEnabled ? e2eSession : null)
+  // Skip loading state entirely in E2E mode since session is already seeded
   const [loading, setLoading] = useState(isE2EAuthEnabled ? false : isSupabaseConfigured)
 
+  // Signs the user out and clears local auth state.
   const logout = async () => {
     setLoading(true)
 
@@ -48,6 +56,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   useEffect(() => {
+    // Skip real auth setup in E2E mode. Fake session is already seeded
     if (isE2EAuthEnabled) {
       return
     }
@@ -57,12 +66,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     let isActive = true
-
+    // Load the existing session on mount
     supabase.auth.getSession().then(({ data }) => {
       if (!isActive) {
         return
       }
 
+      // Sync user profile with the backend after session is loaded
       setSession(data.session)
       setUser(data.session?.user ?? null)
       setLoading(false)
@@ -72,6 +82,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     })
 
+    // Listen for auth state changes (login, logout, token refresh)
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!isActive) {
         return
@@ -81,6 +92,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(session?.user ?? null)
       setLoading(false)
 
+      // Sync user profile with the backend after auth state changes
       if (session) {
         void syncUser().catch((error) => console.error(error))
       }
@@ -88,6 +100,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     return () => {
       isActive = false
+      // Unsubscribe from auth state changes on cleanup to prevent memory leaks
       data.subscription.unsubscribe()
     }
   }, [])
