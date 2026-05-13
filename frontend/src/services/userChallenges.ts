@@ -52,6 +52,7 @@ const getBackendUrl = () => {
   return url
 }
 
+// Retrieves the current Supabase session token, throwing if the user is not authenticated.
 const getToken = async () => {
   const supabase = getSupabaseClient()
   const { data } = await supabase.auth.getSession()
@@ -64,6 +65,8 @@ const getToken = async () => {
   return token
 }
 
+// Extracts a user-friendly error message from a failed API response.
+// Falls back to the provided message if the response body is not valid JSON.
 const getErrorMessage = async (response: Response, fallbackMessage: string) => {
   try {
     const json = (await response.json()) as { message?: string }
@@ -73,6 +76,7 @@ const getErrorMessage = async (response: Response, fallbackMessage: string) => {
   }
 }
 
+// Fetches today's challenges for the authenticated user based on their location and radius.
 export const getUserChallenges = async (
   lat?: number,
   lng?: number,
@@ -162,6 +166,8 @@ export const cancelUserChallenge = async (userChallengeId: number): Promise<User
   return json.data
 }
 
+// Checks in a user to a challenge, verifying they are within the required distance.
+// Triggers a confetti animation on successful check-in.
 export const checkInUserChallenge = async (
   userChallengeId: number,
   completedFromLat: number,
@@ -185,6 +191,7 @@ export const checkInUserChallenge = async (
   const json = (await res.json()) as ApiResponse<CheckInUserChallengeResponse>
 
 
+  // Fire confetti celebration on successful check-in
   confetti({
     particleCount: 180,
     spread: 100,
