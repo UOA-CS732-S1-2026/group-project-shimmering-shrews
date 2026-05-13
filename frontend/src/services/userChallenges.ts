@@ -53,6 +53,10 @@ const getBackendUrl = () => {
 }
 
 const getToken = async () => {
+  if (import.meta.env.VITE_E2E_AUTH === 'true') {
+    return 'e2e-token'
+  }
+
   const supabase = getSupabaseClient()
   const { data } = await supabase.auth.getSession()
   const token = data.session?.access_token
