@@ -39,7 +39,7 @@ export const buttonStyle = {
         marginTop: "12px",
         borderRadius: "12px",
         border: "1px #cfe3ea solid",
-        background: "#9c71ff",
+        background: "rgb(117, 65, 240)",
         color: "white",
         fontSize: "16px",
         fontWeight: "bold",

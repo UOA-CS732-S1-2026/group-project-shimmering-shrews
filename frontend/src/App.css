@@ -465,12 +465,12 @@
 
 .bottom-nav__item--active {
   color: white;
-  background: #5465ff;
+  background: rgb(107, 58, 221);
 }
 
 
 .bottom-nav__item:focus-visible {
-  outline: 3px solid rgba(25, 139, 111, 0.32);
+  outline: 3px solid rgb(117, 65, 240);
   outline-offset: 3px;
 }
 
