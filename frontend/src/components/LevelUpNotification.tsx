@@ -26,6 +26,7 @@ function LevelUpNotification({
   newLevel,
   xpForLevelStart,
   xpForNextLevelStart,
+  message,
   onClose,
 }: ChallengeCompletionNotificationProps) {
 
