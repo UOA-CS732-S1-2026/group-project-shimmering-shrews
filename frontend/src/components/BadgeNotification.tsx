@@ -1,3 +1,5 @@
+import { useEffect } from "react"
+
 type BadgeNotificationProps = {
   badges: {
     id: number
@@ -9,41 +11,87 @@ type BadgeNotificationProps = {
 }
 
 function BadgeNotification({ badges, onClose }: BadgeNotificationProps) {
+  useEffect(() => {
+    // close after short delay
+    setTimeout(() => {
+      onClose?.();
+    }, 2000); 
+  }, [onClose])
+
   return (
-    <div className="fixed bottom-28 right-6 z-50 max-w-sm rounded-2xl bg-yellow-50 p-4 shadow-lg border border-yellow-200">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-sm font-semibold text-yellow-700">New Badge Unlocked</p>
+    <div style={styles.overlay}>
+      <div style={styles.card}>
+        <div style={styles.header}>
+          <h3>New Badge Unlocked</h3>
 
           {badges.map((badge) => (
-            <div key={badge.id} className="mt-2 flex items-center gap-3">
+            <div key={badge.id} style={styles.badgeDisplay}>
               {badge.activeUrl && (
                 <img
                   src={badge.activeUrl}
                   alt={badge.name}
-                  className="h-12 w-12 rounded-full"
+                  style={styles.badgeImage}
                 />
               )}
 
               <div>
-                <h3 className="text-base font-bold">{badge.name}</h3>
-                <p className="text-sm text-gray-700">{badge.description}</p>
+                <h3>{badge.name}</h3>
+                <p style={styles.message}>{badge.description}</p>
               </div>
             </div>
           ))}
         </div>
-
-        {onClose && (
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-700"
-          >
-            ×
-          </button>
-        )}
       </div>
     </div>
   )
+  
 }
+
+const styles: Record<string, React.CSSProperties> = {
+overlay: {
+  position: "fixed",
+  inset: 0,
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  background: "rgba(0, 0, 0, 0.3)",
+  zIndex: 9999,
+},
+
+badgeDisplay: {
+  display: "flex",
+  marginTop: "0.5rem",
+  alignItems: "center",
+  gap: "0.75rem",
+},
+
+badgeImage: {
+  width: 64,
+  height: 64,
+  objectFit: "contain",
+  flexShrink: 0,
+},
+
+card: {
+  width: 420,
+  background: "white",
+  padding: "16px",
+  border: "1px solid #d8ebf2",
+  borderRadius: "8px",
+  boxShadow: "0 20px 60px rgba(35, 82, 96, 0.12)",
+},
+
+header: {
+  marginBottom: 16,
+},
+
+message: {
+  margin: "0 0 16px",
+  color: "#24424d",
+  fontSize: 14,
+  lineHeight: 1.4,
+},
+
+};
 
 export default BadgeNotification

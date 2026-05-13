@@ -226,14 +226,20 @@ export default function ChallengeDetailView({
       {levelUpNotification && (
         <LevelUpNotification
           xpGained={levelUpNotification.xpGained}
+          previousXp={levelUpNotification.previousXp}
+          newXp={levelUpNotification.newXp}
+          previousLevelXpRequired={levelUpNotification.previousLevelXpRequired}
+          nextLevelXpRequired={levelUpNotification.nextLevelXpRequired}
           levelUp={levelUpNotification.levelUp}
           previousLevel={levelUpNotification.previousLevel}
           newLevel={levelUpNotification.newLevel}
+          xpForLevelStart={levelUpNotification.xpForLevelStart}
+          xpForNextLevelStart={levelUpNotification.xpForNextLevelStart}
           message={levelUpNotification.message}
           onClose={() => setLevelUpNotification(null)}
         />
       )}
-      {badgeNotification && (
+      {!levelUpNotification && badgeNotification && (
         <BadgeNotification
           badges={badgeNotification}
           onClose={()=>setBadgeNotification(null)}

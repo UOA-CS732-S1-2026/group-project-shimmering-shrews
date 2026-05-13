@@ -7,6 +7,7 @@ import {
 import { ApiError } from '../utils/ApiError'
 import { asyncHandler } from '../utils/asyncHandler'
 import { sendSuccess } from '../utils/httpResponse'
+import { getRequestTimeZone } from '../utils/timeZone'
 import type { AuthRequest } from '../middleware/auth'
 
 // Keep route ids defensive at the controller boundary. The service tests mock
@@ -106,9 +107,14 @@ export const getTodayUserChallenges = asyncHandler(async (req: Request, res: Res
   const lat = parseCoordinate(req.query.lat, 'lat')
   const lng = parseCoordinate(req.query.lng, 'lng')
   const radius = parseRadius(req.query.radius)
+  const timeZone = getRequestTimeZone(req)
 
   const data = await userChallengeService.getOrCreateTodayChallenges(
-    authUser.sub, lat, lng, radius
+    authUser.sub,
+    lat,
+    lng,
+    radius,
+    timeZone
   )
 
   sendSuccess(res, data)
@@ -155,12 +161,14 @@ export const checkInUserChallenge = asyncHandler(async (req: Request, res: Respo
   const userChallengeId = parseId(req.params.id, 'User challenge id')
   const completedFromLat = parseCoordinate(req.body?.completedFromLat, 'completedFromLat')
   const completedFromLng = parseCoordinate(req.body?.completedFromLng, 'completedFromLng')
+  const timeZone = getRequestTimeZone(req)
 
   const data = await userChallengeService.checkInChallenge(
     authUser.sub,
     userChallengeId,
     completedFromLat,
-    completedFromLng
+    completedFromLng,
+    timeZone
   )
 
   sendSuccess(res, data, 'Challenge checked in')

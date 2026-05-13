@@ -1,6 +1,7 @@
 import confetti from 'canvas-confetti'
 import { getSupabaseClient } from '../lib/supabase'
 import type { UserChallenge } from '../types/userChallenge'
+import { getTimeZoneHeaders } from './timeZone'
 
 type ApiResponse<T> = {
   success: boolean
@@ -11,9 +12,15 @@ type ApiResponse<T> = {
 export type LevelUpNotificationData = {
   type: string
   xpGained: number
+  previousXp: number
+  newXp: number
+  previousLevelXpRequired: number
+  nextLevelXpRequired: number
   levelUp: boolean
   previousLevel: number
   newLevel: number
+  xpForLevelStart: number
+  xpForNextLevelStart: number
   message: string
 }
 
@@ -31,7 +38,7 @@ export type ChallengeCompletionNotification = {
 
 export type CheckInUserChallengeResponse = {
   userChallenge: UserChallenge
-  notification: ChallengeCompletionNotification
+  notification: ChallengeCompletionNotification | null
 }
 
 
@@ -87,7 +94,10 @@ export const getUserChallenges = async (
   const queryString = params.toString()
   const url = `${getBackendUrl()}/user-challenges/today${queryString ? `?${queryString}` : ''}`
   const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...getTimeZoneHeaders(),
+    },
   })
 
   if (!res.ok) {
@@ -163,6 +173,7 @@ export const checkInUserChallenge = async (
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
+      ...getTimeZoneHeaders(),
     },
     body: JSON.stringify({ completedFromLat, completedFromLng }),
   })
