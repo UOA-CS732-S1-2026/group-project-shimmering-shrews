@@ -5,6 +5,8 @@ type StatCardProps = {
   loading?: boolean
 }
 
+// Displays a single stat card showing a label, value and optional helper text.
+// Shows a skeleton loading state while stat data is being fetched.
 function StatCard({ stat, loading }: StatCardProps) {
   if (loading || !stat) {
     return (

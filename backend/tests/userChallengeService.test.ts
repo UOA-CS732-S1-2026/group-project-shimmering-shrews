@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  badgeDaoMocks,
   challengeDaoMocks,
   userChallengeDaoMocks,
   userDaoMocks,
@@ -21,7 +22,7 @@ import {
 const { userChallengeDAO } = userChallengeDaoMocks
 
 const authId = 'auth-1'
-const user = { id: 1 }
+const user = { id: 1, level: 1, xp_earned: 0 }
 
 const activeChallenge = (id: number, latitude: number, longitude: number) => ({
   id,
@@ -112,7 +113,7 @@ describe('userChallengeService', () => {
     expect(userChallengeDAO.createTodayUserChallenges).not.toHaveBeenCalled()
   })
 
-  it('uses the UTC day boundary for today challenge lookup and expiry', async () => {
+  it('uses the Pacific/Auckland day boundary for today challenge lookup and expiry', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-05-08T23:30:00.000Z'))
     const todayChallenges = [userChallenge({ id: 1 })]
@@ -126,14 +127,16 @@ describe('userChallengeService', () => {
 
     const expiryCutoff = vi.mocked(userChallengeDAO.expireOpenChallengesBeforeDate)
       .mock.calls[0][1]
-    const todayLookup = vi.mocked(userChallengeDAO.getTodayUserChallengesByUserId)
-      .mock.calls[0][1]
+    const [, todayStart, tomorrowStart] = vi.mocked(
+      userChallengeDAO.getTodayUserChallengesByUserId
+    ).mock.calls[0]
 
-    expect(expiryCutoff.toISOString()).toBe('2026-05-08T00:00:00.000Z')
-    expect(todayLookup.toISOString()).toBe('2026-05-08T00:00:00.000Z')
+    expect(expiryCutoff.toISOString()).toBe('2026-05-08T12:00:00.000Z')
+    expect(todayStart.toISOString()).toBe('2026-05-08T12:00:00.000Z')
+    expect(tomorrowStart.toISOString()).toBe('2026-05-09T12:00:00.000Z')
   })
 
-  it('uses the next UTC day boundary for today challenges after midnight', async () => {
+  it('keeps the same challenge day across UTC midnight when the Auckland day has not changed', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-05-09T00:01:00.000Z'))
     const todayChallenges = [userChallenge({ id: 1 })]
@@ -147,11 +150,65 @@ describe('userChallengeService', () => {
 
     const expiryCutoff = vi.mocked(userChallengeDAO.expireOpenChallengesBeforeDate)
       .mock.calls[0][1]
-    const todayLookup = vi.mocked(userChallengeDAO.getTodayUserChallengesByUserId)
-      .mock.calls[0][1]
+    const [, todayStart, tomorrowStart] = vi.mocked(
+      userChallengeDAO.getTodayUserChallengesByUserId
+    ).mock.calls[0]
 
-    expect(expiryCutoff.toISOString()).toBe('2026-05-09T00:00:00.000Z')
-    expect(todayLookup.toISOString()).toBe('2026-05-09T00:00:00.000Z')
+    expect(expiryCutoff.toISOString()).toBe('2026-05-08T12:00:00.000Z')
+    expect(todayStart.toISOString()).toBe('2026-05-08T12:00:00.000Z')
+    expect(tomorrowStart.toISOString()).toBe('2026-05-09T12:00:00.000Z')
+  })
+
+  it('keeps the previous challenge day until Auckland midnight', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-08T11:59:00.000Z'))
+    const todayChallenges = [userChallenge({ id: 1 })]
+    userChallengeDAO.getTodayUserChallengesByUserId.mockResolvedValue(
+      todayChallenges as any
+    )
+
+    await expect(
+      userChallengeService.getOrCreateTodayChallenges(authId, -36.852, 174.765, 5)
+    ).resolves.toBe(todayChallenges)
+
+    const expiryCutoff = vi.mocked(userChallengeDAO.expireOpenChallengesBeforeDate)
+      .mock.calls[0][1]
+    const [, todayStart, tomorrowStart] = vi.mocked(
+      userChallengeDAO.getTodayUserChallengesByUserId
+    ).mock.calls[0]
+
+    expect(expiryCutoff.toISOString()).toBe('2026-05-07T12:00:00.000Z')
+    expect(todayStart.toISOString()).toBe('2026-05-07T12:00:00.000Z')
+    expect(tomorrowStart.toISOString()).toBe('2026-05-08T12:00:00.000Z')
+  })
+
+  it("uses the supplied user's timezone for today challenge lookup and expiry", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-08T06:30:00.000Z'))
+    const todayChallenges = [userChallenge({ id: 1 })]
+    userChallengeDAO.getTodayUserChallengesByUserId.mockResolvedValue(
+      todayChallenges as any
+    )
+
+    await expect(
+      userChallengeService.getOrCreateTodayChallenges(
+        authId,
+        -36.852,
+        174.765,
+        5,
+        'America/Los_Angeles'
+      )
+    ).resolves.toBe(todayChallenges)
+
+    const expiryCutoff = vi.mocked(userChallengeDAO.expireOpenChallengesBeforeDate)
+      .mock.calls[0][1]
+    const [, todayStart, tomorrowStart] = vi.mocked(
+      userChallengeDAO.getTodayUserChallengesByUserId
+    ).mock.calls[0]
+
+    expect(expiryCutoff.toISOString()).toBe('2026-05-07T07:00:00.000Z')
+    expect(todayStart.toISOString()).toBe('2026-05-07T07:00:00.000Z')
+    expect(tomorrowStart.toISOString()).toBe('2026-05-08T07:00:00.000Z')
   })
 
   it('creates at most three nearby daily challenges when none exist today', async () => {
@@ -217,9 +274,10 @@ describe('userChallengeService', () => {
     const completed = userChallenge({ status: 'completed' })
     userChallengeDaoMocks.findUserChallengeForUser.mockResolvedValue(completed as any)
 
-    await expect(
-      userChallengeService.checkInChallenge(authId, 20, -36.852, 174.765)
-    ).resolves.toBe(completed)
+    const result = await userChallengeService.checkInChallenge(authId, 20, -36.852, 174.765)
+
+    expect(result.userChallenge).toBe(completed)
+    expect(result.notification).toBeNull()
     expect(challengeDaoMocks.completeUserChallengeByUserChallengeId).not.toHaveBeenCalled()
   })
 
@@ -263,31 +321,171 @@ describe('userChallengeService', () => {
   it('completes an accepted user challenge from a nearby location', async () => {
     const completed = userChallenge({ status: 'completed' })
     userChallengeDaoMocks.findUserChallengeForUser.mockResolvedValue(userChallenge() as any)
-    challengeDaoMocks.completeUserChallengeByUserChallengeId.mockResolvedValue(completed as any)
 
-    await expect(
-      userChallengeService.checkInChallenge(authId, 20, -36.852, 174.765)
-    ).resolves.toBe(completed)
-    expect(challengeDaoMocks.completeUserChallengeByUserChallengeId).toHaveBeenCalledWith(20, 1)
+    badgeDaoMocks.badgeDAO.getBadgesForUser
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+
+    challengeDaoMocks.completeUserChallengeByUserChallengeId.mockResolvedValue({
+      userChallenge: completed,
+      previousUser: user,
+      updatedUser: { id: 1, xp_earned: 10, level: 1 },
+      xpAwarded: 10,
+    } as any)
+
+
+    const result = await userChallengeService.checkInChallenge(
+      authId,
+      20,
+      -36.852,
+      174.765,
+      'America/Los_Angeles'
+    )
+
+    expect(result.userChallenge).toBe(completed)
+    expect(result.notification).toMatchObject({
+      badgesAwarded: [],
+      level: {
+        type: 'challenge_completed',
+        xpGained: 10,
+        previousXp: 0,
+        newXp: 10,
+        nextLevelXpRequired: 30,
+        levelUp: false,
+        previousLevel: 1,
+        previousLevelXpRequired: 30,
+        newLevel: 1,
+        xpForLevelStart: 0,
+        xpForNextLevelStart: 0,
+        message: expect.any(String),
+      }
+    })
+
+    expect(result.notification?.badgesAwarded).toEqual([])
+    expect(result.notification).toHaveProperty('level')
+    expect(result.notification?.level).toHaveProperty('previousLevelXpRequired')
+    expect(result.notification?.level).toHaveProperty('nextLevelXpRequired')
+    expect(result.notification?.level).toHaveProperty('xpForLevelStart')
+    expect(result.notification?.level).toHaveProperty('xpForNextLevelStart')
+    expect(challengeDaoMocks.completeUserChallengeByUserChallengeId).toHaveBeenCalledWith(
+      20,
+      1,
+      'America/Los_Angeles'
+    )
   })
 
   it('handles concurrent challenge completions', async () => {
     const accepted = userChallenge()
     const completed = userChallenge({ status: 'completed' })
     userChallengeDaoMocks.findUserChallengeForUser.mockResolvedValue(accepted as any)
-    challengeDaoMocks.completeUserChallengeByUserChallengeId.mockResolvedValue(completed as any)
 
-    await expect(
-      Promise.all([
-        userChallengeService.checkInChallenge(authId, 20, -36.852, 174.765),
-        userChallengeService.checkInChallenge(authId, 20, -36.852, 174.765),
-      ])
-    ).resolves.toEqual([completed, completed])
+    badgeDaoMocks.badgeDAO.getBadgesForUser
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+
+    challengeDaoMocks.completeUserChallengeByUserChallengeId.mockResolvedValue({
+      userChallenge: completed,
+      previousUser: user,
+      updatedUser: { id: 1, xp_earned: 10, level: 1 },
+      xpAwarded: 10,
+    } as any)
+
+
+    const results = await Promise.all([
+      userChallengeService.checkInChallenge(authId, 20, -36.852, 174.765),
+      userChallengeService.checkInChallenge(authId, 20, -36.852, 174.765),
+    ])
+
+    expect(results).toHaveLength(2)
+    results.forEach((result) => {
+      expect(result.userChallenge).toBe(completed)
+      expect(result.notification).toMatchObject({
+        badgesAwarded: [],
+        level: {
+          type: 'challenge_completed',
+          xpGained: 10,
+          previousXp: 0,
+          newXp: 10,
+          levelUp: false,
+          previousLevel: 1,
+          newLevel: 1,
+          message: expect.any(String),
+        }
+      })
+      expect(result.notification?.level).toHaveProperty('previousLevelXpRequired')
+      expect(result.notification?.level).toHaveProperty('nextLevelXpRequired')
+      expect(result.notification?.level).toHaveProperty('xpForLevelStart')
+      expect(result.notification?.level).toHaveProperty('xpForNextLevelStart')
+    })
 
     expect(userChallengeDaoMocks.findUserChallengeForUser).toHaveBeenCalledTimes(2)
     expect(challengeDaoMocks.completeUserChallengeByUserChallengeId).toHaveBeenCalledTimes(2)
-    expect(challengeDaoMocks.completeUserChallengeByUserChallengeId).toHaveBeenNthCalledWith(1, 20, 1)
-    expect(challengeDaoMocks.completeUserChallengeByUserChallengeId).toHaveBeenNthCalledWith(2, 20, 1)
+    expect(challengeDaoMocks.completeUserChallengeByUserChallengeId).toHaveBeenNthCalledWith(
+      1,
+      20,
+      1,
+      undefined
+    )
+    expect(challengeDaoMocks.completeUserChallengeByUserChallengeId).toHaveBeenNthCalledWith(
+      2,
+      20,
+      1,
+      undefined
+    )
+  })
+
+  it('calculates level-up when XP crosses threshold and updates notification', async () => {
+    const completed = userChallenge({ status: 'completed' })
+    userDaoMocks.userDAO.getUserByAuthId.mockResolvedValue({
+      id: 1,
+      level: 1,
+      xp_earned: 0,
+    } as any)
+    userChallengeDaoMocks.findUserChallengeForUser.mockResolvedValue(userChallenge() as any)
+    challengeDaoMocks.completeUserChallengeByUserChallengeId.mockResolvedValue({
+      userChallenge: completed,
+      previousUser: { id: 1, xp_earned: 25, level: 1 },
+      updatedUser: { id: 1, xp_earned: 35, level: 2 },
+      xpAwarded: 10,
+    } as any)
+
+    const result = await userChallengeService.checkInChallenge(
+      authId,
+      20,
+      -36.852,
+      174.765
+    )
+
+    expect(result.userChallenge).toBe(completed)
+    const notification = result.notification
+    expect(notification).not.toBeNull()
+    if (!notification) {
+      throw new Error('Expected challenge completion notification')
+    }
+    expect(notification).toMatchObject({
+      badgesAwarded: null,
+      level: {
+        type: 'challenge_completed',
+        xpGained: 10,
+        previousXp: 25,
+        newXp: 35,
+        levelUp: true,
+        previousLevel: 1,
+        previousLevelXpRequired: 30,
+        nextLevelXpRequired: 45,
+        xpForLevelStart: 0,
+        xpForNextLevelStart: 30,
+        newLevel: 2,
+        message: expect.stringContaining('Level 2'),
+      }
+    })
+    // Verify XP boundary fields exist
+    expect(notification.level.previousLevelXpRequired).toBe(30)
+    expect(notification.level.nextLevelXpRequired).toBe(45)
+    expect(notification.level.xpForLevelStart).toBe(0)
+    expect(notification.level.xpForNextLevelStart).toBe(30)
   })
 
   it('throws 409 when the DAO cannot complete the challenge from its current status', async () => {

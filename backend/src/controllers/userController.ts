@@ -5,6 +5,7 @@ import { AuthRequest } from '../middleware/auth'
 import { sendSuccess } from '../utils/httpResponse'
 import { ApiError } from '../utils/ApiError'
 
+// Returns the profile information for the authenticated user.
 export const getProfileInfo = asyncHandler(
   async (req: AuthRequest, res: Response) => {
     if (!req.auth?.sub) {
@@ -17,5 +18,18 @@ export const getProfileInfo = asyncHandler(
     // The user profile endpoint returns the same success envelope as the newer
     // profile/auth controllers, avoiding one-off response shapes in tests.
     sendSuccess(res, profile)
+  }
+)
+
+// Returns the leaderboard showing the top 10 users ranked by XP.
+// Also returns the authenticated user's rank if they fall outside the top 10.
+export const getLeaderboard = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const authUserId = req.auth!.sub
+    const leaderboard = await UserService.getLeaderboard(authUserId)
+    res.status(200).json({
+      success: true,
+      data: leaderboard,
+    })
   }
 )

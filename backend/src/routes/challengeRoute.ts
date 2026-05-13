@@ -1,12 +1,15 @@
 import { Router } from 'express'
-import { getChallenges, getChallenge, checkInChallenge, createChallengesFromLocations } from '../controllers/challengeController'
-import { requireAuth } from '../middleware/auth'
+import { getChallenges, getChallenge, createChallengesFromLocations } from '../controllers/challengeController'
 
 const router = Router()
 
+// Returns all active challenges.
 router.get('/', getChallenges)
+
+// Fetches locations from Geoapify and creates new challenges from them.
 router.get('/create-new', createChallengesFromLocations)
+
+// Returns a single active challenge by ID.
 router.get('/:id', getChallenge)
-router.post('/:id/checkin', requireAuth, checkInChallenge)
 
 export default router

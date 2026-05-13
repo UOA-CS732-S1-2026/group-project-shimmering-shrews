@@ -1,5 +1,6 @@
 import { getSupabaseClient } from "../lib/supabase"
 import type { Badge, HistoryItem } from "../types/profile"
+import { getTimeZoneHeaders } from "./timeZone"
 
 type ApiResponse<T> = {
   success: boolean
@@ -20,6 +21,7 @@ type BackendProfile = {
   historyItems: HistoryItem[]
 }
 
+// Returns the backend URL from environment variables, throwing if not configured.
 const getBackendUrl = () => {
   const url = import.meta.env.VITE_BACKEND_URL
 
@@ -32,7 +34,13 @@ const getBackendUrl = () => {
 
 export type LiveProfile = BackendProfile
 
-export const getMyProfile = async (): Promise<LiveProfile> => {
+// Retrieves the current session token for API requests.
+// Returns a hardcoded E2E token during Playwright tests to bypass real authentication.
+const getToken = async () => {
+  if (import.meta.env.VITE_E2E_AUTH === 'true') {
+    return 'e2e-token'
+  }
+
   const supabase = getSupabaseClient()
   const { data } = await supabase.auth.getSession()
   const token = data.session?.access_token
@@ -41,9 +49,17 @@ export const getMyProfile = async (): Promise<LiveProfile> => {
     throw new Error("No authenticated session found")
   }
 
+  return token
+}
+
+export const getMyProfile = async (): Promise<LiveProfile> => {
+  const token = await getToken()
+
   const res = await fetch(`${getBackendUrl()}/api/profile/me`, {
     headers: {
       Authorization: `Bearer ${token}`,
+      // Include timezone headers so the backend groups history by the user's local date
+      ...getTimeZoneHeaders(),
     },
   })
 
@@ -65,5 +81,34 @@ export const getMyProfile = async (): Promise<LiveProfile> => {
 
   const json = (await res.json()) as ApiResponse<BackendProfile>
 
+  return json.data
+}
+
+export type LeaderboardEntry = {
+  rank: number
+  username: string
+  xp_earned: number
+  level: number
+  isCurrentUser?: boolean
+}
+
+export type Leaderboard = {
+  topUsers: LeaderboardEntry[]
+  // null if the current user is already in the top 10
+  currentUserRank: Omit<LeaderboardEntry, 'isCurrentUser'> | null
+}
+
+// Fetches the leaderboard showing the top 10 users ranked by XP.
+// Also returns the current user's rank if they fall outside the top 10.
+export const getLeaderboard = async (): Promise<Leaderboard> => {
+  const token = await getToken()
+
+  const res = await fetch(`${getBackendUrl()}/api/user/leaderboard`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+
+  if (!res.ok) throw new Error('Failed to fetch leaderboard')
+
+  const json = (await res.json()) as ApiResponse<Leaderboard>
   return json.data
 }

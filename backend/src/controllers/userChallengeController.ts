@@ -7,6 +7,7 @@ import {
 import { ApiError } from '../utils/ApiError'
 import { asyncHandler } from '../utils/asyncHandler'
 import { sendSuccess } from '../utils/httpResponse'
+import { getRequestTimeZone } from '../utils/timeZone'
 import type { AuthRequest } from '../middleware/auth'
 
 // Keep route ids defensive at the controller boundary. The service tests mock
@@ -72,6 +73,7 @@ const parseRadius = (value: unknown) => {
   return parsedValue
 }
 
+// Returns all user challenges for the authenticated user.
 export const getChallenges = asyncHandler(async (req: Request, res: Response) => {
   const authUser = (req as AuthRequest).auth
   if (!authUser?.sub) {
@@ -83,6 +85,7 @@ export const getChallenges = asyncHandler(async (req: Request, res: Response) =>
   sendSuccess(res, challenges)
 })
 
+// Returns a single user challenge by ID for the authenticated user.
 export const getChallenge = asyncHandler(async (req: Request, res: Response) => {
   const authUser = (req as AuthRequest).auth
   if (!authUser?.sub) {
@@ -95,6 +98,8 @@ export const getChallenge = asyncHandler(async (req: Request, res: Response) => 
   sendSuccess(res, userChallenge)
 })
 
+// Returns today's challenges for the authenticated user based on their location.
+// Creates new challenge assignments if none exist for today.
 export const getTodayUserChallenges = asyncHandler(async (req: Request, res: Response) => {
   const authUser = (req as AuthRequest).auth
   if (!authUser?.sub) throw new ApiError(401, 'Authenticated user is missing')
@@ -106,14 +111,21 @@ export const getTodayUserChallenges = asyncHandler(async (req: Request, res: Res
   const lat = parseCoordinate(req.query.lat, 'lat')
   const lng = parseCoordinate(req.query.lng, 'lng')
   const radius = parseRadius(req.query.radius)
+  const timeZone = getRequestTimeZone(req)
 
   const data = await userChallengeService.getOrCreateTodayChallenges(
-    authUser.sub, lat, lng, radius
+    authUser.sub,
+    lat,
+    lng,
+    radius,
+    timeZone
   )
 
   sendSuccess(res, data)
 })
 
+// Accepts a user challenge, recording the user's location at the time of acceptance.
+// Acceptance triggers route display to guide the user to the challenge location.
 export const acceptUserChallenge = asyncHandler(async (req: Request, res: Response) => {
   const authUser = (req as AuthRequest).auth
   if (!authUser?.sub) {
@@ -134,6 +146,7 @@ export const acceptUserChallenge = asyncHandler(async (req: Request, res: Respon
   sendSuccess(res, data, 'Challenge accepted')
 })
 
+// Cancels a user challenge, marking it as cancelled in the database.
 export const cancelUserChallenge = asyncHandler(async (req: Request, res: Response) => {
   const authUser = (req as AuthRequest).auth
   if (!authUser?.sub) {
@@ -146,6 +159,8 @@ export const cancelUserChallenge = asyncHandler(async (req: Request, res: Respon
   sendSuccess(res, data, 'Challenge cancelled')
 })
 
+// Checks in a user to a challenge, verifying they are within the required distance.
+// Awards XP and marks the challenge as completed if successful.
 export const checkInUserChallenge = asyncHandler(async (req: Request, res: Response) => {
   const authUser = (req as AuthRequest).auth
   if (!authUser?.sub) {
@@ -155,12 +170,14 @@ export const checkInUserChallenge = asyncHandler(async (req: Request, res: Respo
   const userChallengeId = parseId(req.params.id, 'User challenge id')
   const completedFromLat = parseCoordinate(req.body?.completedFromLat, 'completedFromLat')
   const completedFromLng = parseCoordinate(req.body?.completedFromLng, 'completedFromLng')
+  const timeZone = getRequestTimeZone(req)
 
   const data = await userChallengeService.checkInChallenge(
     authUser.sub,
     userChallengeId,
     completedFromLat,
-    completedFromLng
+    completedFromLng,
+    timeZone
   )
 
   sendSuccess(res, data, 'Challenge checked in')

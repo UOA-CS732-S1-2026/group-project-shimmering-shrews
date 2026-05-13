@@ -4,15 +4,17 @@ import BottomNav from '../components/BottomNav'
 import ProfileHeader from '../components/ProfileHeader'
 import StatCard from '../components/StatCard'
 import Tabs from '../components/Tabs'
-import { getMyProfile, type LiveProfile } from '../services/profile'
+import { getMyProfile, getLeaderboard, type LiveProfile, type Leaderboard } from '../services/profile'
 import type { Badge, HistoryItem, Stat, TabKey, UserProfile } from '../types/profile'
 import { useAuth } from '../context/useAuth'
 import { useLogout } from "../hooks/useLogout"
 import { Link } from "react-router-dom"
 
-const tabs: TabKey[] = ['badges', 'history']
+const tabs: TabKey[] = ['badges', 'history', 'leaderboard']
 const fallbackAvatarUrl = '/profile-placeholder.svg'
 
+// Extracts the user's Google avatar URL from Supabase user metadata.
+// Falls back to a placeholder if no avatar URL is found.
 const getGoogleAvatarUrl = (metadata: Record<string, unknown> | undefined) => {
   const avatarUrl = metadata?.avatar_url
   const picture = metadata?.picture
@@ -28,6 +30,8 @@ const getGoogleAvatarUrl = (metadata: Record<string, unknown> | undefined) => {
   return fallbackAvatarUrl
 }
 
+// Displays the user's profile including stats, badges, challenge history, and leaderboard.
+// Fetches profile data on mount and leaderboard data lazily when the leaderboard tab is selected.
 function ProfilePage() {
   const [activeTab, setActiveTab] = useState<TabKey>('badges')
   const { user, session, loading } = useAuth()
@@ -39,11 +43,13 @@ function ProfilePage() {
   const [profileError, setProfileError] = useState<string | null>(null)
   const [profileLoading, setProfileLoading] = useState(true)
 
-  useEffect(() => {
-    if (loading) {
-      return
-    }
+  const [leaderboard, setLeaderboard] = useState<Leaderboard | null>(null)
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false)
+  const [leaderboardError, setLeaderboardError] = useState<string | null>(null)
 
+  // Fetch profile data when the user session is available
+  useEffect(() => {
+    if (loading) return
     if (!user || !session) {
       setProfile(null)
       setHistoryItems([])
@@ -60,16 +66,11 @@ function ProfilePage() {
 
       try {
         const liveProfile = await getMyProfile()
-
-        if (!isActive) {
-          return
-        }
-
+        if (!isActive) return
         setProfile(mapLiveProfileToUserProfile(liveProfile, getGoogleAvatarUrl(user.user_metadata)))
         setHistoryItems(liveProfile.historyItems)
       } catch (error) {
         console.error('Failed to load profile', error)
-
         if (isActive) {
           setProfile(null)
           setHistoryItems([])
@@ -78,38 +79,39 @@ function ProfilePage() {
           )
         }
       } finally {
-        if (isActive) {
-          setProfileLoading(false)
-        }
+        if (isActive) setProfileLoading(false)
       }
     }
 
     fetchProfile()
-
-    return () => {
-      isActive = false
-    }
+    return () => { isActive = false }
   }, [loading, session, user])
 
+  // Fetch leaderboard data lazily when the leaderboard tab is first opened
+  useEffect(() => {
+    if (activeTab !== 'leaderboard') return
+    if (leaderboard) return
+
+    let isActive = true
+    setLeaderboardLoading(true)
+    setLeaderboardError(null)
+
+    getLeaderboard()
+      .then((data) => { if (isActive) setLeaderboard(data) })
+      .catch(() => { if (isActive) setLeaderboardError('Could not load leaderboard.') })
+      .finally(() => { if (isActive) setLeaderboardLoading(false) })
+
+    return () => { isActive = false }
+  }, [activeTab, leaderboard])
+
+  // Build stat cards from the profile data
   const profileStats = useMemo<Stat[]>(
     () =>
       profile
         ? [
-            {
-              label: 'Streak',
-              value: `${profile.streak_count} 🔥`,
-              helper: 'days in a row',
-            },
-            {
-              label: 'Badges',
-              value: profile.badges.filter((badge) => badge.earned).length,
-              helper: 'earned so far',
-            },
-            {
-              label: 'Challenges',
-              value: profile.challengesCompleted,
-              helper: 'city quests done',
-            },
+            { label: 'Streak', value: `${profile.streak_count} 🔥`, helper: 'days in a row' },
+            { label: 'Badges', value: profile.badges.filter((badge) => badge.earned).length, helper: 'earned so far' },
+            { label: 'Challenges', value: profile.challengesCompleted, helper: 'city quests done' },
           ]
         : [],
     [profile]
@@ -120,14 +122,9 @@ function ProfilePage() {
       <main className="container page page-profile">
         <div className="shell shell-profile">
           <nav className="topbar" aria-label="Main navigation">
-            <Link to="/" aria-label="CityQuest home">
-              CityQuest
-            </Link>
-            <Link className="logout-button" to="/login">
-              Login
-            </Link>
+            <Link to="/" aria-label="CityQuest home">CityQuest</Link>
+            <Link className="logout-button" to="/login">Login</Link>
           </nav>
-
           <p className="status-message">Please sign in to view your profile.</p>
         </div>
       </main>
@@ -138,12 +135,8 @@ function ProfilePage() {
     <main className="container page page-profile">
       <div className="shell shell-profile">
         <nav className="topbar" aria-label="Main navigation">
-          <Link to="/" aria-label="CityQuest home">
-            CityQuest
-          </Link>
-          <button className="logout-button" type="button" onClick={logout}>
-            Logout
-          </button>
+          <Link to="/" aria-label="CityQuest home">CityQuest</Link>
+          <button className="logout-button" type="button" onClick={logout}>Logout</button>
         </nav>
 
         <ProfileHeader profile={profile} loading={profileLoading} />
@@ -151,9 +144,7 @@ function ProfilePage() {
         <section className="stats-grid" aria-label="Profile stats">
           {profileLoading
             ? ['1', '2', '3'].map((i) => <StatCard key={i} loading />)
-            : profileStats.map((stat) => (
-                <StatCard key={stat.label} stat={stat} />
-            ))
+            : profileStats.map((stat) => <StatCard key={stat.label} stat={stat} />)
           }
         </section>
 
@@ -162,7 +153,15 @@ function ProfilePage() {
 
         <section className="profile-content" aria-live="polite">
           <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
-          {renderTabContent(activeTab, profileLoading, profile?.badges ?? [], historyItems)}
+          {renderTabContent(
+            activeTab,
+            profileLoading,
+            profile?.badges ?? [],
+            historyItems,
+            leaderboard,
+            leaderboardLoading,
+            leaderboardError,
+          )}
         </section>
 
         {!loading && !isLoggedIn ? <p className="status-message">You have been logged out.</p> : null}
@@ -172,12 +171,105 @@ function ProfilePage() {
   )
 }
 
+// Renders the content for the active tab — leaderboard, history, or badges.
 function renderTabContent(
   activeTab: TabKey,
   loading: boolean,
   badgeItems: Badge[],
-  historyItems: HistoryItem[]
+  historyItems: HistoryItem[],
+  leaderboard: Leaderboard | null,
+  leaderboardLoading: boolean,
+  leaderboardError: string | null,
 ) {
+  if (activeTab === 'leaderboard') {
+    return (
+      <div className="tab-panel" role="tabpanel">
+        <div className="section-heading">
+          <p className="eyebrow">Top Players</p>
+          <h2>Leaderboard</h2>
+        </div>
+
+        {leaderboardLoading && <p className="status-message">Loading leaderboard...</p>}
+        {leaderboardError && <p className="status-message">{leaderboardError}</p>}
+
+        {!leaderboardLoading && leaderboard && (
+          <>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+              {leaderboard.topUsers.map((entry) => (
+                <li
+                  key={entry.rank}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    padding: '12px 16px',
+                    marginBottom: '8px',
+                    borderRadius: '12px',
+                    background: entry.isCurrentUser ? '#e8f5e9' : '#f5f7fa',
+                    border: entry.isCurrentUser ? '2px solid #4caf50' : '1px solid #e0e0e0',
+                  }}
+                >
+                  <span style={{ fontSize: '1.2rem', width: '32px', textAlign: 'center' }}>
+                    {entry.rank === 1 ? '👑' : `#${entry.rank}`}
+                  </span>
+                  <div style={{ flex: 1 }}>
+                    <strong>{entry.username}{entry.isCurrentUser ? ' (You)' : ''}</strong>
+                    <div style={{ fontSize: '0.85rem', color: '#666' }}>Level {entry.level}</div>
+                  </div>
+                  <span style={{
+                    background: '#4caf50',
+                    color: 'white',
+                    borderRadius: '8px',
+                    padding: '4px 10px',
+                    fontSize: '0.85rem',
+                    fontWeight: 'bold',
+                  }}>
+                    {entry.xp_earned} XP
+                  </span>
+                </li>
+              ))}
+            </ul>
+
+            {leaderboard.currentUserRank && (
+              <>
+                <p style={{ textAlign: 'center', color: '#999', fontSize: '0.85rem', margin: '8px 0' }}>
+                  • • •
+                </p>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '12px 16px',
+                  borderRadius: '12px',
+                  background: '#e8f5e9',
+                  border: '2px solid #4caf50',
+                }}>
+                  <span style={{ fontSize: '1.2rem', width: '32px', textAlign: 'center' }}>
+                    #{leaderboard.currentUserRank.rank}
+                  </span>
+                  <div style={{ flex: 1 }}>
+                    <strong>{leaderboard.currentUserRank.username} (You)</strong>
+                    <div style={{ fontSize: '0.85rem', color: '#666' }}>Level {leaderboard.currentUserRank.level}</div>
+                  </div>
+                  <span style={{
+                    background: '#4caf50',
+                    color: 'white',
+                    borderRadius: '8px',
+                    padding: '4px 10px',
+                    fontSize: '0.85rem',
+                    fontWeight: 'bold',
+                  }}>
+                    {leaderboard.currentUserRank.xp_earned} XP
+                  </span>
+                </div>
+              </>
+            )}
+          </>
+        )}
+      </div>
+    )
+  }
+
   if (activeTab === 'history') {
     return (
       <div className="tab-panel" role="tabpanel">
@@ -234,7 +326,6 @@ function BadgeTab({ loading, badgeItems }: BadgeTabProps) {
         <p className="eyebrow">Badge Vault</p>
         <h2>{loading ? 'Loading badges...' : `${badgeItems.filter((badge) => badge.earned).length} earned badges`}</h2>
       </div>
-
       {loading ? (
         <div className="badge-grid">
           {['1', '2', '3', '4', '5'].map((key) => (

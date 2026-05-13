@@ -1,4 +1,4 @@
-export type TabKey = 'badges' | 'history'
+export type TabKey = 'badges' | 'history' | 'leaderboard'
 
 export type UserProfile = {
   username: string
