@@ -150,7 +150,7 @@ describe('ProfilePage', () => {
     renderProfilePage()
 
     expect(await screen.findByRole('heading', { name: 'Vivienne' })).toBeInTheDocument()
-    expect(screen.getByText('Level 2')).toBeInTheDocument().toHaveLength(2)
+    expect(screen.getAllByText('Level 2')).toHaveLength(2)
     expect(screen.getByText('First Quest')).toBeInTheDocument()
     expect(screen.getByText('3')).toBeInTheDocument()
     expect(mockGetMyProfile).toHaveBeenCalledTimes(1)
@@ -188,13 +188,13 @@ describe('ProfilePage', () => {
 
     expect(await screen.findByRole('heading', { name: 'Leaderboard' })).toBeInTheDocument()
     expect(mockGetLeaderboard).toHaveBeenCalledTimes(1)
-    expect(screen.getByText('/Avery/')).toBeInTheDocument()
+    expect(screen.getByText('Avery👑')).toBeInTheDocument()
     expect(screen.getByText('Level 5')).toBeInTheDocument()
-    expect(screen.getByText('/900\s*XP')).toBeInTheDocument()
-    expect(screen.getByText('/Morgan/')).toBeInTheDocument()
+    expect(screen.getByText('900 XP')).toBeInTheDocument()
+    expect(screen.getByText('Morgan')).toBeInTheDocument()
     expect(screen.getByText('#8')).toBeInTheDocument()
     expect(screen.getByText('Vivienne (You)')).toBeInTheDocument()
-    expect(screen.getByText('/151\s*XP')).toBeInTheDocument()
+    expect(screen.getByText('151 XP')).toBeInTheDocument()
   })
 
   it('shows a leaderboard error message when leaderboard loading fails', async () => {
