@@ -197,17 +197,17 @@ function renderTabContent(
                     padding: '12px 16px',
                     marginBottom: '8px',
                     borderRadius: '12px',
-                    background: entry.isCurrentUser ? '#0095ff' : '#f5f7fa',
-                    color: entry.isCurrentUser ? '#e7e7e7' : '#1f1d1d',
-                    border: entry.isCurrentUser ? '1px solid #66d1ff' : '1px solid #e0e0e0',
+                    background: entry.rank === 1? 'linear-gradient(180deg, #f7f313, #cec54f)' : entry.isCurrentUser ? '#0095ff' : '#f5f7fa',
+                    color: entry.rank === 1 ? '#4e3c2f' : entry.isCurrentUser ? '#e7e7e7' : '#1f1d1d',
+                    border: entry.rank === 1 ? '2px solid rgba(139, 118, 25, 0.42)' : entry.isCurrentUser ? '1px solid #66d1ff' : '1px solid #e0e0e0',
                   }}
                 >
-                  <span style={{ fontSize: '1.2rem', width: '32px', textAlign: 'center' }}>
-                    {entry.rank === 1 ? '👑' : `#${entry.rank}`}
+                  <span style={{ fontSize: '1.2rem', fontWeight: 'bold', width: '32px', textAlign: 'center' }}>
+                    {`#${entry.rank}`}
                   </span>
                   <div style={{ flex: 1 }}>
-                    <strong>{entry.username}{entry.isCurrentUser ? ' (You)' : ''}</strong>
-                    <div style={{ fontSize: '0.85rem', color: '#3e3e3e' }}>Level {entry.level}</div>
+                    <strong>{entry.username}{entry.rank === 1 ? '👑' : ''}{entry.isCurrentUser ? ' (You)' : ''}</strong>
+                    <div style={{ fontSize: '0.85rem', color: entry.isCurrentUser ? '#e7e7e7' : '#3e3e3e' }}>Level {entry.level}</div>
                   </div>
                   <span style={{
                     background: '#c997f7',
