@@ -33,7 +33,11 @@ const getBackendUrl = () => {
 
 export type LiveProfile = BackendProfile
 
-export const getMyProfile = async (): Promise<LiveProfile> => {
+const getToken = async () => {
+  if (import.meta.env.VITE_E2E_AUTH === 'true') {
+    return 'e2e-token'
+  }
+
   const supabase = getSupabaseClient()
   const { data } = await supabase.auth.getSession()
   const token = data.session?.access_token
@@ -41,6 +45,12 @@ export const getMyProfile = async (): Promise<LiveProfile> => {
   if (!token) {
     throw new Error("No authenticated session found")
   }
+
+  return token
+}
+
+export const getMyProfile = async (): Promise<LiveProfile> => {
+  const token = await getToken()
 
   const res = await fetch(`${getBackendUrl()}/api/profile/me`, {
     headers: {
@@ -84,10 +94,7 @@ export type Leaderboard = {
 }
 
 export const getLeaderboard = async (): Promise<Leaderboard> => {
-  const supabase = getSupabaseClient()
-  const { data } = await supabase.auth.getSession()
-  const token = data.session?.access_token
-  if (!token) throw new Error('No authenticated session found')
+  const token = await getToken()
 
   const res = await fetch(`${getBackendUrl()}/api/user/leaderboard`, {
     headers: { Authorization: `Bearer ${token}` },

@@ -4,10 +4,28 @@ import { isSupabaseConfigured, supabase } from "../lib/supabase"
 import { syncUser } from "../services/auth"
 import type { Session, User } from "@supabase/supabase-js"
 
+const isE2EAuthEnabled = import.meta.env.VITE_E2E_AUTH === "true"
+
+const e2eUser = {
+  id: "e2e-user",
+  email: "e2e@example.test",
+  app_metadata: {},
+  aud: "authenticated",
+  created_at: "2026-05-13T00:00:00.000Z",
+  user_metadata: {
+    avatar_url: "/profile-placeholder.svg",
+  },
+} as User
+
+const e2eSession = {
+  access_token: "e2e-token",
+  user: e2eUser,
+} as Session
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null)
-  const [session, setSession] = useState<Session | null>(null)
-  const [loading, setLoading] = useState(isSupabaseConfigured)
+  const [user, setUser] = useState<User | null>(isE2EAuthEnabled ? e2eUser : null)
+  const [session, setSession] = useState<Session | null>(isE2EAuthEnabled ? e2eSession : null)
+  const [loading, setLoading] = useState(isE2EAuthEnabled ? false : isSupabaseConfigured)
 
   const logout = async () => {
     setLoading(true)
@@ -30,6 +48,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   useEffect(() => {
+    if (isE2EAuthEnabled) {
+      return
+    }
+
     if (!isSupabaseConfigured || !supabase) {
       return
     }
