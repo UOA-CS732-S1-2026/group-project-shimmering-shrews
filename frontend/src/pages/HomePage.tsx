@@ -17,7 +17,7 @@ export default function HomePage() {
                     </Link>
                     {!loading && !isLoggedIn && (
                         <Link className="button login-button" to="/login">
-                        Login
+                        Log In
                         </Link>
                     )}
                 </nav>
