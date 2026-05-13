@@ -3,7 +3,7 @@ export const containerStyle = {
         minWidth: "350px",
         minHeight: "80vh",
         margin: "0 auto",
-        padding: "0 2em 0 2em",
+        padding: "0 2em 64px 2em",
 
         display: "flex",
         flexDirection: "column",

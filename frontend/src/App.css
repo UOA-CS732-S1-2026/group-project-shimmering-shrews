@@ -398,6 +398,10 @@
   padding: 14px 16px;
 }
 
+.paddingForBottomNav{
+  padding-bottom: calc(64px + env(safe-area-inset-bottom));
+}
+
 .bottom-nav {
   position: fixed;
   right: 50%;

@@ -125,7 +125,7 @@ function ProfilePage() {
   }
 
   return (
-    <main className="container page page-profile">
+    <main className="container page page-profile paddingForBottomNav">
       <div className="shell shell-profile">
         <nav className="topbar" aria-label="Main navigation">
           <Link to="/" aria-label="CityQuest home">CityQuest</Link>
