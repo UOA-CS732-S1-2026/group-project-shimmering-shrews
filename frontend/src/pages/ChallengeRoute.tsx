@@ -16,16 +16,24 @@ export default function ChallengeRoute() {
   // fetch passed challenge if we came here from View Route via Challenge Detail View
   const passedUserChallenge = location.state?.userChallenge
 
-  const [userChallenge, setUserChallenge] = useState<UserChallenge | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [loadedUserChallenge, setLoadedUserChallenge] = useState<UserChallenge | null>(null)
+  const [errorState, setErrorState] = useState<{
+    id: number
+    message: string
+  } | null>(null)
 
+  const matchingPassedUserChallenge =
+    passedUserChallenge?.id === normalisedId ? passedUserChallenge : null
+  const matchingLoadedUserChallenge =
+    loadedUserChallenge?.id === normalisedId ? loadedUserChallenge : null
+  const userChallenge = matchingPassedUserChallenge ?? matchingLoadedUserChallenge
+  const error = errorState?.id === normalisedId ? errorState.message : null
   const isLoading = userChallenge === null && error === null
 
   useEffect(() => {
     if (normalisedId === null || hasInvalidChallengeId) return
 
-    if (passedUserChallenge?.id === normalisedId) {
-      setUserChallenge(passedUserChallenge)
+    if (matchingPassedUserChallenge) {
       return
     }
 
@@ -34,17 +42,20 @@ export default function ChallengeRoute() {
     getUserChallenge(String(normalisedId))
       .then((data) => {
         if (!isActive) return
-        setUserChallenge(data)
+        setLoadedUserChallenge(data)
       })
       .catch(() => {
         if (!isActive) return
-        setError('Could not load challenge details.')
+        setErrorState({
+          id: normalisedId,
+          message: 'Could not load challenge details.',
+        })
       })
 
     return () => {
       isActive = false
     }
-  }, [passedUserChallenge, normalisedId, hasInvalidChallengeId])
+  }, [matchingPassedUserChallenge, normalisedId, hasInvalidChallengeId])
 
   if (!userChallengeId) {
     return (

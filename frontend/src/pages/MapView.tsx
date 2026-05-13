@@ -123,9 +123,13 @@ export default function MapView() {
   const [isRequestingLocation, setIsRequestingLocation] = useState(false)
   const [isInitializingLocation, setIsInitializingLocation] = useState(!DEV_SHOW_ALL)
   const [locationMessage, setLocationMessage] = useState<string | null>(null)
-  const [focusedRouteChallenge, setFocusedRouteChallenge] = useState<UserChallenge | null>(null)
-  const [route, setRoute] = useState<[number, number][] | null>(null)
-  const [routeError, setRouteError] = useState<string | null>(null)
+  const [loadedFocusedRouteChallenge, setLoadedFocusedRouteChallenge] =
+    useState<UserChallenge | null>(null)
+  const [routeState, setRouteState] = useState<{
+    key: string
+    points: [number, number][] | null
+    error: string | null
+  } | null>(null)
 
   const location = useLocation()
   // fetch passed challenge if we came here from View Route via Challenge Detail View
@@ -263,14 +267,19 @@ export default function MapView() {
     [focusedUserChallengeId, userChallenges]
   )
 
+  const matchingPassedChallenge =
+    passedChallenge?.id === focusedUserChallengeId ? passedChallenge : null
+  const matchingLoadedRouteChallenge =
+    loadedFocusedRouteChallenge?.id === focusedUserChallengeId
+      ? loadedFocusedRouteChallenge
+      : null
+
   useEffect(() => {
     if (!focusedUserChallengeId) {
-      setFocusedRouteChallenge(null)
       return
     }
 
-    if (passedChallenge?.id === focusedUserChallengeId) {
-      setFocusedRouteChallenge(passedChallenge)
+    if (matchingPassedChallenge) {
       return
     }
 
@@ -279,19 +288,19 @@ export default function MapView() {
 
     getUserChallenge(String(focusedUserChallengeId))
       .then((challenge) => {
-        if (isActive) setFocusedRouteChallenge(challenge)
+        if (isActive) setLoadedFocusedRouteChallenge(challenge)
       })
       .catch((error) => {
         console.error('Could not load focused challenge route details', error)
-        if (isActive) setFocusedRouteChallenge(null)
       })
 
     return () => {
       isActive = false
     }
-  }, [focusedUserChallengeId, passedChallenge])
+  }, [focusedUserChallengeId, matchingPassedChallenge])
 
-  const activeFocusedChallenge = focusedRouteChallenge ?? focusedUserChallenge
+  const activeFocusedChallenge =
+    matchingPassedChallenge ?? matchingLoadedRouteChallenge ?? focusedUserChallenge
   const currUserLocation: [number, number] | null = DEV_SHOW_ALL ? DEFAULT_MAP_CENTER : userLocation
   const mapCenter: [number, number] = currUserLocation ?? DEFAULT_MAP_CENTER
 
@@ -314,19 +323,25 @@ export default function MapView() {
     )
   }, [activeFocusedChallenge])
 
-  useEffect(() => {
-    setRoute(null)
-    setRouteError(null)
+  const routeKey =
+    activeFocusedChallenge?.status === 'accepted' && focusedRouteStart && focusedChallengeLocation
+      ? [
+          activeFocusedChallenge.id,
+          focusedRouteStart.join(','),
+          focusedChallengeLocation.join(','),
+        ].join('|')
+      : null
 
-    if (
-      !activeFocusedChallenge ||
-      activeFocusedChallenge.status !== 'accepted' ||
-      !focusedRouteStart ||
-      !focusedChallengeLocation
-    ) {
-      if (activeFocusedChallenge?.status === 'accepted' && !focusedRouteStart) {
-        setRouteError('Could not determine the route start location for this challenge.')
-      }
+  const routeStartError =
+    activeFocusedChallenge?.status === 'accepted' && !focusedRouteStart
+      ? 'Could not determine the route start location for this challenge.'
+      : null
+  const currentRouteState = routeState?.key === routeKey ? routeState : null
+  const route = currentRouteState?.points ?? null
+  const routeError = routeStartError ?? currentRouteState?.error ?? null
+
+  useEffect(() => {
+    if (!routeKey || !focusedRouteStart || !focusedChallengeLocation) {
       return
     }
 
@@ -337,22 +352,29 @@ export default function MapView() {
         if (!isActive) return
 
         if (points.length > 0) {
-          setRoute(points)
+          setRouteState({ key: routeKey, points, error: null })
         } else {
-          setRouteError('Could not load a route to this challenge right now.')
+          setRouteState({
+            key: routeKey,
+            points: null,
+            error: 'Could not load a route to this challenge right now.',
+          })
         }
       })
       .catch((error) => {
         console.error('Failed to load route for focused challenge', error)
         if (!isActive) return
-        setRoute(null)
-        setRouteError('Could not load a route to this challenge right now.')
+        setRouteState({
+          key: routeKey,
+          points: null,
+          error: 'Could not load a route to this challenge right now.',
+        })
       })
 
     return () => {
       isActive = false
     }
-  }, [activeFocusedChallenge, focusedChallengeLocation, focusedRouteStart])
+  }, [focusedChallengeLocation, focusedRouteStart, routeKey])
 
   const mapFocusPoints = useMemo(() => {
     if (route) return route
