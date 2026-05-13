@@ -51,6 +51,8 @@ const parseOptionalLimit = (value: unknown) => {
   return limit
 }
 
+// Fetches locations from Geoapify without saving them to the database.
+// Useful for previewing what locations would be returned before committing them.
 export const fetchPlaces = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const category = parseOptionalCategory(req.query?.category)
   const limit = parseOptionalLimit(req.query?.limit)
@@ -61,6 +63,8 @@ export const fetchPlaces = asyncHandler(async (req: Request, res: Response): Pro
   sendSuccess(res, data, 'Locations fetched');
 });
 
+// Fetches locations from Geoapify and saves new ones to the database.
+// Skips duplicates automatically via the DAO layer.
 export const fetchAndCreateLocations = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const category = parseOptionalCategory(req.query?.category)
   const limit = parseOptionalLimit(req.query?.limit)

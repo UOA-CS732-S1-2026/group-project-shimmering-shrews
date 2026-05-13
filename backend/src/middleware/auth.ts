@@ -2,11 +2,13 @@ import { Request, Response, NextFunction } from "express"
 import { createClient, type User } from "@supabase/supabase-js"
 import { ApiError } from "../utils/ApiError"
 
+// Single shared Supabase client instance used for JWT verification.
 const supabase = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_PUBLISHABLE_KEY!
 )
 
+// Extends the Express Request type to include the authenticated user's auth ID and email.
 export interface AuthRequest extends Request {
   auth?: {
     sub: string
@@ -15,8 +17,11 @@ export interface AuthRequest extends Request {
   }
 }
 
+// Middleware that verifies the Supabase JWT token from the Authorization header.
+// Attaches the authenticated user's ID and email to req.auth if valid.
 const supabaseJwtMiddleware = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
+    // Extract Bearer token from Authorization header
     const token = req.headers.authorization?.split(" ")[1]
     if (!token) {
       return next(new ApiError(401, "No token provided"))
@@ -43,6 +48,7 @@ const supabaseJwtMiddleware = async (req: AuthRequest, res: Response, next: Next
 
 console.log("requireAuth initialised")
 
+// Debug middleware that logs the authenticated user's ID — used during development only.
 export const attachUser = (
   req: AuthRequest,
   _res: Response,
@@ -52,8 +58,11 @@ export const attachUser = (
   next()
 }
 
+// Middleware array that requires a valid Supabase JWT to access a route.
 export const requireAuth = [supabaseJwtMiddleware]
 
+// Middleware that ensures the authenticated user can only access their own resources.
+// Compares the route param ID against the authenticated user's ID.
 export const requireSelf = (
   req: AuthRequest,
   res: Response,
