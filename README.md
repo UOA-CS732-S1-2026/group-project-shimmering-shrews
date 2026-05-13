@@ -88,6 +88,22 @@ Terminal 2 - Frontend
 
 The frontend will be available at `http://localhost:5173` and the backend at `http://localhost:5001`.
 
+### Database Setup
+
+After installing dependencies and setting up your environment variables, initialise the database:
+
+```bash
+cd backend
+npx prisma migrate deploy
+npx prisma db seed
+```
+
+This will:
+- Create all tables, enums, indexes, and foreign keys
+- Apply badge and stat constraints
+- Set up badge and stat trigger functions
+- Populate initial seed data for categories, badges, locations, and challenges
+
 ## Deployment
 
 This project is deployed using [Vercel](https://vercel.com) for the frontend web server, [Render](https://render.com) for the backend API, and [Supabase](https://supabase.com) for the backend database.
