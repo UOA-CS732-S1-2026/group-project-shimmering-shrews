@@ -1,0 +1,116 @@
+name: Backend CI
+
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
+
+jobs:
+  backend-checks:
+    name: Backend checks
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: backend
+
+    env:
+      # Dummy PostgreSQL URLs for Prisma config/client generation only.
+      # Unit tests run with integration mode disabled and do not connect to this database.
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/postgres
+      SUPABASE_URL: http://localhost:54321
+      SUPABASE_PUBLISHABLE_KEY: test-supabase-key
+      GEOAPIFY_KEY: test-geoapify-key
+      WEBSERVER_URLS: http://localhost:5173
+      NODE_ENV: test
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run test:typecheck
+
+      - name: Lint if configured
+        run: |
+          if npm run | grep -q " lint"; then
+            npm run lint
+          else
+            echo "No backend lint script configured; typecheck is the backend static check."
+          fi
+
+      - name: Build
+        run: npm run build
+
+      - name: Run unit tests
+        env:
+          RUN_INTEGRATION: "0"
+          ALLOW_DB_RESET: "0"
+        run: npm test
+
+  backend-integration:
+    name: Backend integration tests
+    runs-on: ubuntu-latest
+    needs: backend-checks
+
+    concurrency:
+      group: backend-integration-tests
+      cancel-in-progress: false
+
+    defaults:
+      run:
+        working-directory: backend
+
+    env:
+      DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+      DIRECT_URL: ${{ secrets.TEST_DIRECT_DATABASE_URL }}
+      TEST_DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+      TEST_DIRECT_DATABASE_URL: ${{ secrets.TEST_DIRECT_DATABASE_URL }}
+      SUPABASE_URL: http://localhost:54321
+      SUPABASE_PUBLISHABLE_KEY: test-supabase-key
+      GEOAPIFY_KEY: test-geoapify-key
+      WEBSERVER_URLS: http://localhost:5173
+      NODE_ENV: test
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Validate integration secrets
+        run: |
+          if [ -z "$TEST_DATABASE_URL" ]; then
+            echo "Missing GitHub Actions secret: TEST_DATABASE_URL"
+            exit 1
+          fi
+
+          if [ -z "$TEST_DIRECT_DATABASE_URL" ]; then
+            echo "Missing GitHub Actions secret: TEST_DIRECT_DATABASE_URL"
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run integration tests
+        env:
+          RUN_INTEGRATION: "1"
+          ALLOW_DB_RESET: "1"
+        run: npm run test:integration
