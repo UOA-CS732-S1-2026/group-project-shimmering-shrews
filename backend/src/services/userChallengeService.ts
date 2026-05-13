@@ -231,16 +231,25 @@ export const userChallengeService = {
     const newLevel = updatedUser.level
     const levelUp = newLevel > previousLevel
     const badgesAfter = await badgeDAO.getBadgesForUser(user.id)
-    const badgesAwarded = badgesAfter
-    .filter(
-      (badgeAfter) => !badgesBefore.some((badgeBefore) => badgeBefore.badge.id === badgeAfter.badge.id)
-    )
-    .map((badge) => ({
-      id: badge.badge.id,
-      name: badge.badge.name,
-      description: badge.badge.description,
-      activeUrl: badge.badge.active_url,
-    }))
+
+    let badgesAwarded = null;
+
+    if (badgesAfter && badgesBefore) {
+      const beforeIds = new Set(
+        badgesBefore
+          .map(b => b.badge?.id)
+          .filter(Boolean)
+      );
+  
+      badgesAwarded = badgesAfter
+      .filter((badgeAfter) => badgeAfter?.badge && !beforeIds.has(badgeAfter.badge.id))
+      .map((badge) => ({
+        id: badge.badge.id,
+        name: badge.badge.name,
+        description: badge.badge.description,
+        activeUrl: badge.badge.active_url,
+      }));
+    }
 
     const previousLevelXpRequired = getXpRequiredForNextLevel(previousLevel)
     const nextLevelXpRequired = getXpRequiredForNextLevel(newLevel)
